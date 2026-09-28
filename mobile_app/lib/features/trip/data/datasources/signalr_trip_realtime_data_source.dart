@@ -46,6 +46,12 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
       StreamController<OfferModel>.broadcast();
   final StreamController<String> _expired =
       StreamController<String>.broadcast();
+  final StreamController<Map<String, dynamic>> _safetyChecks =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _messages =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _messagesRead =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   HubConnection? _hub;
   int _refCount = 0;
@@ -60,6 +66,13 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
   Stream<OfferModel> get offerReceived => _offers.stream;
   @override
   Stream<String> get offerExpired => _expired.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get safetyCheck => _safetyChecks.stream;
+  @override
+  Stream<Map<String, dynamic>> get tripMessage => _messages.stream;
+  @override
+  Stream<Map<String, dynamic>> get tripMessagesRead => _messagesRead.stream;
 
   @override
   bool get isConnected => _hub?.state == HubConnectionState.Connected;
@@ -128,6 +141,18 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
             : first;
         if (id != null) _expired.add(id.toString());
       })
+      ..on(TripHubEvents.safetyCheck, (List<Object?>? args) {
+        final Map<String, dynamic>? json = _firstObject(args);
+        if (json != null) _safetyChecks.add(json);
+      })
+      ..on(TripHubEvents.tripMessage, (List<Object?>? args) {
+        final Map<String, dynamic>? json = _firstObject(args);
+        if (json != null) _messages.add(json);
+      })
+      ..on(TripHubEvents.tripMessagesRead, (List<Object?>? args) {
+        final Map<String, dynamic>? json = _firstObject(args);
+        if (json != null) _messagesRead.add(json);
+      })
       ..onclose(({Exception? error}) => _scheduleReconnect());
   }
 
@@ -172,6 +197,9 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
       _locations.close(),
       _offers.close(),
       _expired.close(),
+      _safetyChecks.close(),
+      _messages.close(),
+      _messagesRead.close(),
     ]);
   }
 }

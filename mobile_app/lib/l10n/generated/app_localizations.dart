@@ -3330,6 +3330,1158 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'المبلغ أكبر من الرصيد المتاح'**
   String get insufficientBalanceError;
+
+  /// No description provided for @shareNotFoundError.
+  ///
+  /// In ar, this message translates to:
+  /// **'رابط التتبع غير موجود'**
+  String get shareNotFoundError;
+
+  /// No description provided for @shareExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية رابط التتبع'**
+  String get shareExpiredError;
+
+  /// No description provided for @trustedContactsLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى 5 جهات موثوقة'**
+  String get trustedContactsLimitError;
+
+  /// No description provided for @trustedContactExistsError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهة مضافة مسبقاً'**
+  String get trustedContactExistsError;
+
+  /// No description provided for @chatClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحادثة مغلقة لهذه الرحلة'**
+  String get chatClosedError;
+
+  /// No description provided for @lostItemWindowClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة الإبلاغ عن المفقودات'**
+  String get lostItemWindowClosedError;
+
+  /// No description provided for @cancellationReasonInvalidError.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الإلغاء غير صالح'**
+  String get cancellationReasonInvalidError;
+
+  /// No description provided for @cancellationFeeChangedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيّرت رسوم الإلغاء، راجعها وأعد المحاولة'**
+  String get cancellationFeeChangedError;
+
+  /// No description provided for @noShowTooEarlyError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تنتهِ مدة الانتظار المطلوبة بعد (متبقٍ {minutes} د)'**
+  String noShowTooEarlyError(int minutes);
+
+  /// No description provided for @accountRestrictedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء'**
+  String get accountRestrictedError;
+
+  /// No description provided for @accountRestrictedUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء حتى {date}'**
+  String accountRestrictedUntil(String date);
+
+  /// No description provided for @cancelNoteHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب سبب الإلغاء'**
+  String get cancelNoteHint;
+
+  /// No description provided for @cancelNoteRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا السبب يتطلب ملاحظة'**
+  String get cancelNoteRequired;
+
+  /// No description provided for @confirmCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الإلغاء'**
+  String get confirmCancel;
+
+  /// No description provided for @reasonEmergencyBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'طارئ'**
+  String get reasonEmergencyBadge;
+
+  /// No description provided for @reasonExcusableBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'يخضع للمراجعة'**
+  String get reasonExcusableBadge;
+
+  /// No description provided for @cancelEmergencyNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُنشأ بلاغ سلامة ويتواصل معك فريق السلامة، ولن تُحتسب رسوم أو نقاط حتى المراجعة.'**
+  String get cancelEmergencyNote;
+
+  /// No description provided for @cancelExcusableNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيراجع فريق العمليات هذا العذر، ولن تُخصم رسوم أو نقاط حتى تتم المراجعة.'**
+  String get cancelExcusableNote;
+
+  /// No description provided for @cancelFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجاني'**
+  String get cancelFree;
+
+  /// No description provided for @penaltyPointsValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{count} نقاط'**
+  String penaltyPointsValue(int count);
+
+  /// No description provided for @scheduledCancelFeeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم إلغاء الحجز المجدول'**
+  String get scheduledCancelFeeLabel;
+
+  /// No description provided for @cancelPointsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أثر الإلغاء على موثوقيتك'**
+  String get cancelPointsLabel;
+
+  /// No description provided for @cancelFeeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم الإلغاء'**
+  String get cancelFeeLabel;
+
+  /// No description provided for @cancelFreeUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإلغاء مجاني حتى {time}'**
+  String cancelFreeUntil(String time);
+
+  /// No description provided for @cancelRequiresReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرسوم محتملة وتُحسم بعد مراجعة العذر'**
+  String get cancelRequiresReview;
+
+  /// No description provided for @noShowAvailableIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك تسجيل عدم حضور الراكب بعد {time}'**
+  String noShowAvailableIn(String time);
+
+  /// No description provided for @noShowAvailableNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة الانتظار، يمكنك تسجيل عدم حضور الراكب'**
+  String get noShowAvailableNow;
+
+  /// No description provided for @noShowAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يحضر الراكب'**
+  String get noShowAction;
+
+  /// No description provided for @noShowConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد عدم حضور الراكب؟'**
+  String get noShowConfirmTitle;
+
+  /// No description provided for @noShowConfirmCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم إلغاء الرحلة واحتساب رسوم عدم الحضور على الراكب مع تعويضك حسب السياسة.'**
+  String get noShowConfirmCopy;
+
+  /// No description provided for @keepWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة الانتظار'**
+  String get keepWaiting;
+
+  /// No description provided for @noShowRecorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل عدم حضور الراكب وإلغاء الرحلة.'**
+  String get noShowRecorded;
+
+  /// No description provided for @compensationLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعويضك: {amount}'**
+  String compensationLine(String amount);
+
+  /// No description provided for @cancelFeePendingReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم الإلغاء قيد مراجعة فريق العمليات.'**
+  String get cancelFeePendingReview;
+
+  /// No description provided for @cancelFeeCharged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم خصم {amount} رسوم إلغاء.'**
+  String cancelFeeCharged(String amount);
+
+  /// No description provided for @levelNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز'**
+  String get levelNone;
+
+  /// No description provided for @levelWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get levelWarning;
+
+  /// No description provided for @levelDeprioritized.
+  ///
+  /// In ar, this message translates to:
+  /// **'أولوية أقل في المطابقة'**
+  String get levelDeprioritized;
+
+  /// No description provided for @levelIncentivesReduced.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافآت مخفضة'**
+  String get levelIncentivesReduced;
+
+  /// No description provided for @levelRestricted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقيّد مؤقتاً'**
+  String get levelRestricted;
+
+  /// No description provided for @levelSuspended.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقوف'**
+  String get levelSuspended;
+
+  /// No description provided for @levelNoneCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجلك جيد، استمر في إكمال رحلاتك.'**
+  String get levelNoneCopy;
+
+  /// No description provided for @levelWarningCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكرار الإلغاء يرفع نقاطك وقد يؤدي إلى تقييد حسابك.'**
+  String get levelWarningCopy;
+
+  /// No description provided for @levelDeprioritizedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستصلك عروض أقل مؤقتاً بسبب ارتفاع نسبة الإلغاء.'**
+  String get levelDeprioritizedCopy;
+
+  /// No description provided for @levelIncentivesReducedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصلك عروض أقل وتُخفَّض مكافآتك حتى تتحسن موثوقيتك.'**
+  String get levelIncentivesReducedCopy;
+
+  /// No description provided for @levelRestrictedDriverCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكنك الاتصال واستقبال الطلبات حتى انتهاء التقييد.'**
+  String get levelRestrictedDriverCopy;
+
+  /// No description provided for @levelRestrictedRiderCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكنك طلب رحلات جديدة حتى انتهاء التقييد.'**
+  String get levelRestrictedRiderCopy;
+
+  /// No description provided for @levelSuspendedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب موقوف حتى يراجعه فريق العمليات.'**
+  String get levelSuspendedCopy;
+
+  /// No description provided for @excusePending.
+  ///
+  /// In ar, this message translates to:
+  /// **'العذر قيد المراجعة'**
+  String get excusePending;
+
+  /// No description provided for @excuseApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم قبول العذر'**
+  String get excuseApproved;
+
+  /// No description provided for @excuseRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض العذر'**
+  String get excuseRejected;
+
+  /// No description provided for @reliabilityTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'موثوقيتك'**
+  String get reliabilityTitle;
+
+  /// No description provided for @reliabilityCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الإلغاء والنقاط وأثرها على حسابك.'**
+  String get reliabilityCopy;
+
+  /// No description provided for @cancellationRateLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الإلغاء'**
+  String get cancellationRateLabel;
+
+  /// No description provided for @penaltyPointsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقاط'**
+  String get penaltyPointsLabel;
+
+  /// No description provided for @acceptanceRateLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة القبول'**
+  String get acceptanceRateLabel;
+
+  /// No description provided for @restrictedUntilLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقيّد حتى {date}'**
+  String restrictedUntilLine(String date);
+
+  /// No description provided for @reliabilityDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض التفاصيل'**
+  String get reliabilityDetails;
+
+  /// No description provided for @tripsAcceptedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلات مُسندة'**
+  String get tripsAcceptedLabel;
+
+  /// No description provided for @tripsCompletedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلات مكتملة'**
+  String get tripsCompletedLabel;
+
+  /// No description provided for @cancellationsAtFaultLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاءات محتسبة'**
+  String get cancellationsAtFaultLabel;
+
+  /// No description provided for @reliabilityRateLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الإكمال'**
+  String get reliabilityRateLabel;
+
+  /// No description provided for @noShowCountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدم الحضور'**
+  String get noShowCountLabel;
+
+  /// No description provided for @matchingFactorLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'معامل المطابقة'**
+  String get matchingFactorLabel;
+
+  /// No description provided for @incentiveMultiplierLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'معامل المكافآت'**
+  String get incentiveMultiplierLabel;
+
+  /// No description provided for @reliabilityWindow.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر {days} يوماً'**
+  String reliabilityWindow(int days);
+
+  /// No description provided for @nextLevelLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى التالي «{level}» عند {points} نقطة أو نسبة إلغاء {rate}'**
+  String nextLevelLine(String level, String points, String rate);
+
+  /// No description provided for @recentCancellations.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر الإلغاءات'**
+  String get recentCancellations;
+
+  /// No description provided for @noRecentCancellations.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إلغاءات محتسبة.'**
+  String get noRecentCancellations;
+
+  /// No description provided for @caseTypeSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء طوارئ'**
+  String get caseTypeSos;
+
+  /// No description provided for @caseTypeReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغ سلامة'**
+  String get caseTypeReport;
+
+  /// No description provided for @alertUnexpectedStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'توقف غير متوقع'**
+  String get alertUnexpectedStop;
+
+  /// No description provided for @alertRouteDeviation.
+  ///
+  /// In ar, this message translates to:
+  /// **'انحراف عن المسار'**
+  String get alertRouteDeviation;
+
+  /// No description provided for @alertTripOverrun.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأخر كبير في الرحلة'**
+  String get alertTripOverrun;
+
+  /// No description provided for @caseStatusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوحة'**
+  String get caseStatusOpen;
+
+  /// No description provided for @caseStatusInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد المعالجة'**
+  String get caseStatusInProgress;
+
+  /// No description provided for @caseStatusEscalated.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُصعَّدة'**
+  String get caseStatusEscalated;
+
+  /// No description provided for @caseStatusResolved.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغلقة'**
+  String get caseStatusResolved;
+
+  /// No description provided for @alertUnexpectedStopCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحظنا أن الرحلة متوقفة منذ مدة في مكان غير متوقع.'**
+  String get alertUnexpectedStopCopy;
+
+  /// No description provided for @alertRouteDeviationCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحظنا أن الرحلة ابتعدت عن المسار المتوقع.'**
+  String get alertRouteDeviationCopy;
+
+  /// No description provided for @alertTripOverrunCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة تستغرق وقتاً أطول بكثير من المتوقع.'**
+  String get alertTripOverrunCopy;
+
+  /// No description provided for @safetyCheckCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نريد الاطمئنان عليك أثناء الرحلة.'**
+  String get safetyCheckCopy;
+
+  /// No description provided for @reportUnsafeDriving.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيادة غير آمنة'**
+  String get reportUnsafeDriving;
+
+  /// No description provided for @reportHarassment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحرش أو إساءة'**
+  String get reportHarassment;
+
+  /// No description provided for @reportVehicleMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'المركبة لا تطابق التطبيق'**
+  String get reportVehicleMismatch;
+
+  /// No description provided for @reportDriverMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن لا يطابق التطبيق'**
+  String get reportDriverMismatch;
+
+  /// No description provided for @reportPassengerMisconduct.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلوك غير لائق من الراكب'**
+  String get reportPassengerMisconduct;
+
+  /// No description provided for @reportOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخرى'**
+  String get reportOther;
+
+  /// No description provided for @lostPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوال'**
+  String get lostPhone;
+
+  /// No description provided for @lostWallet.
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة'**
+  String get lostWallet;
+
+  /// No description provided for @lostBag.
+  ///
+  /// In ar, this message translates to:
+  /// **'حقيبة'**
+  String get lostBag;
+
+  /// No description provided for @lostKeys.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفاتيح'**
+  String get lostKeys;
+
+  /// No description provided for @lostDocuments.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستندات'**
+  String get lostDocuments;
+
+  /// No description provided for @lostOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخرى'**
+  String get lostOther;
+
+  /// No description provided for @lostStatusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار رد الكابتن'**
+  String get lostStatusOpen;
+
+  /// No description provided for @lostStatusDriverContacted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التواصل مع الكابتن'**
+  String get lostStatusDriverContacted;
+
+  /// No description provided for @lostStatusFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم العثور عليه'**
+  String get lostStatusFound;
+
+  /// No description provided for @lostStatusReturned.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الإعادة'**
+  String get lostStatusReturned;
+
+  /// No description provided for @lostStatusNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُعثر عليه'**
+  String get lostStatusNotFound;
+
+  /// No description provided for @lostStatusClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغلق'**
+  String get lostStatusClosed;
+
+  /// No description provided for @sosSemantics.
+  ///
+  /// In ar, this message translates to:
+  /// **'زر الطوارئ، اضغط مطولاً للتأكيد'**
+  String get sosSemantics;
+
+  /// No description provided for @sosLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'SOS'**
+  String get sosLabel;
+
+  /// No description provided for @sosHoldHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط مطولاً للطوارئ'**
+  String get sosHoldHint;
+
+  /// No description provided for @sosKeepHolding.
+  ///
+  /// In ar, this message translates to:
+  /// **'استمر بالضغط…'**
+  String get sosKeepHolding;
+
+  /// No description provided for @sosSending.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ إرسال نداء الطوارئ…'**
+  String get sosSending;
+
+  /// No description provided for @sosActiveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال نداء الطوارئ لفريق السلامة'**
+  String get sosActiveTitle;
+
+  /// No description provided for @sosCancelledTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء نداء الطوارئ'**
+  String get sosCancelledTitle;
+
+  /// No description provided for @sosFailedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إرسال نداء الطوارئ'**
+  String get sosFailedTitle;
+
+  /// No description provided for @sosCaseLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة {number} · {status}'**
+  String sosCaseLine(String number, String status);
+
+  /// No description provided for @sosContactsNotified.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إبلاغ {count} من جهاتك الموثوقة'**
+  String sosContactsNotified(int count);
+
+  /// No description provided for @sosSharingLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشارك موقعك مع فريق السلامة كل 10 ثوانٍ'**
+  String get sosSharingLocation;
+
+  /// No description provided for @sosCancelledCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتواصل معك فريق السلامة للتأكد من سلامتك.'**
+  String get sosCancelledCopy;
+
+  /// No description provided for @callEmergency.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصل بالطوارئ {number}'**
+  String callEmergency(String number);
+
+  /// No description provided for @sosPressedByMistake.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضغطت بالخطأ'**
+  String get sosPressedByMistake;
+
+  /// No description provided for @close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get close;
+
+  /// No description provided for @safetyCheckTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت بخير؟'**
+  String get safetyCheckTitle;
+
+  /// No description provided for @safetyCheckHelpSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إبلاغ فريق السلامة وسيتواصل معك فوراً.'**
+  String get safetyCheckHelpSent;
+
+  /// No description provided for @safetyCheckOkThanks.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً لك، سعداء أنك بخير.'**
+  String get safetyCheckOkThanks;
+
+  /// No description provided for @safetyCheckExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتلقَّ ردك، سيتواصل معك فريق السلامة.'**
+  String get safetyCheckExpired;
+
+  /// No description provided for @safetyCheckCountdown.
+  ///
+  /// In ar, this message translates to:
+  /// **'يرجى الرد خلال {seconds} ث'**
+  String safetyCheckCountdown(int seconds);
+
+  /// No description provided for @safetyCheckOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا بخير'**
+  String get safetyCheckOk;
+
+  /// No description provided for @safetyCheckHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحتاج مساعدة'**
+  String get safetyCheckHelp;
+
+  /// No description provided for @manageSharing.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة'**
+  String get manageSharing;
+
+  /// No description provided for @shareTripLinkText.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع رحلتي مع ATA مباشرة: {url}'**
+  String shareTripLinkText(String url);
+
+  /// No description provided for @shareSheetCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل رابط تتبع مباشر، ويمكنك إيقافه في أي وقت.'**
+  String get shareSheetCopy;
+
+  /// No description provided for @shareToContacts.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال لجهاتك الموثوقة'**
+  String get shareToContacts;
+
+  /// No description provided for @addTrustedContact.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة جهة موثوقة'**
+  String get addTrustedContact;
+
+  /// No description provided for @sendBySms.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال عبر رسالة نصية'**
+  String get sendBySms;
+
+  /// No description provided for @smsSentTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الإرسال إلى {count}'**
+  String smsSentTo(int count);
+
+  /// No description provided for @activeLinks.
+  ///
+  /// In ar, this message translates to:
+  /// **'الروابط النشطة'**
+  String get activeLinks;
+
+  /// No description provided for @noActiveLinks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد روابط نشطة.'**
+  String get noActiveLinks;
+
+  /// No description provided for @shareViews.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مشاهدة'**
+  String shareViews(int count);
+
+  /// No description provided for @revokeLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف'**
+  String get revokeLink;
+
+  /// No description provided for @chatAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'محادثة'**
+  String get chatAction;
+
+  /// No description provided for @maskedCallPin.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز الاتصال: {pin}'**
+  String maskedCallPin(String pin);
+
+  /// No description provided for @callUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتصال غير متاح حالياً، تواصل عبر المحادثة.'**
+  String get callUnavailable;
+
+  /// No description provided for @chatWithDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحادثة مع الكابتن'**
+  String get chatWithDriver;
+
+  /// No description provided for @chatWithPassenger.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحادثة مع الراكب'**
+  String get chatWithPassenger;
+
+  /// No description provided for @chatMaskedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تتم مشاركة أرقام الهواتف، وتُخفى الأرقام داخل الرسائل.'**
+  String get chatMaskedNote;
+
+  /// No description provided for @chatEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رسائل بعد.'**
+  String get chatEmpty;
+
+  /// No description provided for @chatInputHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رسالة…'**
+  String get chatInputHint;
+
+  /// No description provided for @chatSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get chatSend;
+
+  /// No description provided for @chatClosedBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت الرحلة، المحادثة للقراءة فقط.'**
+  String get chatClosedBanner;
+
+  /// No description provided for @messageSending.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الإرسال…'**
+  String get messageSending;
+
+  /// No description provided for @messageFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الإرسال، اضغط لإعادة المحاولة'**
+  String get messageFailed;
+
+  /// No description provided for @messageRead.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقروءة'**
+  String get messageRead;
+
+  /// No description provided for @sosHoldCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط مطولاً على SOS لإبلاغ فريق السلامة بموقعك فوراً'**
+  String get sosHoldCopy;
+
+  /// No description provided for @shareTripOnTripOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاحة أثناء الرحلة من بطاقة الكابتن، ويمكن إرسالها تلقائياً لجهاتك الموثوقة.'**
+  String get shareTripOnTripOnly;
+
+  /// No description provided for @myReportsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغاتي'**
+  String get myReportsTitle;
+
+  /// No description provided for @myReportsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع حالة بلاغات السلامة ونداءات الطوارئ.'**
+  String get myReportsCopy;
+
+  /// No description provided for @lostItemsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفقودات'**
+  String get lostItemsTitle;
+
+  /// No description provided for @lostItemsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع بلاغات الأغراض المفقودة في رحلاتك.'**
+  String get lostItemsCopy;
+
+  /// No description provided for @trustedContactsPageCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إضافة حتى 5 جهات تصلها رسالة عند الطوارئ، وتلقائياً رابط تتبع رحلاتك إن فعّلت المشاركة التلقائية.'**
+  String get trustedContactsPageCopy;
+
+  /// No description provided for @noTrustedContacts.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تضف أي جهة موثوقة بعد.'**
+  String get noTrustedContacts;
+
+  /// No description provided for @trustedContactsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} من {max}'**
+  String trustedContactsCount(int count, int max);
+
+  /// No description provided for @edit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get delete;
+
+  /// No description provided for @autoShareLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة رحلاتي تلقائياً'**
+  String get autoShareLabel;
+
+  /// No description provided for @notifyOnSosLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إبلاغها عند الطوارئ'**
+  String get notifyOnSosLabel;
+
+  /// No description provided for @contactPhoneSelf.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكنك إضافة رقمك'**
+  String get contactPhoneSelf;
+
+  /// No description provided for @editTrustedContact.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الجهة الموثوقة'**
+  String get editTrustedContact;
+
+  /// No description provided for @contactNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get contactNameLabel;
+
+  /// No description provided for @contactNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم مطلوب'**
+  String get contactNameRequired;
+
+  /// No description provided for @contactPhoneLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الجوال'**
+  String get contactPhoneLabel;
+
+  /// No description provided for @contactPhoneHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'05XXXXXXXX'**
+  String get contactPhoneHint;
+
+  /// No description provided for @contactRelationshipLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلة القرابة (اختياري)'**
+  String get contactRelationshipLabel;
+
+  /// No description provided for @save.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get save;
+
+  /// No description provided for @noReports.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات.'**
+  String get noReports;
+
+  /// No description provided for @caseNoUpdates.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تحديثات بعد، سيتواصل معك فريق السلامة.'**
+  String get caseNoUpdates;
+
+  /// No description provided for @safetyReportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإبلاغ عن مشكلة سلامة'**
+  String get safetyReportTitle;
+
+  /// No description provided for @safetyReportCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخبرنا بما حدث خلال رحلتك (خلال 7 أيام)، وسيراجعه فريق السلامة.'**
+  String get safetyReportCopy;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استلام بلاغك'**
+  String get reportSubmitted;
+
+  /// No description provided for @reportNumberLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم البلاغ: {number}'**
+  String reportNumberLine(String number);
+
+  /// No description provided for @chooseCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر نوع المشكلة'**
+  String get chooseCategory;
+
+  /// No description provided for @describeWhatHappened.
+  ///
+  /// In ar, this message translates to:
+  /// **'صف ما حدث…'**
+  String get describeWhatHappened;
+
+  /// No description provided for @descriptionRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف مطلوب'**
+  String get descriptionRequired;
+
+  /// No description provided for @submitReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال البلاغ'**
+  String get submitReport;
+
+  /// No description provided for @noPendingSafetyCheck.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد سؤال سلامة معلّق.'**
+  String get noPendingSafetyCheck;
+
+  /// No description provided for @lostItemTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإبلاغ عن غرض مفقود'**
+  String get lostItemTitle;
+
+  /// No description provided for @lostItemCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'صف الغرض وسنبلغ الكابتن ونتابع معك عبر الدعم (خلال 7 أيام من الرحلة).'**
+  String get lostItemCopy;
+
+  /// No description provided for @lostItemSubmitted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استلام بلاغ المفقودات'**
+  String get lostItemSubmitted;
+
+  /// No description provided for @lostItemDescribe.
+  ///
+  /// In ar, this message translates to:
+  /// **'صف الغرض (اللون، العلامة، مكانه في السيارة…)'**
+  String get lostItemDescribe;
+
+  /// No description provided for @lostItemContactPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم للتواصل (اختياري)'**
+  String get lostItemContactPhone;
+
+  /// No description provided for @lostItemsPageCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة بلاغات الأغراض المفقودة.'**
+  String get lostItemsPageCopy;
+
+  /// No description provided for @noLostItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بلاغات مفقودات.'**
+  String get noLostItems;
+
+  /// No description provided for @driverLostItemsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفقودات'**
+  String get driverLostItemsTitle;
+
+  /// No description provided for @driverLostItemsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أغراض أبلغ عنها الركاب في رحلاتك.'**
+  String get driverLostItemsCopy;
+
+  /// No description provided for @lostItemFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجدته'**
+  String get lostItemFound;
+
+  /// No description provided for @lostItemNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم أجده'**
+  String get lostItemNotFound;
+
+  /// No description provided for @tripHelpTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تحتاج مساعدة بخصوص هذه الرحلة؟'**
+  String get tripHelpTitle;
+
+  /// No description provided for @lostItemRowCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت شيئاً في السيارة؟'**
+  String get lostItemRowCopy;
+
+  /// No description provided for @safetyReportRowCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبلغ عن قيادة غير آمنة أو سلوك غير لائق'**
+  String get safetyReportRowCopy;
 }
 
 class _AppLocalizationsDelegate

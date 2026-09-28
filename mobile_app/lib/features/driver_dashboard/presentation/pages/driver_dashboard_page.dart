@@ -14,8 +14,10 @@ import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_ta
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/overview_tab.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/settings_tab.dart';
 import 'package:ata_app/features/driver_wallet/presentation/cubit/payout_summary_cubit.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/presentation/cubit/driver_offer_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/location_stream_cubit.dart';
+import 'package:ata_app/features/trip/presentation/cubit/reliability_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,6 +46,11 @@ class DriverDashboardPage extends StatelessWidget {
         BlocProvider<DriverOverviewCubit>(
           create: (_) =>
               DriverOverviewCubit(getEarnings: getIt(), getTrips: getIt())
+                ..load(),
+        ),
+        BlocProvider<ReliabilityCubit>(
+          create: (_) =>
+              ReliabilityCubit(getReliability: getIt(), role: TripActor.driver)
                 ..load(),
         ),
         BlocProvider<DriverDocumentsCubit>(

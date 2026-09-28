@@ -15,6 +15,7 @@ import 'package:ata_app/features/payments/presentation/cubit/receipt_cubit.dart'
 import 'package:ata_app/features/payments/presentation/cubit/receipt_state.dart';
 import 'package:ata_app/features/payments/presentation/widgets/receipt_lines_card.dart';
 import 'package:ata_app/features/payments/presentation/widgets/receipt_payment_card.dart';
+import 'package:ata_app/features/safety/presentation/widgets/trip_help_actions.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -66,7 +67,14 @@ class ReceiptPage extends StatelessWidget {
                   onRetry: context.read<ReceiptCubit>().load,
                 );
               }
-              return _ReceiptBody(receipt: receipt);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  _ReceiptBody(receipt: receipt),
+                  const SizedBox(height: AtaSpacing.md),
+                  TripHelpActions(tripId: tripId),
+                ],
+              );
             },
           ),
         ],

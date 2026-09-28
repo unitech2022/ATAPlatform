@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
@@ -10,6 +11,7 @@ import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// Driver settings rows and logout.
 class SettingsTab extends StatelessWidget {
@@ -30,6 +32,18 @@ class SettingsTab extends StatelessWidget {
             null,
           ),
           (AtaIcons.clock, l10n.notificationsRow, l10n.driverNotifCopy, null),
+          (
+            AtaIcons.check,
+            l10n.reliabilityTitle,
+            l10n.reliabilityCopy,
+            () => context.push(AppRoutes.driverReliability),
+          ),
+          (
+            AtaIcons.search,
+            l10n.driverLostItemsTitle,
+            l10n.driverLostItemsCopy,
+            () => context.push(AppRoutes.driverLostItems),
+          ),
           (
             AtaIcons.document,
             l10n.languageRow,

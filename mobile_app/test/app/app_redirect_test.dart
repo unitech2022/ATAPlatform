@@ -87,6 +87,45 @@ void main() {
     expect(resolveRedirect(rider, AppRoutes.trip), AppRoutes.home);
   });
 
+  test('the trip chat and safety pages stay reachable during a trip', () {
+    final SessionState rider = SessionState.authenticated(
+      testSession.copyWith(
+        user: testUser.copyWith(termsAcceptedAt: DateTime.utc(2026)),
+      ),
+    );
+    const TripPresence trip = TripPresence(hasPassengerTrip: true);
+    for (final String location in <String>[
+      AppRoutes.tripChat,
+      AppRoutes.safety,
+      AppRoutes.safetyCheckFor('a1'),
+      AppRoutes.safetyContacts,
+    ]) {
+      expect(resolveRedirect(rider, location, presence: trip), isNull);
+    }
+    expect(
+      resolveRedirect(rider, AppRoutes.wallet, presence: trip),
+      AppRoutes.trip,
+    );
+    expect(resolveRedirect(rider, AppRoutes.tripChat), AppRoutes.home);
+
+    final SessionState driver = SessionState.authenticated(
+      testSession.copyWith(
+        activeRole: UserRole.driver,
+        driver: const DriverSummary(
+          applicationNumber: 'ATA-1',
+          applicationStatus: DriverApplicationStatus.approved,
+        ),
+      ),
+    );
+    const TripPresence driving = TripPresence(hasDriverTrip: true);
+    expect(
+      resolveRedirect(driver, AppRoutes.driverTripChat, presence: driving),
+      isNull,
+    );
+    expect(resolveRedirect(driver, AppRoutes.driverTripChat), AppRoutes.driver);
+    expect(resolveRedirect(driver, AppRoutes.driverReliability), isNull);
+  });
+
   test('drivers are sent to the trip, then the offer, then the dashboard', () {
     final SessionState driver = SessionState.authenticated(
       testSession.copyWith(

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:ata_app/core/errors/failures.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/offer.dart';
@@ -139,8 +138,10 @@ class FakeTripRepository implements TripRepository {
   Future<Either<Failure, Trip>> cancelTrip({
     required String tripId,
     required TripActor actor,
-    required CancelReason reason,
+    required String reasonCode,
     String? note,
+    double? expectedFee,
+    int? expectedPenaltyPoints,
   }) async => Right<Failure, Trip>(tripAt(TripStage.cancelled));
 
   @override

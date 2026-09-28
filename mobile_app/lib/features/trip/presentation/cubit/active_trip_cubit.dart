@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:ata_app/core/utils/countdown.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -60,7 +59,7 @@ class ActiveTripCubit extends Cubit<ActiveTripState> {
   /// Shows a trip created by the home sheet before the feed delivers it.
   void adopt(Trip trip) => _apply(trip);
 
-  Future<void> cancel(CancelReason reason, {String? note}) async {
+  Future<void> cancel(String reasonCode, {String? note}) async {
     final Trip? trip = state.trip;
     if (trip == null || !state.canCancel) return;
     emit(state.copyWith(cancelling: true, clearFailure: true));
@@ -68,7 +67,7 @@ class ActiveTripCubit extends Cubit<ActiveTripState> {
       CancelTripParams(
         tripId: trip.id,
         actor: TripActor.passenger,
-        reason: reason,
+        reasonCode: reasonCode,
         note: note,
       ),
     );

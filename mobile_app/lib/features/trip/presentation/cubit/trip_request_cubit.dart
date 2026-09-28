@@ -1,4 +1,3 @@
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_request.dart';
@@ -68,7 +67,7 @@ class TripRequestCubit extends Cubit<TripRequestState> {
     );
   }
 
-  Future<void> cancel(CancelReason reason, {String? note}) async {
+  Future<void> cancel(String reasonCode, {String? note}) async {
     final Trip? trip = state.trip;
     if (trip == null || state.isBusy) return;
     emit(state.copyWith(status: TripRequestStatus.cancelling));
@@ -76,7 +75,7 @@ class TripRequestCubit extends Cubit<TripRequestState> {
       CancelTripParams(
         tripId: trip.id,
         actor: TripActor.passenger,
-        reason: reason,
+        reasonCode: reasonCode,
         note: note,
       ),
     );

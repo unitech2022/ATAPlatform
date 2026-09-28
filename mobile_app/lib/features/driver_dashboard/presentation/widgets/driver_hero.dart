@@ -12,6 +12,7 @@ import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/online_status_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/online_status_state.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/debt_block_card.dart';
+import 'package:ata_app/features/driver_dashboard/presentation/widgets/restriction_block_card.dart';
 import 'package:ata_app/features/trip/presentation/widgets/location_notice.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +83,10 @@ class DriverHero extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (state.debtBlock != null) ...<Widget>[
+                if (state.restriction != null) ...<Widget>[
+                  const SizedBox(height: AtaSpacing.sm),
+                  RestrictionBlockCard(restriction: state.restriction!),
+                ] else if (state.debtBlock != null) ...<Widget>[
                   const SizedBox(height: AtaSpacing.sm),
                   DebtBlockCard(block: state.debtBlock!),
                 ] else if (state.failure != null) ...<Widget>[

@@ -1,5 +1,4 @@
 import 'package:ata_app/core/errors/failures.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/offer.dart';
@@ -15,11 +14,17 @@ abstract interface class TripRepository {
   Future<Either<Failure, Trip>> requestTrip(TripRequest request);
   Future<Either<Failure, Trip?>> getActiveTrip(TripActor actor);
   Future<Either<Failure, Trip>> getTrip(String tripId);
+
+  /// `POST …/cancel`. [expectedFee] (passenger) / [expectedPenaltyPoints]
+  /// (driver) come from the preview: a higher actual value fails with
+  /// `409 cancellation_fee_changed` and nothing is cancelled (F14).
   Future<Either<Failure, Trip>> cancelTrip({
     required String tripId,
     required TripActor actor,
-    required CancelReason reason,
+    required String reasonCode,
     String? note,
+    double? expectedFee,
+    int? expectedPenaltyPoints,
   });
 
   /// Merged hub + polling feed; `null` means no active trip.

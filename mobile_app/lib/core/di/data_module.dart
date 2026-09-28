@@ -37,14 +37,23 @@ import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.
 import 'package:ata_app/features/rides/data/datasources/rides_remote_data_source.dart';
 import 'package:ata_app/features/rides/data/repositories/rides_repository_impl.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
+import 'package:ata_app/features/safety/data/datasources/safety_remote_data_source.dart';
+import 'package:ata_app/features/safety/data/repositories/safety_repository_impl.dart';
+import 'package:ata_app/features/safety/domain/repositories/safety_repository.dart';
+import 'package:ata_app/features/trip/data/datasources/cancellation_remote_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/signalr_trip_realtime_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/trip_realtime_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/trip_remote_data_source.dart';
+import 'package:ata_app/features/trip/data/repositories/cancellation_repository_impl.dart';
 import 'package:ata_app/features/trip/data/repositories/geolocator_location_repository.dart';
 import 'package:ata_app/features/trip/data/repositories/simulated_location_repository.dart';
 import 'package:ata_app/features/trip/data/repositories/trip_repository_impl.dart';
+import 'package:ata_app/features/trip/domain/repositories/cancellation_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
+import 'package:ata_app/features/trip_chat/data/datasources/trip_chat_remote_data_source.dart';
+import 'package:ata_app/features/trip_chat/data/repositories/trip_chat_repository_impl.dart';
+import 'package:ata_app/features/trip_chat/domain/repositories/trip_chat_repository.dart';
 import 'package:ata_app/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:ata_app/features/wallet/data/repositories/wallet_repository_impl.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
@@ -122,6 +131,22 @@ void registerData({
     ..registerLazySingleton<TripRepository>(
       () => TripRepositoryImpl(
         remote: TripRemoteDataSource(getIt()),
+        realtime: getIt(),
+      ),
+    )
+    ..registerLazySingleton<CancellationRepository>(
+      () => CancellationRepositoryImpl(CancellationRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<SafetyRepository>(
+      () => SafetyRepositoryImpl(
+        remote: SafetyRemoteDataSource(getIt()),
+        realtime: getIt(),
+        push: getIt(),
+      ),
+    )
+    ..registerLazySingleton<TripChatRepository>(
+      () => TripChatRepositoryImpl(
+        remote: TripChatRemoteDataSource(getIt()),
         realtime: getIt(),
       ),
     )

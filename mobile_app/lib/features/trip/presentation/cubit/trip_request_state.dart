@@ -37,6 +37,10 @@ class TripRequestState extends Equatable {
   bool get isOutstandingBalance =>
       failure?.code == ErrorCodes.outstandingBalance;
 
+  /// `403 account_restricted`: reliability restriction (F14); the failure
+  /// text includes `details.restrictedUntil`.
+  bool get isAccountRestricted => failure?.code == ErrorCodes.accountRestricted;
+
   /// Amount owed, from `details.amount` (positive).
   double? get outstandingAmount => failure?.numDetail(ErrorCodes.amount)?.abs();
 

@@ -9,12 +9,13 @@ import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/presentation/cubit/active_trip_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/active_trip_state.dart';
 import 'package:ata_app/features/trip/presentation/widgets/cancel_reason_sheet.dart';
+import 'package:ata_app/features/trip/presentation/widgets/cancellation_text.dart';
 import 'package:ata_app/features/trip/presentation/widgets/driver_card.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_ended_view.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_progress_view.dart';
@@ -96,6 +97,7 @@ class _StageBody extends StatelessWidget {
     } else if (stage.isTerminal) {
       body = TripEndedView(
         stage: stage,
+        copy: CancellationText.passengerCopy(l10n, trip),
         retryLabel: l10n.retryRequest,
         onRetry: cubit.dismiss,
       );
@@ -141,8 +143,12 @@ class _StageBody extends StatelessWidget {
 
   Future<void> _cancel(BuildContext context) async {
     final ActiveTripCubit cubit = context.read<ActiveTripCubit>();
-    final CancelReason? reason = await CancelReasonSheet.show(context);
-    if (reason != null) await cubit.cancel(reason);
+    final Trip? cancelled = await CancelReasonSheet.show(
+      context,
+      trip: trip,
+      actor: TripActor.passenger,
+    );
+    if (cancelled != null) cubit.adopt(cancelled);
   }
 }
 

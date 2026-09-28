@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/safety_failure_text.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 
@@ -27,6 +28,22 @@ abstract final class ErrorCodes {
   static const String payoutPendingExists = 'payout_pending_exists';
   static const String ibanMissing = 'iban_missing';
   static const String insufficientBalance = 'insufficient_balance';
+  static const String shareNotFound = 'share_not_found';
+  static const String shareExpired = 'share_expired';
+  static const String trustedContactsLimit = 'trusted_contacts_limit';
+  static const String trustedContactExists = 'trusted_contact_exists';
+  static const String chatClosed = 'chat_closed';
+  static const String lostItemWindowClosed = 'lost_item_window_closed';
+  static const String cancellationReasonInvalid = 'cancellation_reason_invalid';
+  static const String cancellationFeeChanged = 'cancellation_fee_changed';
+  static const String noShowTooEarly = 'no_show_too_early';
+  static const String accountRestricted = 'account_restricted';
+  static const String validationFailed = 'validation_failed';
+  static const String conflict = 'conflict';
+  static const String secondsRemaining = 'secondsRemaining';
+  static const String restrictedUntil = 'restrictedUntil';
+  static const String level = 'level';
+  static const String fee = 'fee';
   static const String amount = 'amount';
   static const String minAmount = 'minAmount';
   static const String offerMin = 'offerMin';
@@ -82,6 +99,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       return l10n.quoteExpiredError;
   }
   return _paymentText(failure, l10n) ??
+      safetyFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

@@ -4,7 +4,6 @@ import 'package:ata_app/features/trip/data/datasources/trip_remote_data_source.d
 import 'package:ata_app/features/trip/data/datasources/trip_watcher.dart';
 import 'package:ata_app/features/trip/data/models/driver_location_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_request_mapper.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/offer.dart';
@@ -49,12 +48,16 @@ class TripRepositoryImpl implements TripRepository {
   Future<Either<Failure, Trip>> cancelTrip({
     required String tripId,
     required TripActor actor,
-    required CancelReason reason,
+    required String reasonCode,
     String? note,
+    double? expectedFee,
+    int? expectedPenaltyPoints,
   }) => guard(() {
     final Map<String, dynamic> body = <String, dynamic>{
-      'reasonCode': reason.apiValue,
+      'reasonCode': reasonCode,
       'note': ?note,
+      'expectedFee': ?expectedFee,
+      'expectedPenaltyPoints': ?expectedPenaltyPoints,
     };
     return actor == TripActor.passenger
         ? _remote.passengerCancel(tripId, body)

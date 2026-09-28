@@ -1800,4 +1800,639 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get insufficientBalanceError => 'المبلغ أكبر من الرصيد المتاح';
+
+  @override
+  String get shareNotFoundError => 'رابط التتبع غير موجود';
+
+  @override
+  String get shareExpiredError => 'انتهت صلاحية رابط التتبع';
+
+  @override
+  String get trustedContactsLimitError => 'الحد الأقصى 5 جهات موثوقة';
+
+  @override
+  String get trustedContactExistsError => 'الجهة مضافة مسبقاً';
+
+  @override
+  String get chatClosedError => 'المحادثة مغلقة لهذه الرحلة';
+
+  @override
+  String get lostItemWindowClosedError => 'انتهت مدة الإبلاغ عن المفقودات';
+
+  @override
+  String get cancellationReasonInvalidError => 'سبب الإلغاء غير صالح';
+
+  @override
+  String get cancellationFeeChangedError =>
+      'تغيّرت رسوم الإلغاء، راجعها وأعد المحاولة';
+
+  @override
+  String noShowTooEarlyError(int minutes) {
+    return 'لم تنتهِ مدة الانتظار المطلوبة بعد (متبقٍ $minutes د)';
+  }
+
+  @override
+  String get accountRestrictedError => 'حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء';
+
+  @override
+  String accountRestrictedUntil(String date) {
+    return 'حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء حتى $date';
+  }
+
+  @override
+  String get cancelNoteHint => 'اكتب سبب الإلغاء';
+
+  @override
+  String get cancelNoteRequired => 'هذا السبب يتطلب ملاحظة';
+
+  @override
+  String get confirmCancel => 'تأكيد الإلغاء';
+
+  @override
+  String get reasonEmergencyBadge => 'طارئ';
+
+  @override
+  String get reasonExcusableBadge => 'يخضع للمراجعة';
+
+  @override
+  String get cancelEmergencyNote =>
+      'سيُنشأ بلاغ سلامة ويتواصل معك فريق السلامة، ولن تُحتسب رسوم أو نقاط حتى المراجعة.';
+
+  @override
+  String get cancelExcusableNote =>
+      'سيراجع فريق العمليات هذا العذر، ولن تُخصم رسوم أو نقاط حتى تتم المراجعة.';
+
+  @override
+  String get cancelFree => 'مجاني';
+
+  @override
+  String penaltyPointsValue(int count) {
+    return '+$count نقاط';
+  }
+
+  @override
+  String get scheduledCancelFeeLabel => 'رسوم إلغاء الحجز المجدول';
+
+  @override
+  String get cancelPointsLabel => 'أثر الإلغاء على موثوقيتك';
+
+  @override
+  String get cancelFeeLabel => 'رسوم الإلغاء';
+
+  @override
+  String cancelFreeUntil(String time) {
+    return 'الإلغاء مجاني حتى $time';
+  }
+
+  @override
+  String get cancelRequiresReview => 'الرسوم محتملة وتُحسم بعد مراجعة العذر';
+
+  @override
+  String noShowAvailableIn(String time) {
+    return 'يمكنك تسجيل عدم حضور الراكب بعد $time';
+  }
+
+  @override
+  String get noShowAvailableNow =>
+      'انتهت مدة الانتظار، يمكنك تسجيل عدم حضور الراكب';
+
+  @override
+  String get noShowAction => 'لم يحضر الراكب';
+
+  @override
+  String get noShowConfirmTitle => 'تأكيد عدم حضور الراكب؟';
+
+  @override
+  String get noShowConfirmCopy =>
+      'سيتم إلغاء الرحلة واحتساب رسوم عدم الحضور على الراكب مع تعويضك حسب السياسة.';
+
+  @override
+  String get keepWaiting => 'متابعة الانتظار';
+
+  @override
+  String get noShowRecorded => 'تم تسجيل عدم حضور الراكب وإلغاء الرحلة.';
+
+  @override
+  String compensationLine(String amount) {
+    return 'تعويضك: $amount';
+  }
+
+  @override
+  String get cancelFeePendingReview => 'رسوم الإلغاء قيد مراجعة فريق العمليات.';
+
+  @override
+  String cancelFeeCharged(String amount) {
+    return 'تم خصم $amount رسوم إلغاء.';
+  }
+
+  @override
+  String get levelNone => 'ممتاز';
+
+  @override
+  String get levelWarning => 'تنبيه';
+
+  @override
+  String get levelDeprioritized => 'أولوية أقل في المطابقة';
+
+  @override
+  String get levelIncentivesReduced => 'مكافآت مخفضة';
+
+  @override
+  String get levelRestricted => 'مقيّد مؤقتاً';
+
+  @override
+  String get levelSuspended => 'موقوف';
+
+  @override
+  String get levelNoneCopy => 'سجلك جيد، استمر في إكمال رحلاتك.';
+
+  @override
+  String get levelWarningCopy =>
+      'تكرار الإلغاء يرفع نقاطك وقد يؤدي إلى تقييد حسابك.';
+
+  @override
+  String get levelDeprioritizedCopy =>
+      'ستصلك عروض أقل مؤقتاً بسبب ارتفاع نسبة الإلغاء.';
+
+  @override
+  String get levelIncentivesReducedCopy =>
+      'تصلك عروض أقل وتُخفَّض مكافآتك حتى تتحسن موثوقيتك.';
+
+  @override
+  String get levelRestrictedDriverCopy =>
+      'لا يمكنك الاتصال واستقبال الطلبات حتى انتهاء التقييد.';
+
+  @override
+  String get levelRestrictedRiderCopy =>
+      'لا يمكنك طلب رحلات جديدة حتى انتهاء التقييد.';
+
+  @override
+  String get levelSuspendedCopy => 'الحساب موقوف حتى يراجعه فريق العمليات.';
+
+  @override
+  String get excusePending => 'العذر قيد المراجعة';
+
+  @override
+  String get excuseApproved => 'تم قبول العذر';
+
+  @override
+  String get excuseRejected => 'تم رفض العذر';
+
+  @override
+  String get reliabilityTitle => 'موثوقيتك';
+
+  @override
+  String get reliabilityCopy => 'نسبة الإلغاء والنقاط وأثرها على حسابك.';
+
+  @override
+  String get cancellationRateLabel => 'نسبة الإلغاء';
+
+  @override
+  String get penaltyPointsLabel => 'النقاط';
+
+  @override
+  String get acceptanceRateLabel => 'نسبة القبول';
+
+  @override
+  String restrictedUntilLine(String date) {
+    return 'مقيّد حتى $date';
+  }
+
+  @override
+  String get reliabilityDetails => 'عرض التفاصيل';
+
+  @override
+  String get tripsAcceptedLabel => 'رحلات مُسندة';
+
+  @override
+  String get tripsCompletedLabel => 'رحلات مكتملة';
+
+  @override
+  String get cancellationsAtFaultLabel => 'إلغاءات محتسبة';
+
+  @override
+  String get reliabilityRateLabel => 'نسبة الإكمال';
+
+  @override
+  String get noShowCountLabel => 'عدم الحضور';
+
+  @override
+  String get matchingFactorLabel => 'معامل المطابقة';
+
+  @override
+  String get incentiveMultiplierLabel => 'معامل المكافآت';
+
+  @override
+  String reliabilityWindow(int days) {
+    return 'آخر $days يوماً';
+  }
+
+  @override
+  String nextLevelLine(String level, String points, String rate) {
+    return 'المستوى التالي «$level» عند $points نقطة أو نسبة إلغاء $rate';
+  }
+
+  @override
+  String get recentCancellations => 'آخر الإلغاءات';
+
+  @override
+  String get noRecentCancellations => 'لا توجد إلغاءات محتسبة.';
+
+  @override
+  String get caseTypeSos => 'نداء طوارئ';
+
+  @override
+  String get caseTypeReport => 'بلاغ سلامة';
+
+  @override
+  String get alertUnexpectedStop => 'توقف غير متوقع';
+
+  @override
+  String get alertRouteDeviation => 'انحراف عن المسار';
+
+  @override
+  String get alertTripOverrun => 'تأخر كبير في الرحلة';
+
+  @override
+  String get caseStatusOpen => 'مفتوحة';
+
+  @override
+  String get caseStatusInProgress => 'قيد المعالجة';
+
+  @override
+  String get caseStatusEscalated => 'مُصعَّدة';
+
+  @override
+  String get caseStatusResolved => 'مغلقة';
+
+  @override
+  String get alertUnexpectedStopCopy =>
+      'لاحظنا أن الرحلة متوقفة منذ مدة في مكان غير متوقع.';
+
+  @override
+  String get alertRouteDeviationCopy =>
+      'لاحظنا أن الرحلة ابتعدت عن المسار المتوقع.';
+
+  @override
+  String get alertTripOverrunCopy =>
+      'الرحلة تستغرق وقتاً أطول بكثير من المتوقع.';
+
+  @override
+  String get safetyCheckCopy => 'نريد الاطمئنان عليك أثناء الرحلة.';
+
+  @override
+  String get reportUnsafeDriving => 'قيادة غير آمنة';
+
+  @override
+  String get reportHarassment => 'تحرش أو إساءة';
+
+  @override
+  String get reportVehicleMismatch => 'المركبة لا تطابق التطبيق';
+
+  @override
+  String get reportDriverMismatch => 'الكابتن لا يطابق التطبيق';
+
+  @override
+  String get reportPassengerMisconduct => 'سلوك غير لائق من الراكب';
+
+  @override
+  String get reportOther => 'أخرى';
+
+  @override
+  String get lostPhone => 'جوال';
+
+  @override
+  String get lostWallet => 'محفظة';
+
+  @override
+  String get lostBag => 'حقيبة';
+
+  @override
+  String get lostKeys => 'مفاتيح';
+
+  @override
+  String get lostDocuments => 'مستندات';
+
+  @override
+  String get lostOther => 'أخرى';
+
+  @override
+  String get lostStatusOpen => 'بانتظار رد الكابتن';
+
+  @override
+  String get lostStatusDriverContacted => 'تم التواصل مع الكابتن';
+
+  @override
+  String get lostStatusFound => 'تم العثور عليه';
+
+  @override
+  String get lostStatusReturned => 'تمت الإعادة';
+
+  @override
+  String get lostStatusNotFound => 'لم يُعثر عليه';
+
+  @override
+  String get lostStatusClosed => 'مغلق';
+
+  @override
+  String get sosSemantics => 'زر الطوارئ، اضغط مطولاً للتأكيد';
+
+  @override
+  String get sosLabel => 'SOS';
+
+  @override
+  String get sosHoldHint => 'اضغط مطولاً للطوارئ';
+
+  @override
+  String get sosKeepHolding => 'استمر بالضغط…';
+
+  @override
+  String get sosSending => 'جارٍ إرسال نداء الطوارئ…';
+
+  @override
+  String get sosActiveTitle => 'تم إرسال نداء الطوارئ لفريق السلامة';
+
+  @override
+  String get sosCancelledTitle => 'تم إلغاء نداء الطوارئ';
+
+  @override
+  String get sosFailedTitle => 'تعذّر إرسال نداء الطوارئ';
+
+  @override
+  String sosCaseLine(String number, String status) {
+    return 'الحالة $number · $status';
+  }
+
+  @override
+  String sosContactsNotified(int count) {
+    return 'تم إبلاغ $count من جهاتك الموثوقة';
+  }
+
+  @override
+  String get sosSharingLocation => 'نشارك موقعك مع فريق السلامة كل 10 ثوانٍ';
+
+  @override
+  String get sosCancelledCopy => 'سيتواصل معك فريق السلامة للتأكد من سلامتك.';
+
+  @override
+  String callEmergency(String number) {
+    return 'اتصل بالطوارئ $number';
+  }
+
+  @override
+  String get sosPressedByMistake => 'ضغطت بالخطأ';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String get safetyCheckTitle => 'هل أنت بخير؟';
+
+  @override
+  String get safetyCheckHelpSent => 'تم إبلاغ فريق السلامة وسيتواصل معك فوراً.';
+
+  @override
+  String get safetyCheckOkThanks => 'شكراً لك، سعداء أنك بخير.';
+
+  @override
+  String get safetyCheckExpired => 'لم نتلقَّ ردك، سيتواصل معك فريق السلامة.';
+
+  @override
+  String safetyCheckCountdown(int seconds) {
+    return 'يرجى الرد خلال $seconds ث';
+  }
+
+  @override
+  String get safetyCheckOk => 'أنا بخير';
+
+  @override
+  String get safetyCheckHelp => 'أحتاج مساعدة';
+
+  @override
+  String get manageSharing => 'إدارة';
+
+  @override
+  String shareTripLinkText(String url) {
+    return 'تابع رحلتي مع ATA مباشرة: $url';
+  }
+
+  @override
+  String get shareSheetCopy => 'أرسل رابط تتبع مباشر، ويمكنك إيقافه في أي وقت.';
+
+  @override
+  String get shareToContacts => 'إرسال لجهاتك الموثوقة';
+
+  @override
+  String get addTrustedContact => 'إضافة جهة موثوقة';
+
+  @override
+  String get sendBySms => 'إرسال عبر رسالة نصية';
+
+  @override
+  String smsSentTo(int count) {
+    return 'تم الإرسال إلى $count';
+  }
+
+  @override
+  String get activeLinks => 'الروابط النشطة';
+
+  @override
+  String get noActiveLinks => 'لا توجد روابط نشطة.';
+
+  @override
+  String shareViews(int count) {
+    return '$count مشاهدة';
+  }
+
+  @override
+  String get revokeLink => 'إيقاف';
+
+  @override
+  String get chatAction => 'محادثة';
+
+  @override
+  String maskedCallPin(String pin) {
+    return 'رمز الاتصال: $pin';
+  }
+
+  @override
+  String get callUnavailable => 'الاتصال غير متاح حالياً، تواصل عبر المحادثة.';
+
+  @override
+  String get chatWithDriver => 'المحادثة مع الكابتن';
+
+  @override
+  String get chatWithPassenger => 'المحادثة مع الراكب';
+
+  @override
+  String get chatMaskedNote =>
+      'لا تتم مشاركة أرقام الهواتف، وتُخفى الأرقام داخل الرسائل.';
+
+  @override
+  String get chatEmpty => 'لا توجد رسائل بعد.';
+
+  @override
+  String get chatInputHint => 'اكتب رسالة…';
+
+  @override
+  String get chatSend => 'إرسال';
+
+  @override
+  String get chatClosedBanner => 'انتهت الرحلة، المحادثة للقراءة فقط.';
+
+  @override
+  String get messageSending => 'جارٍ الإرسال…';
+
+  @override
+  String get messageFailed => 'تعذّر الإرسال، اضغط لإعادة المحاولة';
+
+  @override
+  String get messageRead => 'مقروءة';
+
+  @override
+  String get sosHoldCopy =>
+      'اضغط مطولاً على SOS لإبلاغ فريق السلامة بموقعك فوراً';
+
+  @override
+  String get shareTripOnTripOnly =>
+      'متاحة أثناء الرحلة من بطاقة الكابتن، ويمكن إرسالها تلقائياً لجهاتك الموثوقة.';
+
+  @override
+  String get myReportsTitle => 'بلاغاتي';
+
+  @override
+  String get myReportsCopy => 'تابع حالة بلاغات السلامة ونداءات الطوارئ.';
+
+  @override
+  String get lostItemsTitle => 'المفقودات';
+
+  @override
+  String get lostItemsCopy => 'تابع بلاغات الأغراض المفقودة في رحلاتك.';
+
+  @override
+  String get trustedContactsPageCopy =>
+      'يمكنك إضافة حتى 5 جهات تصلها رسالة عند الطوارئ، وتلقائياً رابط تتبع رحلاتك إن فعّلت المشاركة التلقائية.';
+
+  @override
+  String get noTrustedContacts => 'لم تضف أي جهة موثوقة بعد.';
+
+  @override
+  String trustedContactsCount(int count, int max) {
+    return '$count من $max';
+  }
+
+  @override
+  String get edit => 'تعديل';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get autoShareLabel => 'مشاركة رحلاتي تلقائياً';
+
+  @override
+  String get notifyOnSosLabel => 'إبلاغها عند الطوارئ';
+
+  @override
+  String get contactPhoneSelf => 'لا يمكنك إضافة رقمك';
+
+  @override
+  String get editTrustedContact => 'تعديل الجهة الموثوقة';
+
+  @override
+  String get contactNameLabel => 'الاسم';
+
+  @override
+  String get contactNameRequired => 'الاسم مطلوب';
+
+  @override
+  String get contactPhoneLabel => 'رقم الجوال';
+
+  @override
+  String get contactPhoneHint => '05XXXXXXXX';
+
+  @override
+  String get contactRelationshipLabel => 'صلة القرابة (اختياري)';
+
+  @override
+  String get save => 'حفظ';
+
+  @override
+  String get noReports => 'لا توجد بلاغات.';
+
+  @override
+  String get caseNoUpdates => 'لا توجد تحديثات بعد، سيتواصل معك فريق السلامة.';
+
+  @override
+  String get safetyReportTitle => 'الإبلاغ عن مشكلة سلامة';
+
+  @override
+  String get safetyReportCopy =>
+      'أخبرنا بما حدث خلال رحلتك (خلال 7 أيام)، وسيراجعه فريق السلامة.';
+
+  @override
+  String get reportSubmitted => 'تم استلام بلاغك';
+
+  @override
+  String reportNumberLine(String number) {
+    return 'رقم البلاغ: $number';
+  }
+
+  @override
+  String get chooseCategory => 'اختر نوع المشكلة';
+
+  @override
+  String get describeWhatHappened => 'صف ما حدث…';
+
+  @override
+  String get descriptionRequired => 'الوصف مطلوب';
+
+  @override
+  String get submitReport => 'إرسال البلاغ';
+
+  @override
+  String get noPendingSafetyCheck => 'لا يوجد سؤال سلامة معلّق.';
+
+  @override
+  String get lostItemTitle => 'الإبلاغ عن غرض مفقود';
+
+  @override
+  String get lostItemCopy =>
+      'صف الغرض وسنبلغ الكابتن ونتابع معك عبر الدعم (خلال 7 أيام من الرحلة).';
+
+  @override
+  String get lostItemSubmitted => 'تم استلام بلاغ المفقودات';
+
+  @override
+  String get lostItemDescribe => 'صف الغرض (اللون، العلامة، مكانه في السيارة…)';
+
+  @override
+  String get lostItemContactPhone => 'رقم للتواصل (اختياري)';
+
+  @override
+  String get lostItemsPageCopy => 'حالة بلاغات الأغراض المفقودة.';
+
+  @override
+  String get noLostItems => 'لا توجد بلاغات مفقودات.';
+
+  @override
+  String get driverLostItemsTitle => 'المفقودات';
+
+  @override
+  String get driverLostItemsCopy => 'أغراض أبلغ عنها الركاب في رحلاتك.';
+
+  @override
+  String get lostItemFound => 'وجدته';
+
+  @override
+  String get lostItemNotFound => 'لم أجده';
+
+  @override
+  String get tripHelpTitle => 'هل تحتاج مساعدة بخصوص هذه الرحلة؟';
+
+  @override
+  String get lostItemRowCopy => 'نسيت شيئاً في السيارة؟';
+
+  @override
+  String get safetyReportRowCopy => 'أبلغ عن قيادة غير آمنة أو سلوك غير لائق';
 }

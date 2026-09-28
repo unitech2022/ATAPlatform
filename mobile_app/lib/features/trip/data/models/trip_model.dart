@@ -1,3 +1,4 @@
+import 'package:ata_app/features/trip/data/models/cancellation_models.dart';
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
 import 'package:ata_app/features/trip/data/models/trip_parties_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_stop_model.dart';
@@ -37,6 +38,7 @@ class TripModel extends Trip {
     super.timeline,
     super.events,
     super.collectCashAmount,
+    super.cancellation,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,10 @@ class TripModel extends Trip {
       'passenger',
     );
     final Map<String, dynamic>? timeline = JsonReaders.object(json, 'timeline');
+    final Map<String, dynamic>? cancellation = JsonReaders.object(
+      json,
+      'cancellation',
+    );
     return TripModel(
       id: JsonReaders.string(json, 'id'),
       tripNumber: JsonReaders.string(json, 'tripNumber'),
@@ -108,6 +114,9 @@ class TripModel extends Trip {
         'events',
       ).map(TripEventModel.fromJson).toList(growable: false),
       collectCashAmount: JsonReaders.optionalNumber(json, 'collectCashAmount'),
+      cancellation: cancellation == null
+          ? null
+          : TripCancellationModel.fromJson(cancellation),
     );
   }
 
@@ -186,5 +195,8 @@ class TripModel extends Trip {
         )
         .toList(growable: false),
     'collectCashAmount': collectCashAmount,
+    'cancellation': cancellation == null
+        ? null
+        : TripCancellationModel.toJson(cancellation!),
   };
 }

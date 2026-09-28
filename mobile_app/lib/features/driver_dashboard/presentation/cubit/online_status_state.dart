@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/features/trip/domain/entities/restriction_level.dart';
 import 'package:equatable/equatable.dart';
 
 /// Going online was refused because the cash debt exceeds the limit
@@ -21,6 +22,7 @@ class OnlineStatusState extends Equatable {
     this.updating = false,
     this.failure,
     this.debtBlock,
+    this.restriction,
   });
 
   final bool isOnline;
@@ -31,6 +33,9 @@ class OnlineStatusState extends Equatable {
   /// Set while the driver cannot go online until the debt is settled.
   final CashDebtBlock? debtBlock;
 
+  /// Reliability restriction (`403 account_restricted`, F14).
+  final AccountRestriction? restriction;
+
   OnlineStatusState copyWith({
     bool? isOnline,
     bool? canGoOnline,
@@ -38,13 +43,16 @@ class OnlineStatusState extends Equatable {
     Failure? failure,
     CashDebtBlock? debtBlock,
     bool clearFailure = false,
+    AccountRestriction? restriction,
     bool clearDebtBlock = false,
+    bool clearRestriction = false,
   }) => OnlineStatusState(
     isOnline: isOnline ?? this.isOnline,
     canGoOnline: canGoOnline ?? this.canGoOnline,
     updating: updating ?? this.updating,
     failure: clearFailure ? null : failure ?? this.failure,
     debtBlock: clearDebtBlock ? null : debtBlock ?? this.debtBlock,
+    restriction: clearRestriction ? null : restriction ?? this.restriction,
   );
 
   @override
@@ -54,5 +62,6 @@ class OnlineStatusState extends Equatable {
     updating,
     failure,
     debtBlock,
+    restriction,
   ];
 }

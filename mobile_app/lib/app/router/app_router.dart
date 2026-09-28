@@ -2,6 +2,7 @@ import 'package:ata_app/app/router/app_redirect.dart';
 import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/app/router/driver_routes.dart';
 import 'package:ata_app/app/router/router_refresh.dart';
+import 'package:ata_app/app/router/safety_routes.dart';
 import 'package:ata_app/app/shell/passenger_shell.dart';
 import 'package:ata_app/app/splash_page.dart';
 import 'package:ata_app/features/account/presentation/pages/account_contact_page.dart';
@@ -23,9 +24,12 @@ import 'package:ata_app/features/payments/presentation/pages/add_card_page.dart'
 import 'package:ata_app/features/payments/presentation/pages/payment_methods_page.dart';
 import 'package:ata_app/features/payments/presentation/pages/receipt_page.dart';
 import 'package:ata_app/features/rides/presentation/pages/rides_page.dart';
-import 'package:ata_app/features/safety/presentation/pages/safety_page.dart';
+import 'package:ata_app/features/safety/presentation/pages/lost_item_page.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_cubits.dart';
 import 'package:ata_app/features/trip/presentation/pages/active_trip_page.dart';
+import 'package:ata_app/features/trip/presentation/pages/reliability_page.dart';
+import 'package:ata_app/features/trip_chat/presentation/pages/trip_chat_page.dart';
 import 'package:ata_app/features/wallet/presentation/pages/top_up_page.dart';
 import 'package:ata_app/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:flutter/widgets.dart';
@@ -60,6 +64,13 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
           GoRoute(
             path: AppRoutes.trip,
             builder: (_, _) => const ActiveTripPage(),
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'chat',
+                builder: (_, _) =>
+                    const TripChatPage(actor: TripActor.passenger),
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoutes.rides,
@@ -70,6 +81,14 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
                 builder: _receipt,
                 routes: <RouteBase>[
                   GoRoute(path: 'receipt', builder: _receipt),
+                  GoRoute(
+                    path: 'lost-item',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        LostItemPage(
+                          tripId:
+                              state.pathParameters[AppRoutes.tripIdParam] ?? '',
+                        ),
+                  ),
                 ],
               ),
             ],
@@ -88,10 +107,7 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
               ),
             ],
           ),
-          GoRoute(
-            path: AppRoutes.safety,
-            builder: (_, _) => const SafetyPage(),
-          ),
+          safetyRoute,
           GoRoute(
             path: AppRoutes.account,
             builder: (_, _) => const AccountPage(),
@@ -115,6 +131,10 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
               GoRoute(
                 path: 'delete',
                 builder: (_, _) => const DeleteAccountPage(),
+              ),
+              GoRoute(
+                path: 'reliability',
+                builder: (_, _) => const ReliabilityPage(),
               ),
             ],
           ),

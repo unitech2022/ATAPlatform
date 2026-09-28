@@ -1,4 +1,3 @@
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
@@ -122,7 +121,7 @@ void main() {
     build: build,
     act: (DriverTripCubit cubit) async {
       cubit.adopt(tripAt(TripStage.driverEnRoute));
-      await cubit.cancel(CancelReason.wrongPickup);
+      await cubit.cancel('wrong_pickup');
     },
     verify: (DriverTripCubit cubit) {
       expect(cubit.state.stage, TripStage.cancelled);

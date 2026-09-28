@@ -29,6 +29,7 @@ class PassengerShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final bool isHome = AppRoutes.isMapPage(location);
+    final bool hideNav = AppRoutes.hidesBottomNav(location);
     final int? tabIndex = AppRoutes.tabIndexFor(location);
     return BlocProvider<NotificationsCubit>(
       create: (_) =>
@@ -47,7 +48,7 @@ class PassengerShell extends StatelessWidget {
           context.read<DeepLinkCubit>().inboxShown();
           showNotificationsSheet(context);
         },
-        child: _scaffold(context, l10n, isHome, tabIndex),
+        child: _scaffold(context, l10n, isHome, hideNav, tabIndex),
       ),
     );
   }
@@ -56,6 +57,7 @@ class PassengerShell extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
     bool isHome,
+    bool hideNav,
     int? tabIndex,
   ) {
     return Scaffold(
@@ -68,7 +70,7 @@ class PassengerShell extends StatelessWidget {
               child: Stack(
                 children: <Widget>[
                   Positioned.fill(child: child),
-                  if (!isHome)
+                  if (!hideNav)
                     Positioned(
                       left: 0,
                       right: 0,

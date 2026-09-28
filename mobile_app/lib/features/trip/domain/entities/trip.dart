@@ -1,3 +1,4 @@
+import 'package:ata_app/features/trip/domain/entities/trip_cancellation.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stop.dart';
@@ -52,6 +53,7 @@ class Trip extends Equatable {
     this.timeline = const TripTimeline(),
     this.events = const <TripEvent>[],
     this.collectCashAmount,
+    this.cancellation,
   });
 
   /// Trip event recorded when a card capture failed and the fare moved to
@@ -90,6 +92,11 @@ class Trip extends Equatable {
   /// Driver view: cash to collect after completion (includes a failed card
   /// capture).
   final double? collectCashAmount;
+
+  /// Stage, reason, fee / compensation of a cancelled trip (F14).
+  final TripCancellation? cancellation;
+
+  bool get isScheduled => bookingType == 'scheduled';
 
   /// The card could not be charged and the trip is paid in cash.
   bool get paymentFellBackToCash =>
@@ -131,6 +138,7 @@ class Trip extends Equatable {
     timeline: timeline,
     events: events,
     collectCashAmount: collectCashAmount,
+    cancellation: cancellation,
   );
 
   @override
@@ -164,5 +172,6 @@ class Trip extends Equatable {
     timeline,
     events,
     collectCashAmount,
+    cancellation,
   ];
 }

@@ -20,6 +20,15 @@ abstract interface class TripRealtimeDataSource {
   /// `OfferExpired(offerId)` (driver).
   Stream<String> get offerExpired;
 
+  /// `SafetyCheck({ alertId, tripId, type, respondBy })` (passenger, F12).
+  Stream<Map<String, dynamic>> get safetyCheck;
+
+  /// `TripMessage(TripMessage)` for both roles (F12 chat).
+  Stream<Map<String, dynamic>> get tripMessage;
+
+  /// `TripMessagesRead({ tripId, upToId })` for both roles.
+  Stream<Map<String, dynamic>> get tripMessagesRead;
+
   /// True while the hub socket is connected (polling can back off).
   bool get isConnected;
 
@@ -33,4 +42,7 @@ abstract final class TripHubEvents {
   static const String driverLocation = 'DriverLocation';
   static const String offerReceived = 'OfferReceived';
   static const String offerExpired = 'OfferExpired';
+  static const String safetyCheck = 'SafetyCheck';
+  static const String tripMessage = 'TripMessage';
+  static const String tripMessagesRead = 'TripMessagesRead';
 }

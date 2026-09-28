@@ -1,3 +1,4 @@
+import 'package:ata_app/app/safety_cubits.dart';
 import 'package:ata_app/design/theme/ata_theme.dart';
 import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
@@ -18,6 +19,7 @@ class AtaApp extends StatelessWidget {
     required this.sessionCubit,
     required this.localeCubit,
     required this.tripCubits,
+    required this.safetyCubits,
     required this.deepLinkCubit,
     required this.router,
   });
@@ -25,6 +27,7 @@ class AtaApp extends StatelessWidget {
   final SessionCubit sessionCubit;
   final LocaleCubit localeCubit;
   final TripCubits tripCubits;
+  final SafetyCubits safetyCubits;
   final DeepLinkCubit deepLinkCubit;
   final GoRouter router;
 
@@ -37,14 +40,16 @@ class AtaApp extends StatelessWidget {
         BlocProvider<DeepLinkCubit>.value(value: deepLinkCubit),
       ],
       child: tripCubits.provide(
-        child: BlocListener<DeepLinkCubit, DeepLinkState>(
-          listenWhen: (DeepLinkState p, DeepLinkState c) =>
-              c.target != null && p.target != c.target,
-          listener: (BuildContext context, DeepLinkState state) {
-            router.go(state.target!.route);
-            deepLinkCubit.consumed();
-          },
-          child: _localizedApp(),
+        child: safetyCubits.provide(
+          child: BlocListener<DeepLinkCubit, DeepLinkState>(
+            listenWhen: (DeepLinkState p, DeepLinkState c) =>
+                c.target != null && p.target != c.target,
+            listener: (BuildContext context, DeepLinkState state) {
+              router.go(state.target!.route);
+              deepLinkCubit.consumed();
+            },
+            child: _localizedApp(),
+          ),
         ),
       ),
     );

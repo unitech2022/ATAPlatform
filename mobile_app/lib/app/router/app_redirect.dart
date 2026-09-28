@@ -28,15 +28,18 @@ String? resolveRedirect(
 }
 
 String? _riderRedirect(String location, TripPresence presence) {
+  final bool inTrip =
+      location == AppRoutes.trip || location.startsWith('${AppRoutes.trip}/');
   if (presence.hasPassengerTrip) {
-    return location == AppRoutes.trip ? null : AppRoutes.trip;
+    // The trip chat and the safety pages stay reachable during a trip.
+    final bool inSafety =
+        location == AppRoutes.safety ||
+        location.startsWith('${AppRoutes.safety}/');
+    return inTrip || inSafety ? null : AppRoutes.trip;
   }
   final bool inDriver = location.startsWith(AppRoutes.driver);
   final bool inAuth = location.startsWith(AppRoutes.authPrefix);
-  if (inAuth ||
-      inDriver ||
-      location == AppRoutes.splash ||
-      location == AppRoutes.trip) {
+  if (inAuth || inDriver || location == AppRoutes.splash || inTrip) {
     return AppRoutes.home;
   }
   return null;
@@ -51,7 +54,10 @@ String? _driverRedirect(
     return location == AppRoutes.driverPending ? null : AppRoutes.driverPending;
   }
   if (presence.hasDriverTrip) {
-    return location == AppRoutes.driverTrip ? null : AppRoutes.driverTrip;
+    return location == AppRoutes.driverTrip ||
+            location == AppRoutes.driverTripChat
+        ? null
+        : AppRoutes.driverTrip;
   }
   if (presence.hasOffer) {
     return location == AppRoutes.driverOffer ? null : AppRoutes.driverOffer;
@@ -60,6 +66,7 @@ String? _driverRedirect(
       location.startsWith(AppRoutes.driver) &&
       location != AppRoutes.driverPending &&
       location != AppRoutes.driverTrip &&
+      location != AppRoutes.driverTripChat &&
       location != AppRoutes.driverOffer;
   return allowed ? null : AppRoutes.driver;
 }

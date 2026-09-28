@@ -1,7 +1,6 @@
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -46,14 +45,6 @@ abstract final class TripText {
         TripStep.arrived => l10n.actionArrived,
         TripStep.start => l10n.actionStart,
         TripStep.complete => l10n.actionComplete,
-      };
-
-  static String reasonLabel(AppLocalizations l10n, CancelReason reason) =>
-      switch (reason) {
-        CancelReason.changedMind => l10n.reasonChangedMind,
-        CancelReason.driverLate => l10n.reasonDriverLate,
-        CancelReason.wrongPickup => l10n.reasonWrongPickup,
-        CancelReason.other => l10n.reasonOther,
       };
 
   static String payment(AppLocalizations l10n, String apiValue) {

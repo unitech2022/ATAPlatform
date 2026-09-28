@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/core/widgets/failure_view.dart';
@@ -10,9 +11,11 @@ import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_over
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_wallet_links.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/earnings_card.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/recent_trips_card.dart';
+import 'package:ata_app/features/trip/presentation/widgets/reliability_card.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// Stat cards, recent trips and the weekly earnings card.
 class OverviewTab extends StatelessWidget {
@@ -77,6 +80,10 @@ class OverviewTab extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AtaSpacing.xl),
+            ReliabilityCard(
+              onDetails: () => context.push(AppRoutes.driverReliability),
             ),
             const SizedBox(height: AtaSpacing.xl),
             RecentTripsCard(trips: state.trips, loading: state.loading),

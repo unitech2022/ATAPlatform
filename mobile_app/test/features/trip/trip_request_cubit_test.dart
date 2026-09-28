@@ -1,6 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_request.dart';
@@ -35,7 +34,7 @@ void main() {
       const CancelTripParams(
         tripId: '',
         actor: TripActor.passenger,
-        reason: CancelReason.other,
+        reasonCode: 'other',
       ),
     );
   });
@@ -198,7 +197,7 @@ void main() {
     ),
     act: (TripRequestCubit cubit) async {
       await cubit.request(testTripRequest);
-      await cubit.cancel(CancelReason.changedMind);
+      await cubit.cancel('changed_mind');
     },
     verify: (TripRequestCubit cubit) {
       expect(cubit.state, const TripRequestState());
@@ -207,7 +206,7 @@ void main() {
               as CancelTripParams;
       expect(params.tripId, 't1');
       expect(params.actor, TripActor.passenger);
-      expect(params.reason, CancelReason.changedMind);
+      expect(params.reasonCode, 'changed_mind');
     },
   );
 }

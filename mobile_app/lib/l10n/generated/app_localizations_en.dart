@@ -1535,7 +1535,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sandboxCardsHint =>
-      'Sandbox: 4000 0000 0000 0002 is declined, 4000 0000 0000 3220 needs verification, mada cards start with 4406 4700 0000 0007.';
+      'Sandbox: 4000 0000 0000 0002 is declined, 4000 0000 0000 3220 needs verification, mada test card 4406 4700 0000 0007.';
 
   @override
   String get paymentActionTitle => 'Bank verification required';
@@ -1818,4 +1818,658 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get insufficientBalanceError =>
       'The amount exceeds your available balance';
+
+  @override
+  String get shareNotFoundError => 'Tracking link not found';
+
+  @override
+  String get shareExpiredError => 'The tracking link has expired';
+
+  @override
+  String get trustedContactsLimitError =>
+      'You can add up to 5 trusted contacts';
+
+  @override
+  String get trustedContactExistsError => 'This contact is already added';
+
+  @override
+  String get chatClosedError => 'Chat is closed for this trip';
+
+  @override
+  String get lostItemWindowClosedError =>
+      'The lost item reporting window has closed';
+
+  @override
+  String get cancellationReasonInvalidError => 'Invalid cancellation reason';
+
+  @override
+  String get cancellationFeeChangedError =>
+      'The cancellation fee changed, review it and try again';
+
+  @override
+  String noShowTooEarlyError(int minutes) {
+    return 'The required waiting time hasn\'t passed yet ($minutes min left)';
+  }
+
+  @override
+  String get accountRestrictedError =>
+      'Your account is temporarily restricted due to repeated cancellations';
+
+  @override
+  String accountRestrictedUntil(String date) {
+    return 'Your account is restricted due to repeated cancellations until $date';
+  }
+
+  @override
+  String get cancelNoteHint => 'Write the cancellation reason';
+
+  @override
+  String get cancelNoteRequired => 'This reason requires a note';
+
+  @override
+  String get confirmCancel => 'Confirm cancellation';
+
+  @override
+  String get reasonEmergencyBadge => 'Emergency';
+
+  @override
+  String get reasonExcusableBadge => 'Reviewed';
+
+  @override
+  String get cancelEmergencyNote =>
+      'A safety case will be opened and the safety team will contact you; no fee or points apply until it is reviewed.';
+
+  @override
+  String get cancelExcusableNote =>
+      'Operations will review this excuse; no fee or points apply until it is reviewed.';
+
+  @override
+  String get cancelFree => 'Free';
+
+  @override
+  String penaltyPointsValue(int count) {
+    return '+$count points';
+  }
+
+  @override
+  String get scheduledCancelFeeLabel => 'Scheduled booking cancellation fee';
+
+  @override
+  String get cancelPointsLabel => 'Impact on your reliability';
+
+  @override
+  String get cancelFeeLabel => 'Cancellation fee';
+
+  @override
+  String cancelFreeUntil(String time) {
+    return 'Cancelling is free until $time';
+  }
+
+  @override
+  String get cancelRequiresReview =>
+      'The fee is potential and is decided after the excuse review';
+
+  @override
+  String noShowAvailableIn(String time) {
+    return 'You can report a no-show in $time';
+  }
+
+  @override
+  String get noShowAvailableNow => 'The wait is over, you can report a no-show';
+
+  @override
+  String get noShowAction => 'Passenger didn\'t show';
+
+  @override
+  String get noShowConfirmTitle => 'Confirm the passenger didn\'t show?';
+
+  @override
+  String get noShowConfirmCopy =>
+      'The trip will be cancelled, the passenger charged the no-show fee and you compensated per the policy.';
+
+  @override
+  String get keepWaiting => 'Keep waiting';
+
+  @override
+  String get noShowRecorded =>
+      'The no-show was recorded and the trip cancelled.';
+
+  @override
+  String compensationLine(String amount) {
+    return 'Your compensation: $amount';
+  }
+
+  @override
+  String get cancelFeePendingReview =>
+      'The cancellation fee is under operations review.';
+
+  @override
+  String cancelFeeCharged(String amount) {
+    return 'A $amount cancellation fee was charged.';
+  }
+
+  @override
+  String get levelNone => 'Good standing';
+
+  @override
+  String get levelWarning => 'Warning';
+
+  @override
+  String get levelDeprioritized => 'Lower matching priority';
+
+  @override
+  String get levelIncentivesReduced => 'Reduced incentives';
+
+  @override
+  String get levelRestricted => 'Temporarily restricted';
+
+  @override
+  String get levelSuspended => 'Suspended';
+
+  @override
+  String get levelNoneCopy =>
+      'Your record is good, keep completing your trips.';
+
+  @override
+  String get levelWarningCopy =>
+      'Frequent cancellations add points and can restrict your account.';
+
+  @override
+  String get levelDeprioritizedCopy =>
+      'You will temporarily receive fewer offers because of your cancellation rate.';
+
+  @override
+  String get levelIncentivesReducedCopy =>
+      'You receive fewer offers and reduced incentives until your reliability improves.';
+
+  @override
+  String get levelRestrictedDriverCopy =>
+      'You can\'t go online or receive requests until the restriction ends.';
+
+  @override
+  String get levelRestrictedRiderCopy =>
+      'You can\'t request new trips until the restriction ends.';
+
+  @override
+  String get levelSuspendedCopy =>
+      'The account is suspended until operations review it.';
+
+  @override
+  String get excusePending => 'Excuse under review';
+
+  @override
+  String get excuseApproved => 'Excuse approved';
+
+  @override
+  String get excuseRejected => 'Excuse rejected';
+
+  @override
+  String get reliabilityTitle => 'Your reliability';
+
+  @override
+  String get reliabilityCopy =>
+      'Your cancellation rate, points and how they affect your account.';
+
+  @override
+  String get cancellationRateLabel => 'Cancellation rate';
+
+  @override
+  String get penaltyPointsLabel => 'Points';
+
+  @override
+  String get acceptanceRateLabel => 'Acceptance rate';
+
+  @override
+  String restrictedUntilLine(String date) {
+    return 'Restricted until $date';
+  }
+
+  @override
+  String get reliabilityDetails => 'View details';
+
+  @override
+  String get tripsAcceptedLabel => 'Assigned trips';
+
+  @override
+  String get tripsCompletedLabel => 'Completed trips';
+
+  @override
+  String get cancellationsAtFaultLabel => 'Counted cancellations';
+
+  @override
+  String get reliabilityRateLabel => 'Completion rate';
+
+  @override
+  String get noShowCountLabel => 'No-shows';
+
+  @override
+  String get matchingFactorLabel => 'Matching factor';
+
+  @override
+  String get incentiveMultiplierLabel => 'Incentive multiplier';
+
+  @override
+  String reliabilityWindow(int days) {
+    return 'Last $days days';
+  }
+
+  @override
+  String nextLevelLine(String level, String points, String rate) {
+    return 'Next level “$level” at $points points or a $rate cancellation rate';
+  }
+
+  @override
+  String get recentCancellations => 'Recent cancellations';
+
+  @override
+  String get noRecentCancellations => 'No counted cancellations.';
+
+  @override
+  String get caseTypeSos => 'Emergency (SOS)';
+
+  @override
+  String get caseTypeReport => 'Safety report';
+
+  @override
+  String get alertUnexpectedStop => 'Unexpected stop';
+
+  @override
+  String get alertRouteDeviation => 'Route deviation';
+
+  @override
+  String get alertTripOverrun => 'Trip running long';
+
+  @override
+  String get caseStatusOpen => 'Open';
+
+  @override
+  String get caseStatusInProgress => 'In progress';
+
+  @override
+  String get caseStatusEscalated => 'Escalated';
+
+  @override
+  String get caseStatusResolved => 'Resolved';
+
+  @override
+  String get alertUnexpectedStopCopy =>
+      'We noticed the trip has been stopped for a while at an unexpected place.';
+
+  @override
+  String get alertRouteDeviationCopy =>
+      'We noticed the trip moved away from the expected route.';
+
+  @override
+  String get alertTripOverrunCopy =>
+      'The trip is taking much longer than expected.';
+
+  @override
+  String get safetyCheckCopy =>
+      'We want to make sure you\'re safe during the trip.';
+
+  @override
+  String get reportUnsafeDriving => 'Unsafe driving';
+
+  @override
+  String get reportHarassment => 'Harassment or abuse';
+
+  @override
+  String get reportVehicleMismatch => 'Vehicle doesn\'t match the app';
+
+  @override
+  String get reportDriverMismatch => 'Driver doesn\'t match the app';
+
+  @override
+  String get reportPassengerMisconduct => 'Passenger misconduct';
+
+  @override
+  String get reportOther => 'Other';
+
+  @override
+  String get lostPhone => 'Phone';
+
+  @override
+  String get lostWallet => 'Wallet';
+
+  @override
+  String get lostBag => 'Bag';
+
+  @override
+  String get lostKeys => 'Keys';
+
+  @override
+  String get lostDocuments => 'Documents';
+
+  @override
+  String get lostOther => 'Other';
+
+  @override
+  String get lostStatusOpen => 'Waiting for the driver';
+
+  @override
+  String get lostStatusDriverContacted => 'Driver contacted';
+
+  @override
+  String get lostStatusFound => 'Found';
+
+  @override
+  String get lostStatusReturned => 'Returned';
+
+  @override
+  String get lostStatusNotFound => 'Not found';
+
+  @override
+  String get lostStatusClosed => 'Closed';
+
+  @override
+  String get sosSemantics => 'Emergency button, press and hold to confirm';
+
+  @override
+  String get sosLabel => 'SOS';
+
+  @override
+  String get sosHoldHint => 'Hold for emergency';
+
+  @override
+  String get sosKeepHolding => 'Keep holding…';
+
+  @override
+  String get sosSending => 'Sending the emergency alert…';
+
+  @override
+  String get sosActiveTitle => 'Emergency alert sent to the safety team';
+
+  @override
+  String get sosCancelledTitle => 'Emergency alert cancelled';
+
+  @override
+  String get sosFailedTitle => 'Couldn\'t send the emergency alert';
+
+  @override
+  String sosCaseLine(String number, String status) {
+    return 'Case $number · $status';
+  }
+
+  @override
+  String sosContactsNotified(int count) {
+    return '$count trusted contacts notified';
+  }
+
+  @override
+  String get sosSharingLocation =>
+      'Your location is shared with the safety team every 10 seconds';
+
+  @override
+  String get sosCancelledCopy =>
+      'The safety team will contact you to make sure you\'re safe.';
+
+  @override
+  String callEmergency(String number) {
+    return 'Call emergency $number';
+  }
+
+  @override
+  String get sosPressedByMistake => 'Pressed by mistake';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get safetyCheckTitle => 'Are you OK?';
+
+  @override
+  String get safetyCheckHelpSent =>
+      'The safety team was alerted and will contact you right away.';
+
+  @override
+  String get safetyCheckOkThanks => 'Thank you, glad you\'re OK.';
+
+  @override
+  String get safetyCheckExpired =>
+      'We didn\'t get your answer; the safety team will contact you.';
+
+  @override
+  String safetyCheckCountdown(int seconds) {
+    return 'Please answer within $seconds s';
+  }
+
+  @override
+  String get safetyCheckOk => 'I\'m OK';
+
+  @override
+  String get safetyCheckHelp => 'I need help';
+
+  @override
+  String get manageSharing => 'Manage';
+
+  @override
+  String shareTripLinkText(String url) {
+    return 'Follow my ATA trip live: $url';
+  }
+
+  @override
+  String get shareSheetCopy =>
+      'Send a live tracking link; you can revoke it at any time.';
+
+  @override
+  String get shareToContacts => 'Send to your trusted contacts';
+
+  @override
+  String get addTrustedContact => 'Add a trusted contact';
+
+  @override
+  String get sendBySms => 'Send by SMS';
+
+  @override
+  String smsSentTo(int count) {
+    return 'Sent to $count';
+  }
+
+  @override
+  String get activeLinks => 'Active links';
+
+  @override
+  String get noActiveLinks => 'No active links.';
+
+  @override
+  String shareViews(int count) {
+    return '$count views';
+  }
+
+  @override
+  String get revokeLink => 'Revoke';
+
+  @override
+  String get chatAction => 'Chat';
+
+  @override
+  String maskedCallPin(String pin) {
+    return 'Call PIN: $pin';
+  }
+
+  @override
+  String get callUnavailable =>
+      'Calling isn\'t available right now, use the chat.';
+
+  @override
+  String get chatWithDriver => 'Chat with your driver';
+
+  @override
+  String get chatWithPassenger => 'Chat with the passenger';
+
+  @override
+  String get chatMaskedNote =>
+      'Phone numbers are never shared and are hidden inside messages.';
+
+  @override
+  String get chatEmpty => 'No messages yet.';
+
+  @override
+  String get chatInputHint => 'Type a message…';
+
+  @override
+  String get chatSend => 'Send';
+
+  @override
+  String get chatClosedBanner => 'The trip ended; the chat is read-only.';
+
+  @override
+  String get messageSending => 'Sending…';
+
+  @override
+  String get messageFailed => 'Not sent, tap to retry';
+
+  @override
+  String get messageRead => 'Read';
+
+  @override
+  String get sosHoldCopy =>
+      'Hold SOS to alert the safety team with your location';
+
+  @override
+  String get shareTripOnTripOnly =>
+      'Available during a trip from the driver card, and can be sent automatically to your trusted contacts.';
+
+  @override
+  String get myReportsTitle => 'My reports';
+
+  @override
+  String get myReportsCopy =>
+      'Follow your safety reports and emergency alerts.';
+
+  @override
+  String get lostItemsTitle => 'Lost items';
+
+  @override
+  String get lostItemsCopy => 'Follow your lost item reports.';
+
+  @override
+  String get trustedContactsPageCopy =>
+      'Add up to 5 contacts who get an SMS in an emergency and, with auto-share on, your trip tracking link.';
+
+  @override
+  String get noTrustedContacts =>
+      'You haven\'t added any trusted contacts yet.';
+
+  @override
+  String trustedContactsCount(int count, int max) {
+    return '$count of $max';
+  }
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get autoShareLabel => 'Share my trips automatically';
+
+  @override
+  String get notifyOnSosLabel => 'Alert in an emergency';
+
+  @override
+  String get contactPhoneSelf => 'You can\'t add your own number';
+
+  @override
+  String get editTrustedContact => 'Edit trusted contact';
+
+  @override
+  String get contactNameLabel => 'Name';
+
+  @override
+  String get contactNameRequired => 'Name is required';
+
+  @override
+  String get contactPhoneLabel => 'Mobile number';
+
+  @override
+  String get contactPhoneHint => '05XXXXXXXX';
+
+  @override
+  String get contactRelationshipLabel => 'Relationship (optional)';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get noReports => 'No reports.';
+
+  @override
+  String get caseNoUpdates =>
+      'No updates yet; the safety team will contact you.';
+
+  @override
+  String get safetyReportTitle => 'Report a safety issue';
+
+  @override
+  String get safetyReportCopy =>
+      'Tell us what happened on your trip (within 7 days); the safety team will review it.';
+
+  @override
+  String get reportSubmitted => 'Your report was received';
+
+  @override
+  String reportNumberLine(String number) {
+    return 'Report number: $number';
+  }
+
+  @override
+  String get chooseCategory => 'Choose a category';
+
+  @override
+  String get describeWhatHappened => 'Describe what happened…';
+
+  @override
+  String get descriptionRequired => 'A description is required';
+
+  @override
+  String get submitReport => 'Submit report';
+
+  @override
+  String get noPendingSafetyCheck => 'There is no pending safety check.';
+
+  @override
+  String get lostItemTitle => 'Report a lost item';
+
+  @override
+  String get lostItemCopy =>
+      'Describe the item; we\'ll notify the driver and follow up through support (within 7 days of the trip).';
+
+  @override
+  String get lostItemSubmitted => 'Lost item report received';
+
+  @override
+  String get lostItemDescribe =>
+      'Describe the item (colour, brand, where it was…)';
+
+  @override
+  String get lostItemContactPhone => 'Contact number (optional)';
+
+  @override
+  String get lostItemsPageCopy => 'Status of your lost item reports.';
+
+  @override
+  String get noLostItems => 'No lost item reports.';
+
+  @override
+  String get driverLostItemsTitle => 'Lost items';
+
+  @override
+  String get driverLostItemsCopy => 'Items passengers reported in your trips.';
+
+  @override
+  String get lostItemFound => 'Found it';
+
+  @override
+  String get lostItemNotFound => 'Not found';
+
+  @override
+  String get tripHelpTitle => 'Need help with this trip?';
+
+  @override
+  String get lostItemRowCopy => 'Left something in the car?';
+
+  @override
+  String get safetyReportRowCopy => 'Report unsafe driving or misconduct';
 }

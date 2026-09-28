@@ -1,5 +1,6 @@
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/di/payments_module.dart';
+import 'package:ata_app/core/di/safety_module.dart';
 import 'package:ata_app/features/account/domain/usecases/change_language.dart';
 import 'package:ata_app/features/account/domain/usecases/delete_account.dart';
 import 'package:ata_app/features/account/domain/usecases/get_notification_preferences.dart';
@@ -129,4 +130,5 @@ void registerUseCases() {
       () => WatchDevicePosition(getIt()),
     );
   registerPaymentAndPushUseCases();
+  registerSafetyAndCancellationUseCases();
 }

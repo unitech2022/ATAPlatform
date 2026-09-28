@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:ata_app/core/errors/failures.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
@@ -150,7 +149,7 @@ void main() {
     act: (ActiveTripCubit cubit) async {
       cubit.start();
       await push(tripAt(TripStage.driverAssigned));
-      await cubit.cancel(CancelReason.driverLate);
+      await cubit.cancel('driver_late');
     },
     verify: (ActiveTripCubit cubit) {
       expect(cubit.state.stage, TripStage.cancelled);

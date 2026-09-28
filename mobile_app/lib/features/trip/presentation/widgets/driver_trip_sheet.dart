@@ -8,7 +8,6 @@ import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -16,8 +15,10 @@ import 'package:ata_app/features/trip/presentation/cubit/driver_trip_cubit.dart'
 import 'package:ata_app/features/trip/presentation/cubit/driver_trip_state.dart';
 import 'package:ata_app/features/trip/presentation/cubit/location_stream_cubit.dart';
 import 'package:ata_app/features/trip/presentation/widgets/cancel_reason_sheet.dart';
+import 'package:ata_app/features/trip/presentation/widgets/cancellation_text.dart';
 import 'package:ata_app/features/trip/presentation/widgets/driver_pin_entry.dart';
 import 'package:ata_app/features/trip/presentation/widgets/driver_trip_info.dart';
+import 'package:ata_app/features/trip/presentation/widgets/no_show_section.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_ended_view.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -105,6 +106,10 @@ class _Body extends StatelessWidget {
                         ?.point,
                   ),
           ),
+        if (stage.isWaiting) ...<Widget>[
+          const SizedBox(height: AtaSpacing.md),
+          NoShowSection(trip: trip),
+        ],
         if (state.failure != null) ...<Widget>[
           const SizedBox(height: AtaSpacing.md),
           InlineError(message: failureText(state.failure!, l10n)),
@@ -124,8 +129,12 @@ class _Body extends StatelessWidget {
 
   Future<void> _cancel(BuildContext context) async {
     final DriverTripCubit cubit = context.read<DriverTripCubit>();
-    final CancelReason? reason = await CancelReasonSheet.show(context);
-    if (reason != null) await cubit.cancel(reason);
+    final Trip? cancelled = await CancelReasonSheet.show(
+      context,
+      trip: trip,
+      actor: TripActor.driver,
+    );
+    if (cancelled != null) cubit.adopt(cancelled);
   }
 }
 
@@ -141,7 +150,9 @@ class _Ended extends StatelessWidget {
     if (trip.status != TripStage.completed) {
       return TripEndedView(
         stage: trip.status,
-        copy: l10n.driverTripCancelledCopy,
+        copy:
+            CancellationText.driverCopy(l10n, trip) ??
+            l10n.driverTripCancelledCopy,
         retryLabel: l10n.backToDashboard,
         onRetry: onDone,
       );

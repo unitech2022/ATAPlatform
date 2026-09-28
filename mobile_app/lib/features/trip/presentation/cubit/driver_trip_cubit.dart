@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -88,7 +87,7 @@ class DriverTripCubit extends Cubit<DriverTripState> {
     );
   }
 
-  Future<void> cancel(CancelReason reason, {String? note}) async {
+  Future<void> cancel(String reasonCode, {String? note}) async {
     final Trip? trip = state.trip;
     if (trip == null || !state.canCancel) return;
     emit(state.copyWith(busy: true, clearFailure: true));
@@ -96,7 +95,7 @@ class DriverTripCubit extends Cubit<DriverTripState> {
       CancelTripParams(
         tripId: trip.id,
         actor: TripActor.driver,
-        reason: reason,
+        reasonCode: reasonCode,
         note: note,
       ),
     );

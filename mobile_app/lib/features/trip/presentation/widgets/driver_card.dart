@@ -4,20 +4,21 @@ import 'package:ata_app/design/tokens/ata_colors.dart';
 import 'package:ata_app/design/tokens/ata_radii.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
-import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/ata_card.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/design/widgets/pill.dart';
+import 'package:ata_app/features/safety/presentation/widgets/share_trip_button.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
+import 'package:ata_app/features/trip_chat/presentation/widgets/trip_contact_actions.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Assigned-driver card: photo placeholder, name, rating, vehicle, plate,
-/// ETA chip, the prominent start PIN and the call / share actions.
+/// ETA chip, the prominent start PIN, masked call / chat and the tracking
+/// link share (F12).
 class DriverCard extends StatelessWidget {
   const DriverCard({super.key, required this.trip, this.etaMinutes});
 
@@ -122,52 +123,11 @@ class DriverCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AtaSpacing.lg),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: AtaButton(
-                  label: l10n.callDriver,
-                  icon: AtaIcons.phone,
-                  variant: AtaButtonVariant.outline,
-                  height: AtaSizes.buttonCompact,
-                  onPressed: driver?.phoneMasked == null
-                      ? null
-                      : () => _call(context, driver!.phoneMasked!),
-                ),
-              ),
-              const SizedBox(width: AtaSpacing.sm),
-              Expanded(
-                child: AtaButton(
-                  label: l10n.shareTrip,
-                  icon: AtaIcons.pin,
-                  variant: AtaButtonVariant.outline,
-                  height: AtaSizes.buttonCompact,
-                  onPressed: () => _share(l10n),
-                ),
-              ),
-            ],
-          ),
+          TripContactActions(tripId: trip.id, actor: TripActor.passenger),
+          const SizedBox(height: AtaSpacing.sm),
+          ShareTripButton(tripId: trip.id),
         ],
       ),
     );
   }
-
-  Future<void> _call(BuildContext context, String phone) async {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final String failed = context.l10n.callFailed;
-    final Uri uri = Uri(scheme: 'tel', path: phone.replaceAll(' ', ''));
-    final bool ok = await launchUrl(uri);
-    if (!ok) messenger.showSnackBar(SnackBar(content: Text(failed)));
-  }
-
-  Future<void> _share(AppLocalizations l10n) => SharePlus.instance.share(
-    ShareParams(
-      text: l10n.shareTripText(
-        trip.tripNumber,
-        trip.driver?.fullName ?? '',
-        trip.vehicle?.title ?? '',
-        trip.vehicle?.plateNumber ?? '',
-      ),
-    ),
-  );
 }

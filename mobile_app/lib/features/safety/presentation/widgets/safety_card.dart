@@ -15,16 +15,18 @@ class SafetyCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.copy,
+    this.onTap,
   });
 
   final AtaIcons icon;
   final String title;
   final String copy;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return AtaCard(
-      onTap: () {},
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -34,11 +36,11 @@ class SafetyCard extends StatelessWidget {
             iconSize: AtaSizes.iconLarge,
             radius: AtaSpacing.md,
           ),
-          const SizedBox(height: AtaSpacing.xxl),
+          const SizedBox(height: AtaSpacing.lg),
           Text(title, style: AtaText.headline),
           const SizedBox(height: AtaSpacing.sm),
           Text(copy, style: AtaText.small),
-          const SizedBox(height: AtaSpacing.xl),
+          const SizedBox(height: AtaSpacing.md),
           Row(
             children: <Widget>[
               Text(
