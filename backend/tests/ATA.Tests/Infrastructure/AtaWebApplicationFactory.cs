@@ -53,6 +53,8 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Payments:PublicBaseUrl", "http://localhost");
         builder.UseSetting("Notifications:WorkerEnabled", "false");
         builder.UseSetting("Notifications:JobsEnabled", "false");
+        builder.UseSetting("Safety:JobsEnabled", "false");
+        builder.UseSetting("Reliability:JobsEnabled", "false");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);
@@ -102,6 +104,18 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     /// <summary>Runs one pass of the notification delivery worker (queued deliveries and due retries).</summary>
     public Task<int> RunNotificationWorkerAsync() =>
         WithServiceAsync<ATA.Api.Modules.Notifications.NotificationDeliveryProcessor, int>(p => p.ProcessDueAsync(CancellationToken.None));
+
+    /// <summary>One pass of <c>SafetyMonitorJob</c> (anomaly detection on in-trip trips).</summary>
+    public Task<int> RunSafetyMonitorAsync() =>
+        WithServiceAsync<ATA.Api.Modules.Safety.SafetyMonitor, int>(m => m.RunMonitorAsync(CancellationToken.None));
+
+    /// <summary>One pass of <c>SafetyCheckTimeoutJob</c>.</summary>
+    public Task<int> RunSafetyCheckTimeoutsAsync() =>
+        WithServiceAsync<ATA.Api.Modules.Safety.SafetyMonitor, int>(m => m.RunCheckTimeoutsAsync(CancellationToken.None));
+
+    /// <summary>One pass of <c>RestrictionExpiryJob</c>.</summary>
+    public Task<int> RunRestrictionExpiryAsync() =>
+        WithServiceAsync<ATA.Api.Modules.Cancellation.ReliabilityService, int>(s => s.ExpireRestrictionsAsync(CancellationToken.None));
 
     public async Task<T> WithDbAsync<T>(Func<AtaDbContext, Task<T>> action)
     {

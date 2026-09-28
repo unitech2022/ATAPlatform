@@ -51,6 +51,16 @@ public static class ErrorCatalog
         [ErrorCodes.UnknownEventCode] = new(StatusCodes.Status422UnprocessableEntity, "كود الحدث غير معروف", "Unknown notification event code"),
         [ErrorCodes.CampaignNotEditable] = new(StatusCodes.Status409Conflict, "لا يمكن تعديل الحملة في حالتها الحالية", "The campaign can no longer be edited"),
         [ErrorCodes.TemplatePlaceholderInvalid] = new(StatusCodes.Status422UnprocessableEntity, "القالب يحتوي عناصر نائبة غير معرّفة لهذا الحدث", "The template uses placeholders that are not defined for this event"),
+        [ErrorCodes.ShareNotFound] = new(StatusCodes.Status404NotFound, "رابط التتبع غير موجود", "The tracking link was not found"),
+        [ErrorCodes.ShareExpired] = new(StatusCodes.Status410Gone, "انتهت صلاحية رابط التتبع", "The tracking link has expired"),
+        [ErrorCodes.TrustedContactsLimit] = new(StatusCodes.Status422UnprocessableEntity, "الحد الأقصى 5 جهات موثوقة", "You can add at most 5 trusted contacts"),
+        [ErrorCodes.TrustedContactExists] = new(StatusCodes.Status409Conflict, "الجهة مضافة مسبقاً", "This contact is already added"),
+        [ErrorCodes.ChatClosed] = new(StatusCodes.Status409Conflict, "المحادثة مغلقة لهذه الرحلة", "The chat is closed for this trip"),
+        [ErrorCodes.LostItemWindowClosed] = new(StatusCodes.Status422UnprocessableEntity, "انتهت مدة الإبلاغ عن المفقودات", "The lost item reporting window has closed"),
+        [ErrorCodes.CancellationReasonInvalid] = new(StatusCodes.Status422UnprocessableEntity, "سبب الإلغاء غير صالح", "The cancellation reason is not valid"),
+        [ErrorCodes.CancellationFeeChanged] = new(StatusCodes.Status409Conflict, "تغيّرت رسوم الإلغاء، راجعها وأعد المحاولة", "The cancellation fee changed, review it and try again"),
+        [ErrorCodes.NoShowTooEarly] = new(StatusCodes.Status422UnprocessableEntity, "لم تنتهِ مدة الانتظار المطلوبة بعد", "The required waiting time has not elapsed yet"),
+        [ErrorCodes.AccountRestricted] = new(StatusCodes.Status403Forbidden, "حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء", "Your account is temporarily restricted because of repeated cancellations"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

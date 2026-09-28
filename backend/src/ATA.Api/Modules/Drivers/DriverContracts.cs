@@ -34,7 +34,8 @@ public sealed record UpsertVehicleRequest(string? Make, string? Model, short? Ye
 
 public sealed record SubmitResponse(ApplicationStatus Status);
 
-public sealed record DriverStatusDto(bool IsOnline, bool CanGoOnline, string? Reason);
+/// <summary><c>reason</c> = <c>driver_not_approved</c> | <c>account_restricted</c> (F14, with <c>restrictedUntil</c> / <c>restrictionLevel</c>) | null.</summary>
+public sealed record DriverStatusDto(bool IsOnline, bool CanGoOnline, string? Reason, DateTime? RestrictedUntil = null, ATA.Domain.Cancellation.RestrictionLevel? RestrictionLevel = null);
 
 public sealed record UpdateDriverStatusRequest(bool? IsOnline, decimal? Latitude, decimal? Longitude);
 

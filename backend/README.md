@@ -14,6 +14,10 @@ F11/F13 add `Modules/Payments` (gateway abstraction with a sandbox and a Moyasar
 authorize/capture and cash fallback, card top-ups, webhooks, receipts, refunds with four-eyes approval, payouts and bank batches,
 settlement statements, admin wallets/ledger) and `Modules/Notifications` (event catalogue, templates, `INotificationDispatcher`,
 OneSignal push + SMS deliveries with retries, broadcast campaigns, document-expiry scanner).
+F12/F14 add `Modules/Safety` (trip sharing with a public tracking page, trusted contacts, SOS → safety cases with on-duty ops fan-out,
+masked in-trip chat, anomaly detection jobs with the "are you OK?" cycle, safety reports, lost items, the admin safety centre) and
+`Modules/Cancellation` (reason catalogue, stage rules with free windows, fees and driver compensation through the F11 ledger, no-show,
+excuse reviews, rolling reliability profiles with a restriction ladder that feeds the matcher and blocks requests / going online, KPIs).
 
 ## Layout
 
@@ -99,6 +103,18 @@ dotnet test
 | `Demand:SnapshotMaxAgeMinutes` | A snapshot older than this no longer drives the level; the engine falls back to `normal` (default 20 = 2 × the 10-minute window) |
 | `Demand:SnapshotRetentionHours` | Older `demand_snapshots` rows are pruned by the loop (default 48) |
 | `Realtime:LiveSnapshotEnabled`, `Realtime:LiveSnapshotSeconds` | `LiveSnapshot` push to the `admins` hub group (default every 5 s) |
+| `Safety:ShareBaseUrl`, `Safety:ShareExpiryMinutesAfterEnd`, `Safety:MaxSharesPerTrip` | Public link base (`https://ata.sa` → `/t/{token}`), link lifetime after the trip ends (30 min), links per trip (10) |
+| `Safety:AutoShareSmsEnabled`, `Safety:PublicShareRatePerMinute`, `Safety:PublicShareRefreshSeconds` | SMS for automatic shares on assignment (`true`); public page limit per IP (30/min → `429 rate_limited`); polling interval returned to the page (10 s) |
+| `Safety:EmergencyNumber`, `Safety:SosDedupMinutes`, `Safety:SosLocationIntervalSeconds`, `Safety:OpsHotlinePhones` | `911`; repeated SOS within 10 min returns the same case; app location interval (10 s); numbers texted on every SOS / escalated alert (`[]`) |
+| `Safety:ChatMaskPhoneNumbers` | Replaces any run of ≥ 8 digits in chat messages with `••••` (`true`) |
+| `Safety:MonitorIntervalSeconds`, `Safety:StopSpeedMps`, `Safety:StopMinutes`, `Safety:StopIgnoreRadiusMeters` | Monitor every 30 s; unexpected stop = speed < 1.5 m/s for > 5 min farther than 300 m from pickup, stops and dropoff |
+| `Safety:DeviationMeters`, `Safety:DeviationMetersMaps`, `Safety:DeviationSeconds` | Route deviation > 2000 m (straight planned route) / 500 m (maps route) for > 120 s |
+| `Safety:OverrunFactor`, `Safety:OverrunMinMinutes`, `Safety:AlertCooldownMinutes`, `Safety:CheckResponseSeconds` | Overrun = elapsed > estimate × 2.0 and > estimate + 15 min; 10 min cooldown per (trip, type) after a closed alert; 120 s to answer "are you OK?" |
+| `Safety:ReportWindowDays`, `Safety:LostItemWindowDays`, `Safety:JobsEnabled` | Safety reports / lost items accepted 7 days after the trip; runs the safety jobs (`false` in tests) |
+| `CallMasking:Provider` | `none` (default): `POST …/call` answers `{ mode: "unavailable", available: false }`; the real number is never returned |
+| `Cancellation:NoShowWaitMinutes`, `Cancellation:ExcuseReviewSlaHours` | Wait at the pickup before a no-show (5 min, never below the free waiting time); excuse queue SLA (48 h) |
+| `Reliability:WindowDays`, `Reliability:PointsExpiryDays`, `Reliability:RecalcHourLocal`, `Reliability:JobsEnabled` | Rolling window (30 days), penalty point lifetime (30 days), nightly recalculation at 02:00 Riyadh, jobs switch (`false` in tests) |
+| `Retention:TripMessagesDays` | Chat messages older than this are purged by the share-expiry job (180) |
 
 ### Development OTP behaviour
 
@@ -126,6 +142,17 @@ dotnet test
 - City: `riyadh`.
 - Admin account: username `admin`, password `Admin@12345` (`POST /api/v1/auth/admin/login`).
 - Notification templates: one row per catalogue event and default channel (ar/en), never overwritten once present.
+- Cancellation reasons (doc 09 §F14.6, unique per `(actor, code)`): passenger `changed_mind`, `driver_late`, `driver_too_far`, `wrong_pickup`, `found_other_ride`,
+  `driver_asked_to_cancel` (excusable), `driver_not_moving` (excusable), `safety_concern` (emergency), `other` (note required); driver `passenger_not_responding`,
+  `passenger_asked_to_cancel` (excusable), `wrong_pickup_location`, `pickup_too_far`, `vehicle_issue` (excusable), `safety_concern` (emergency), `other` (note),
+  `passenger_no_show` (not selectable); system `no_drivers`, `payment_failed`, `admin_cancelled`, `scheduled_driver_unavailable`. The four codes of the F8 app
+  (`changed_mind`, `driver_late`, `wrong_pickup`, `other`) are valid in every passenger stage.
+- Cancellation rules (city-wide, seeded while the table is empty): passenger before accept free; after accept 120 s free then 5 SAR (50 % to the driver, 1 point);
+  en route 120 s free then 10 SAR (70 %, 2); arrived pricing-rule fee (80 %, 2); waiting / no-show pricing-rule fee min 10 SAR (80 %, 3 / 4); driver after accept
+  60 s window (2 points), en route 3, arrived 4, waiting 2.
+- Reliability thresholds: driver warning 4 pts / 10 %, matching_deprioritized 8 / 15 % (×0.70), incentives_reduced 12 / 20 % (×0.60, −50 %),
+  temporarily_restricted 18 / 30 % (24 h), suspended 30 / 45 %; passenger warning 4 / 15 %, temporarily_restricted 12 / 35 % (24 h), suspended 25 / 50 %
+  (rates need ≥ 10 accepted trips).
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
 
@@ -151,12 +178,20 @@ dotnet test
 | Admin trips | `GET /admin/trips?status=&from=&to=&search=&page=`, `GET /admin/trips/{id}` (full events with actor names, offers, route), `POST /admin/trips/{id}/cancel` (audited as `trip.cancel`), `GET /admin/live` (drivers incl. recently-offline, active and searching trips) |
 | Admin payments | `GET /admin/payments?status=&purpose=&provider=&method=&from=&to=&search=`, `GET /admin/payments/{id}` (+ `webhookEvents`, `refunds`, `ledger`), `POST /admin/payments/{id}/refunds`, `POST /admin/trips/{id}/refunds`, `GET /admin/trips/{id}/receipt`, `GET /admin/refunds?status=&from=&to=`, `POST /admin/refunds/{id}/approve\|reject\|retry` (`409 four_eyes_required`), `GET /admin/payouts?status=&driverId=&from=&to=`, `POST /admin/payouts/{id}/approve\|reject\|mark-paid`, `POST/GET /admin/payout-batches`, `GET /admin/payout-batches/{id}`, `GET /admin/payout-batches/{id}/export?format=csv`, `POST /admin/payout-batches/{id}/mark-paid`, `POST /admin/settlement-batches` (202; `409 settlement_period_overlap`), `GET /admin/settlement-batches`, `GET /admin/settlement-batches/{id}`, `GET /admin/settlement-batches/{id}/settlements?direction=&search=`, `GET /admin/settlement-batches/{id}/export?format=csv` (UTF-8 BOM), `POST /admin/settlement-batches/{id}/finalize\|regenerate`, `GET /admin/settlements/{id}`, `GET /admin/wallets?kind=&search=&negativeOnly=`, `GET /admin/wallets/{id}`, `POST /admin/wallets/{id}/adjustments\|freeze\|unfreeze`, `GET /admin/ledger/balances?from=&to=`. Audited: `refund.*`, `payout.*`, `payout_batch.*`, `settlement_batch.*`, `wallet.adjust\|freeze\|unfreeze` |
 | Admin notifications | `GET /admin/notification-events`, `GET/POST /admin/notification-templates` (`422 unknown_event_code`, `422 template_placeholder_invalid`), `PUT /admin/notification-templates/{id}`, `POST /admin/notification-templates/{id}/preview\|test`, `GET/POST /admin/notification-campaigns`, `GET/PUT/DELETE /admin/notification-campaigns/{id}` (`409 campaign_not_editable`), `POST /admin/notification-campaigns/{id}/schedule\|send-now\|cancel`, `POST /admin/notification-campaigns/audience-preview`, `GET /admin/notification-deliveries?userId=&eventCode=&channel=&status=&campaignId=&from=&to=`, `POST /admin/notification-deliveries/{id}/retry`, `GET/PUT /admin/me/duty`. Audited: `notification_template.*`, `notification_campaign.*`, `notification_delivery.retry` |
-| Realtime | SignalR hub `/hubs/trips` (JWT via `?access_token=`): `TripUpdated`, `DriverLocation` (passenger), `OfferReceived`, `OfferExpired`, `TripUpdated` (driver), `LiveSnapshot` every 5 s + `TripUpdated` + `DemandChanged` + `PayoutRequested` (`admins` group), `PaymentUpdated`, `NotificationCreated` (user) |
+| Public | `GET /public/trip-shares/{token}` (anonymous, rate limited: `404 share_not_found`, `410 share_expired`, `429 rate_limited`; no phone, family name, PIN, fare or payment method), `GET /public/trip-shares/{token}/driver-photo` |
+| Safety (rider & driver) | `GET/POST /safety/trusted-contacts`, `PUT/DELETE /safety/trusted-contacts/{id}` (`422 trusted_contacts_limit`, `409 trusted_contact_exists`, `400 phone_invalid`, own number → `422 { phoneNumber: "self" }`), `POST/GET /safety/trips/{tripId}/shares` (`{ channel: link\|sms, contactIds? }` → `201 { shares: [...] }` with the links created; `409` outside `driver_assigned…in_trip`), `DELETE /safety/shares/{id}`, `POST /safety/sos` (`201`, or `200` for a repeated press), `POST /safety/sos/{caseId}/location` (204), `POST /safety/sos/{caseId}/cancel`, `POST /safety/reports` (`422 { tripId: "window_closed" }`), `GET /safety/cases`, `GET /safety/cases/{id}`, `GET /safety/alerts/pending` (JSON `null` when none), `POST /safety/alerts/{id}/respond` (`409` unless `pending_rider`) |
+| Chat & calls | `GET/POST /passenger/trips/{id}/messages` and `/driver/trips/{id}/messages` (`?after=`; `{ body \| quickReplyCode }`; `409 chat_closed`; non-party `403`), `POST …/messages/read { upToId }` (204), `POST …/call` (`{ mode, available, proxyNumber, pin, expiresAt }`), `GET /catalog/chat-quick-replies?role=` |
+| Lost items | `POST /passenger/trips/{id}/lost-items` (`contactPhone` defaults to the rider's phone; `422 lost_item_window_closed`), `GET /passenger/lost-items`, `GET /driver/lost-items?status=` (no rider phone), `POST /driver/lost-items/{id}/respond { found, note? }` (`409` when already answered) |
+| Cancellation (rider & driver) | `GET /catalog/cancellation-reasons?actor=&stage=`, `POST /passenger/trips/{id}/cancel/preview`, `POST /passenger/trips/{id}/cancel` (`reasonCode` from the catalogue: `422 cancellation_reason_invalid`, note required → `422 { note: "required" }`, `expectedFee` → `409 cancellation_fee_changed { fee }`), `GET /passenger/reliability`, `POST /driver/trips/{id}/cancel/preview`, `POST /driver/trips/{id}/cancel` (`expectedPenaltyPoints`), `POST /driver/trips/{id}/no-show` (`422 no_show_too_early { secondsRemaining }`), `GET /driver/reliability` (+ `effects { matchingFactor, incentiveMultiplier }`). `Trip` adds `cancellation` (the driver sees `compensation`, not the fee). Restricted users: `POST /passenger/trips` / `PUT /driver/status` → `403 account_restricted { level, restrictedUntil }`; `GET /driver/status` returns `reason: "account_restricted"` + `restrictedUntil` |
+| Admin safety (`safety.manage`) | `GET /admin/safety/summary`, `GET /admin/safety/cases?status=&priority=&type=&assignedTo=me\|unassigned\|{userId}&from=&to=&search=`, `POST /admin/safety/cases`, `GET /admin/safety/cases/{id}`, `POST /admin/safety/cases/{id}/assign\|status\|notes\|resolve`, `GET /admin/safety/alerts?status=&type=&tripId=&from=&to=&search=`, `POST /admin/safety/alerts/{id}/dismiss`, `GET /admin/trips/{id}/messages` (audited `trip_messages.view`), `GET /admin/trips/{id}/shares`, `GET /admin/users/{userId}/trusted-contacts` (only while the user is party to an open case; audited `trusted_contacts.view`), `GET /admin/lost-items`, `PATCH /admin/lost-items/{id}` (`safety.manage` or `support.manage`). Audited: `safety_case.assign\|status\|note\|resolve\|create`, `safety_alert.dismiss`, `lost_item.update` |
+| Admin cancellation | `GET/POST /admin/cancellation-reasons`, `PUT/DELETE /admin/cancellation-reasons/{id}` (delete deactivates a used reason), `GET/POST /admin/cancellation-rules`, `PUT/DELETE /admin/cancellation-rules/{id}`, `POST /admin/cancellation-rules/simulate`, `GET /admin/reliability-thresholds?role=`, `PUT /admin/reliability-thresholds/{id}` (`cancellation.manage`); `GET /admin/cancellations?actor=&stage=&atFault=&feeStatus=&excuseStatus=&from=&to=&search=` (`trips.view`); `GET /admin/cancellations/excuses?status=` (+ `ageHours`, `slaBreached`, `pendingPenaltyPoints`), `POST /admin/cancellations/{eventId}/review { decision, note }` (`cancellation.review`); `GET /admin/reliability-profiles?role=&level=&search=`, `GET /admin/reliability-profiles/{userId}?role=`, `POST /admin/reliability-profiles/{userId}/adjust` (`reliability.manage`); `GET /admin/cancellations/stats?from=&to=&cityId=&zoneId=&rideCategoryId=` (`reports.view`); `POST /admin/trips/{id}/cancel { reason, atFault?, chargeFee? }` (`trips.cancel`). Audited: `cancellation_reason.*`, `cancellation_rule.*`, `reliability_threshold.update`, `cancellation.review`, `reliability.adjust`, `reliability.level_change` (system) |
+| Realtime | SignalR hub `/hubs/trips` (JWT via `?access_token=`): `TripUpdated`, `DriverLocation` (passenger), `OfferReceived`, `OfferExpired`, `TripUpdated` (driver), `LiveSnapshot` every 5 s + `TripUpdated` + `DemandChanged` + `PayoutRequested` (`admins` group), `PaymentUpdated`, `NotificationCreated` (user); F12: `TripMessage`, `TripMessagesRead` (trip parties), `SafetyCheck` (passenger), `SafetyCaseOpened`, `SafetyCaseUpdated`, `SafetyAlertRaised` (`admins`) |
 | System | `GET /health` (MySQL check), `GET /openapi/v1.json`, `GET /docs` (Development) |
 
 Roles: `passenger`, `driver`, `admin`, `operations` (JWT `roles` claim). F11/F13 admin endpoints also check the JWT `perm` claim
 (`payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust`, `notifications.view`,
-`notifications.manage`, `notifications.sms_broadcast`, `safety.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
+`notifications.manage`, `notifications.sms_broadcast`, `safety.manage`, and since F12/F14 `support.manage`, `trips.view`, `trips.cancel`, `cancellation.manage`,
+`cancellation.review`, `reliability.manage`, `reports.view`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
 and driver status changes create a notification row for the driver. Approving a driver requires every required
 document type to be `verified`.
 
@@ -247,7 +282,8 @@ Every posting is balanced: a wallet movement (`wallet_transactions` + 2 `ledger_
 | `payouts_pending` | Payouts requested and not transferred yet (`payout` credit, `payout_reversal` / `payout_paid` debit) |
 | `refunds` | Refunds to passengers (`refund_card` journal or wallet `refund`) |
 | `adjustments` | Manual wallet adjustments by admins |
-| `cancellation_fees`, `discount_promotion`, `discount_favorite_driver`, `incentives`, `corporate_receivable:{id}` | Reserved for F14/F15/F16/F19 |
+| `cancellation_fees` | F14 cancellation fees (wallet `cancellation_fee` debit or `cancellation_fee_card` journal); driver compensation (`cancellation_compensation`) is paid out of it |
+| `discount_promotion`, `discount_favorite_driver`, `incentives`, `corporate_receivable:{id}` | Reserved for F15/F16/F19 |
 
 Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `cancellation_fee_card`, `refund_card`, `payout_paid`,
 `corporate_invoice_payment`, `manual`. Wallet movement types add `cash_collection`, `cancellation_compensation`, `payout_reversal`.
@@ -294,6 +330,52 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
 - Legacy notification types (`trip_completed`, …) are migrated to dotted codes by `AddPaymentsAndNotifications` and normalised on read.
 - Tests call `RunNotificationWorkerAsync()`, `WithServiceAsync<CampaignService, …>`, `WithServiceAsync<DocumentExpiryScanner, …>` and
   `WithServiceAsync<PaymentJobs, …>`; all background jobs are disabled in the test host.
+
+## Safety (F12)
+
+- **Sharing**: only the trip's passenger, between `driver_assigned` and `in_trip`; tokens are 128 random bits in base64url (22 characters). `channel=sms` creates
+  one link per chosen trusted contact and texts it (`safety.trip_shared`); contacts with `auto_share` get an `auto` link (+ SMS) when a driver accepts. Links
+  get `expires_at = end + Safety:ShareExpiryMinutesAfterEnd` when the trip completes / is cancelled (`TripShareExpiryJob` catches missed ends); revoked or
+  expired → `410`. Views are counted at most once per 60 s per IP. `pin_verified` is shown as `waiting`; `route.travelled` is downsampled to 300 points.
+- **Trips** store `planned_route` (JSON `[[lat,lng],…]`, straight segments pickup → stops → dropoff, `planned_route_source = straight`) at creation.
+- **SOS**: the role is the caller's role in the trip (else `role` / the single JWT role); a repeated press within `Safety:SosDedupMinutes` returns the same case
+  (`200`) with a system note. New case: `sos`, `critical`, `rider_sos|driver_sos`; `SafetyCaseOpened` to `admins`, `safety.alert` push to every on-duty active admin
+  holding `safety.manage`, SMS to `Safety:OpsHotlinePhones`; with `notifyTrustedContacts` every `notify_on_sos` contact gets a tracking link and `safety.sos_contact`.
+  Location updates push `SafetyCaseUpdated`; a reporter cancel keeps the case open for ops and lowers `critical` to `high`.
+- **Chat**: `trip_messages` open from `driver_assigned` to `in_trip`, read-only afterwards; quick replies are a code catalogue (stored in Arabic, returned in the
+  viewer's language); each message pushes `TripMessage` + `trip.message` to the other party. `ICallMaskingProvider` (`NoneCallMaskingProvider`) never returns a real number.
+- **Monitor** (`SafetyMonitor`): on `in_trip` trips with a live location fresher than `Matching:LocationMaxAgeSeconds`, continuity is measured on
+  `driver_location_history` (stop = consecutive segments slower than `Safety:StopSpeedMps`; deviation = points farther than the threshold from the planned route,
+  equirectangular projection); overrun only needs `started_at`. One open alert per (trip, type), then `Safety:AlertCooldownMinutes` after it closed. An alert asks
+  the passenger (`safety.check` push with `alertId` / `alertType` + `SafetyCheck`) and tells admins (`SafetyAlertRaised`); `need_help` or no answer by `respond_by`
+  (`SafetyCheckTimeoutJob`) opens a `high` case (`source = alert`) with the ops fan-out.
+- **Reports / lost items**: safety reports within 7 days (`harassment` → `high`, others `medium`, `subject_user_id` = the other party). Lost items on completed trips
+  within 7 days (`LI-YYYYMMDD-####`), `lost_item.reported` to the driver, the driver's answer → `found|not_found` + `lost_item.update` to the rider; ops continue
+  `driver_contacted → returned → closed`. `support_ticket_id` stays `null` until F18.
+- Case numbers `SC-YYYYMMDD-####`; the first admin action (assign / note / status / resolve) stamps `first_response_at` once.
+
+## Cancellation & reliability (F14)
+
+- **Engine** (`CancellationEngine`): every F8 cancel endpoint (passenger, driver, admin) and the no-show go through it. Stage = `before_accept` (requested /
+  searching), `after_accept`, `en_route`, `arrived` / `waiting` (free waiting from the pricing rule), `no_show`; the most specific active rule (booking type,
+  category, pickup zone) wins, then priority, then the newest. Inside `free_window_seconds` → no fee and no points. Passenger fault only after acceptance and
+  outside the window; driver cancellations after acceptance always count (the window only removes points/fees); system cancellations (`no_drivers`,
+  `payment_failed`) are recorded with nobody at fault; admins choose `atFault` and `chargeFee`.
+- **Fees** (through F11): card trips capture the fee from the trip authorization (`cancellation_fee_card` journal, then the rest of the hold is released); other
+  trips (or a failed capture) debit the passenger wallet (`cancellation_fee`, overdraft → `outstanding_balance` blocks the next request); compensation
+  `round(fee × driver_compensation_percent / 100, 2)` is credited to the driver (`cancellation_compensation`); notifications `cancellation.fee_charged`,
+  `cancellation.compensation`, `trip.cancelled`. Excusable / emergency reasons leave the event `pending_review` with no fee, points or rate impact until reviewed;
+  emergency reasons also open a `medium` safety report. Approval → `waived` (a fee already charged is refunded through F11, `cancellation_fee_waived` →
+  `refunded`); rejection → the fee is charged now (to the wallet) and the rule's points apply.
+- **Reliability** (`ReliabilityService`, `IReliabilityService`): profiles per (user, role) refreshed after each cancellation, completion and offer answer, nightly
+  (`ReliabilityRecalcJob`) and when restrictions end (`RestrictionExpiryJob`, every 5 min). Points = non-waived events + manual adjustments within 30 days
+  (reset by `clear_restriction`); the first active threshold (highest `sort_order` first) met by points or by rate (with ≥ `min_trips_for_rate` accepted trips) sets
+  the level; a `set_level` adjustment still in force wins. `temporarily_restricted` lasts `restriction_hours` and is re-entered only after a new at-fault
+  cancellation; automatic `suspended` stays until ops act. Level ups send `reliability.warning` / `reliability.restricted` and are audited
+  (`reliability.level_change`); restricted drivers online without a trip are taken offline.
+- **Matching**: `ProfileDriverReliability` (the F9 `IDriverReliabilityProvider`) feeds `1 − cancellation_rate`, blocks restricted drivers and multiplies the score by
+  `deprioritize_factor` (`matching_deprioritized` 0.70, `incentives_reduced` 0.60); drivers without a profile keep the F9 counters.
+- Tests drive the jobs with `RunSafetyMonitorAsync()`, `RunSafetyCheckTimeoutsAsync()`, `RunRestrictionExpiryAsync()` and `WithServiceAsync<SafetyMonitor, …>`.
 
 ## Migrations
 

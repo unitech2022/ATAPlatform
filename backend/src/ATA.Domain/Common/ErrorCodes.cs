@@ -40,5 +40,15 @@ public static class ErrorCodes
     public const string UnknownEventCode = "unknown_event_code";
     public const string CampaignNotEditable = "campaign_not_editable";
     public const string TemplatePlaceholderInvalid = "template_placeholder_invalid";
+    public const string ShareNotFound = "share_not_found";
+    public const string ShareExpired = "share_expired";
+    public const string TrustedContactsLimit = "trusted_contacts_limit";
+    public const string TrustedContactExists = "trusted_contact_exists";
+    public const string ChatClosed = "chat_closed";
+    public const string LostItemWindowClosed = "lost_item_window_closed";
+    public const string CancellationReasonInvalid = "cancellation_reason_invalid";
+    public const string CancellationFeeChanged = "cancellation_fee_changed";
+    public const string NoShowTooEarly = "no_show_too_early";
+    public const string AccountRestricted = "account_restricted";
     public const string InternalError = "internal_error";
 }

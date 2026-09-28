@@ -290,7 +290,7 @@ public class PricingAndMatchingTests(ApiFixture fixture) : IClassFixture<ApiFixt
         Assert.NotNull(await fixture.Factory.WithDbAsync(db => db.FareQuotes.FirstOrDefaultAsync(q => q.UsedTripId == Guid.Parse(surged.GetProperty("id").GetString()!))));
 
         // The used quote cannot be reused.
-        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{lockedId}/cancel", new { reasonCode = "test" })).EnsureSuccessStatusCode();
+        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{lockedId}/cancel", new { reasonCode = "changed_mind" })).EnsureSuccessStatusCode();
         var reused = await passenger.PostAsJsonAsync("/api/v1/passenger/trips", TripFlow.Request(area, quoteId: quoteId));
         Assert.Equal(HttpStatusCode.UnprocessableEntity, reused.StatusCode);
         Assert.Equal("quote_expired", await reused.ErrorCodeAsync());
@@ -310,7 +310,7 @@ public class PricingAndMatchingTests(ApiFixture fixture) : IClassFixture<ApiFixt
         Assert.Equal(HttpStatusCode.Created, offered.StatusCode);
         var offeredTrip = await offered.ReadJsonAsync();
         Assert.Equal(offerMin, offeredTrip.GetProperty("estimatedFare").GetDecimal());
-        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{offeredTrip.GetProperty("id").GetString()}/cancel", new { reasonCode = "test" })).EnsureSuccessStatusCode();
+        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{offeredTrip.GetProperty("id").GetString()}/cancel", new { reasonCode = "changed_mind" })).EnsureSuccessStatusCode();
 
         // Expiry: 5 minutes.
         var expiring = await (await passenger.PostAsJsonAsync("/api/v1/pricing/quote", TripFlow.Route(area))).ReadJsonAsync();

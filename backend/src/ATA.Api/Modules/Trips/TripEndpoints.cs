@@ -126,6 +126,7 @@ public static class TripEndpoints
 
         admin.MapPost("/trips/{id:guid}/cancel", async (Guid id, AdminCancelTripRequest request, AdminTripService service, HttpContext http, CancellationToken ct) =>
                 Results.Ok(await service.CancelAsync(id, request, http.GetLanguage(), ct)))
+            .RequirePermission(Permissions.TripsCancel)
             .Produces<AdminTripDetailDto>();
 
         admin.MapGet("/live", async (AdminTripService service, CancellationToken ct) => Results.Ok(await service.GetLiveAsync(ct)))

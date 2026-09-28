@@ -79,14 +79,14 @@ public static class DriverEndpoints
 }
 
 /// <summary>Online/offline state with status logs, and the earnings summary (completed trips + online hours from status logs).</summary>
-public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUser, IClock clock, IOptions<PayoutsOptions> payouts)
+public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUser, IClock clock, IOptions<PayoutsOptions> payouts, Cancellation.ReliabilityService reliability)
 {
     public const decimal WeeklyTarget = 2500m;
 
     public async Task<DriverStatusDto> GetStatusAsync(CancellationToken ct)
     {
         var driver = await LoadAsync(ct);
-        return ToDto(driver);
+        return await ToDtoAsync(driver, ct);
     }
 
     public async Task<DriverStatusDto> UpdateStatusAsync(UpdateDriverStatusRequest request, CancellationToken ct)
@@ -106,6 +106,9 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
         var isOnline = request.IsOnline!.Value;
         if (isOnline && !driver.IsOnline)
         {
+            // F14: a temporarily restricted or suspended driver cannot go online (403 account_restricted { level, restrictedUntil }).
+            await reliability.EnsureNotRestrictedAsync(driver.UserId, Role.Driver, ct);
+
             // Cash debt rule (F11): a driver whose cash commission debt exceeds Payouts:MaxCashDebt must top up before going online.
             var balance = await db.Wallets.AsNoTracking().Where(w => w.UserId == driver.UserId && w.Kind == WalletKind.Driver).Select(w => (decimal?)w.Balance).FirstOrDefaultAsync(ct) ?? 0m;
             var limit = payouts.Value.MaxCashDebt;
@@ -128,7 +131,7 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
             await db.SaveChangesAsync(ct);
         }
 
-        return ToDto(driver);
+        return await ToDtoAsync(driver, ct);
     }
 
     public async Task<EarningsSummaryDto> GetEarningsSummaryAsync(CancellationToken ct)
@@ -205,9 +208,17 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
         return await db.Drivers.FirstOrDefaultAsync(d => d.UserId == userId, ct) ?? throw new DomainException(ErrorCodes.Forbidden);
     }
 
-    private static DriverStatusDto ToDto(DriverProfile driver)
+    private async Task<DriverStatusDto> ToDtoAsync(DriverProfile driver, CancellationToken ct)
     {
         var approved = driver.ApplicationStatus == ApplicationStatus.Approved;
-        return new DriverStatusDto(driver.IsOnline, approved, approved ? null : ErrorCodes.DriverNotApproved);
+        if (!approved)
+        {
+            return new DriverStatusDto(driver.IsOnline, false, ErrorCodes.DriverNotApproved);
+        }
+
+        var snapshot = await reliability.GetAsync(driver.UserId, Role.Driver, ct);
+        return reliability.IsRestricted(snapshot)
+            ? new DriverStatusDto(driver.IsOnline, false, ErrorCodes.AccountRestricted, snapshot.RestrictedUntil, snapshot.Level)
+            : new DriverStatusDto(driver.IsOnline, true, null);
     }
 }

@@ -31,6 +31,16 @@ public static class NotificationTypes
     public const string DocumentExpired = "document.expired";
     public const string SafetyCheck = "safety.check";
     public const string SafetyAlert = "safety.alert";
+    public const string SafetySosContact = "safety.sos_contact";
+    public const string SafetyTripShared = "safety.trip_shared";
+    public const string SafetyCaseUpdate = "safety.case_update";
+    public const string TripMessage = "trip.message";
+    public const string LostItemReported = "lost_item.reported";
+    public const string LostItemUpdate = "lost_item.update";
+    public const string CancellationFeeCharged = "cancellation.fee_charged";
+    public const string CancellationCompensation = "cancellation.compensation";
+    public const string ReliabilityWarning = "reliability.warning";
+    public const string ReliabilityRestricted = "reliability.restricted";
     public const string CampaignBroadcast = "campaign.broadcast";
 }
 

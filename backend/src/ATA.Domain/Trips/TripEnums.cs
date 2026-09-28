@@ -51,4 +51,6 @@ public static class TripEventTypes
     public const string PaymentCapturePending = "payment_capture_pending";
     public const string Cancelled = "cancelled";
     public const string NoDrivers = "no_drivers";
+    public const string PassengerNoShow = "passenger_no_show";
+    public const string CancellationFeeCharged = "cancellation_fee_charged";
 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Trips;
 
 /// <summary>Trip browsing, forced cancellation (audited) and the live map snapshot for the admin console.</summary>
-public sealed class AdminTripService(AtaDbContext db, TripReadService reads, TripEventRecorder events, AuditService audit, INotificationDispatcher notifications, CardTripPaymentService cardPayments, ICurrentUser currentUser, IClock clock)
+public sealed class AdminTripService(AtaDbContext db, TripReadService reads, AuditService audit, Cancellation.CancellationEngine cancellations, ICurrentUser currentUser, IClock clock)
 {
     public const string EntityType = "trip";
     private static readonly TimeSpan RecentlyOffline = TimeSpan.FromMinutes(15);
@@ -61,27 +61,21 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Tri
         return await BuildDetailAsync(trip, lang, ct);
     }
 
+    /// <summary>
+    /// Forced cancellation (audited <c>trip.cancel</c>) through the F14 engine with <c>reason_code = admin_cancelled</c>: <c>atFault</c> (default
+    /// <c>none</c>) decides who it counts against and <c>chargeFee</c> applies the matching rule's fee.
+    /// </summary>
     public async Task<AdminTripDetailDto> CancelAsync(Guid tripId, AdminCancelTripRequest request, Language lang, CancellationToken ct)
     {
         new Validator().Require(nameof(request.Reason), request.Reason, 500).ThrowIfInvalid();
         var trip = Guard.NotFound(await reads.FindAsync(tripId, ct));
-        var now = clock.UtcNow;
         var reason = request.Reason!.Trim();
-        var participants = await reads.ParticipantsAsync(trip, ct);
-        var hadDriver = trip.HasDriver;
         var before = new { status = trip.Status, trip.DriverId };
-        trip.Cancel(CancelledBy.Admin, reason, now);
-        await reads.ReleaseDriverAsync(trip, now, ct);
-        events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.Admin, currentUser.UserId, data: new { reason, hadDriver });
-        audit.Log("trip.cancel", EntityType, trip.Id, before, new { status = trip.Status, reason });
-        await notifications.DispatchAsync(TripNotifications.Cancelled(trip, participants.PassengerUserId), ct);
-        if (hadDriver && participants.DriverUserId is { } driverUserId)
-        {
-            await notifications.DispatchAsync(TripNotifications.Cancelled(trip, driverUserId), ct);
-        }
-
+        var atFault = request.AtFault ?? ATA.Domain.Cancellation.AtFault.None;
+        var cancellation = await cancellations.CancelAsync(trip, new Cancellation.CancelCommand(TripActor.Admin, currentUser.UserId, "admin_cancelled", reason,
+            AdminAtFault: atFault, AdminChargeFee: request.ChargeFee ?? false), ct);
+        audit.Log("trip.cancel", EntityType, trip.Id, before, new { status = trip.Status, reason, atFault, chargeFee = request.ChargeFee ?? false, fee = cancellation.FeeCharged });
         await db.SaveChangesAsync(ct);
-        await cardPayments.ReleaseAsync(trip.Id, ct);
         await reads.PublishAsync(trip, TripViewer.Admin, lang, ct);
         return await BuildDetailAsync(trip, lang, ct);
     }
@@ -162,7 +156,7 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Tri
             dto.PaymentMethod, dto.PricingMode, dto.OfferedPrice, dto.EstimatedFare, dto.FinalFare, dto.EstimatedDistanceMeters, dto.EstimatedDurationSeconds,
             trip.FinalDistanceM, trip.FinalDurationS, trip.DriverEarnings,
             passenger, driver, dto.Vehicle, dto.WaitingSeconds, dto.CancelledBy, dto.CancellationReason, trip.RiderNote, dto.Timeline,
-            events, offers, route);
+            events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)));
     }
 
     private async Task<Dictionary<Guid, string?>> DriverNamesAsync(IEnumerable<Guid> driverIds, CancellationToken ct)

@@ -29,6 +29,8 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.Property(x => x.CancellationReason).HasMaxLength(500);
         b.Property(x => x.RiderNote).HasMaxLength(500);
         b.Property(x => x.FareBreakdown).HasColumnType("json");
+        b.Property(x => x.PlannedRoute).HasColumnType("json");
+        b.Property(x => x.PlannedRouteSource).HasDefaultValue(ATA.Domain.Safety.PlannedRouteSource.Straight).HasSentinel((ATA.Domain.Safety.PlannedRouteSource)(-1));
         b.HasIndex(x => new { x.PassengerId, x.CreatedAt });
         b.HasIndex(x => new { x.DriverId, x.CreatedAt });
         b.HasIndex(x => x.Status);

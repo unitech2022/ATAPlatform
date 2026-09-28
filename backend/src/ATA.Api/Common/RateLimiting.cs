@@ -14,6 +14,7 @@ public sealed class RateLimitingOptions
 public static class RateLimiting
 {
     public const string OtpPolicy = "otp";
+    public const string PublicSharePolicy = "public_share";
 
     public static IServiceCollection AddAtaRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
@@ -31,6 +32,13 @@ public static class RateLimiting
                         SegmentsPerWindow = 6,
                         QueueLimit = 0,
                     }));
+
+            // F12: the public tracking page, Safety:PublicShareRatePerMinute requests per client IP per minute.
+            var sharePerMinute = Math.Max(1, configuration.GetValue("Safety:PublicShareRatePerMinute", 30));
+            limiter.AddPolicy(PublicSharePolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = sharePerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 
             limiter.OnRejected = async (context, cancellationToken) =>
             {

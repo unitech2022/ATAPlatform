@@ -16,6 +16,45 @@ public static class Permissions
     public const string NotificationsManage = "notifications.manage";
     public const string NotificationsSmsBroadcast = "notifications.sms_broadcast";
     public const string SafetyManage = "safety.manage";
+    public const string SupportManage = "support.manage";
+    public const string TripsView = "trips.view";
+    public const string TripsCancel = "trips.cancel";
+    public const string CancellationManage = "cancellation.manage";
+    public const string CancellationReview = "cancellation.review";
+    public const string ReliabilityManage = "reliability.manage";
+    public const string ReportsView = "reports.view";
+
+    /// <summary>Whether a stored permission list (JSON array of <c>admin_accounts.permissions</c>) grants <paramref name="permission"/>.</summary>
+    public static bool Grants(string? permissionsJson, string permission)
+    {
+        if (string.IsNullOrWhiteSpace(permissionsJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            var values = System.Text.Json.JsonSerializer.Deserialize<string[]>(permissionsJson) ?? [];
+            return values.Contains("*") || values.Contains(permission);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Rejects the request with <c>403 forbidden</c> unless the caller holds at least one of <paramref name="permissions"/> (or <c>*</c>).</summary>
+    public static TBuilder RequireAnyPermission<TBuilder>(this TBuilder builder, params string[] permissions) where TBuilder : IEndpointConventionBuilder =>
+        builder.AddEndpointFilter(async (context, next) =>
+        {
+            var user = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
+            if (!permissions.Any(user.HasPermission))
+            {
+                throw new DomainException(ErrorCodes.Forbidden, new { permissions });
+            }
+
+            return await next(context);
+        });
 
     /// <summary>Rejects the request with <c>403 forbidden</c> unless the caller's JWT carries <paramref name="permission"/> (or <c>*</c>).</summary>
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, string permission) where TBuilder : IEndpointConventionBuilder =>

@@ -239,6 +239,7 @@ public sealed class MatchingService(
         trip.MarkNoDrivers(now);
         await recorder.CloseOpenAttemptAsync(trip.Id, MatchingOutcome.Timeout, now, ct);
         events.Add(trip.Id, TripEventTypes.NoDrivers, TripActor.System);
+        await Cancellation.SystemCancellation.RecordAsync(db, trip, "no_drivers", ct);
         var participants = await reads.ParticipantsAsync(trip, ct);
         var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == trip.RideCategoryId, ct);
         await notifications.DispatchAsync(TripNotifications.NoDrivers(trip, participants.PassengerUserId, category), ct);

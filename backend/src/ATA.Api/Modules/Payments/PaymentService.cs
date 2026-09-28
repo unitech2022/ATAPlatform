@@ -224,6 +224,7 @@ public sealed class PaymentService(
             trip.Cancel(CancelledBy.System, "payment_failed", clock.UtcNow);
             events.Add(trip.Id, TripEventTypes.PaymentFailed, TripActor.System, data: new { paymentId = payment.Id, payment.FailureCode });
             events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.System, data: new { reasonCode = "payment_failed" });
+            await Cancellation.SystemCancellation.RecordAsync(db, trip, "payment_failed", ct);
             await NotifyFailedAsync(payment, payment.Amount, ct);
             _pendingTrips.Add(trip);
         }

@@ -30,7 +30,10 @@ public sealed class DriverTripService(
     MatchingRecorder matching,
     INotificationDispatcher notifications,
     ITripNotifier notifier,
-    IOptions<TripOptions> options)
+    IOptions<TripOptions> options,
+    Cancellation.CancellationEngine cancellations,
+    Cancellation.ReliabilityService reliability,
+    Safety.TripShareService shares)
 {
     private readonly TripOptions _options = options.Value;
 
@@ -135,7 +138,10 @@ public sealed class DriverTripService(
         var participants = await reads.ParticipantsAsync(trip, ct);
         var driverName = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
         await notifications.DispatchAsync(TripNotifications.DriverAssigned(trip, participants.PassengerUserId, driverName, vehicle, offer.EtaSeconds), ct);
+        // F12: automatic sharing with the passenger's trusted contacts (auto_share).
+        await shares.AutoShareOnAssignAsync(trip, participants.PassengerUserId, ct);
         await db.SaveChangesAsync(ct);
+        await RefreshReliabilityAsync(driver.UserId, Role.Driver, ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 
@@ -150,6 +156,7 @@ public sealed class DriverTripService(
         events.Add(offer.TripId, TripEventTypes.OfferRejected, TripActor.Driver, driver.UserId,
             data: new { offerId = offer.Id, driverId = driver.Id, reasonCode = request?.ReasonCode?.Trim() });
         await db.SaveChangesAsync(ct);
+        await RefreshReliabilityAsync(driver.UserId, Role.Driver, ct);
     }
 
     public async Task<TripDto?> GetActiveTripAsync(Language lang, CancellationToken ct)
@@ -288,32 +295,42 @@ public sealed class DriverTripService(
             events.Add(trip.Id, TripEventTypes.Completed, TripActor.Driver, driver.UserId, request?.FinalLat, request?.FinalLng,
                 new { finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod, breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source });
             await notifications.DispatchAsync(TripNotifications.Completed(trip, participants.PassengerUserId, fare), ct);
+            await shares.ExpireForTripAsync(trip.Id, now, ct);
             await db.SaveChangesAsync(ct);
         }, ct);
 
         await paymentService.PublishPendingAsync(ct);
+        await RefreshReliabilityAsync(participants.PassengerUserId, Role.Passenger, ct);
+        await RefreshReliabilityAsync(driver.UserId, Role.Driver, ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 
+    /// <summary>F14: goes through the cancellation engine (reason catalogue, penalty points, <c>expectedPenaltyPoints</c> guard).</summary>
     public async Task<TripDto> CancelAsync(Guid tripId, CancelTripRequest request, Language lang, CancellationToken ct)
     {
         new Validator()
             .Require(nameof(request.ReasonCode), request.ReasonCode, 60)
             .Rule(nameof(request.Note), request.Note is null || request.Note.Length <= 500, "max_length:500")
+            .Rule(nameof(request.ExpectedPenaltyPoints), request.ExpectedPenaltyPoints is null or >= 0, "must be positive")
             .ThrowIfInvalid();
 
         var (trip, driver) = await LoadOwnAsync(tripId, ct);
-        var now = clock.UtcNow;
-        var participants = await reads.ParticipantsAsync(trip, ct);
-        trip.Cancel(CancelledBy.Driver, request.ReasonCode!.Trim(), now);
-        driver.CurrentTripId = null;
-        await reads.ReleaseDriverAsync(trip, now, ct);
-        events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.Driver, driver.UserId,
-            data: new { reasonCode = trip.CancellationReason, note = request.Note?.Trim() });
-        await notifications.DispatchAsync(TripNotifications.Cancelled(trip, participants.PassengerUserId), ct);
-        await db.SaveChangesAsync(ct);
-        await cardPayments.ReleaseAsync(trip.Id, ct);
+        await cancellations.CancelAsync(trip, new Cancellation.CancelCommand(TripActor.Driver, driver.UserId, request.ReasonCode!.Trim(), request.Note,
+            ExpectedPenaltyPoints: request.ExpectedPenaltyPoints), ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
+    }
+
+    /// <summary>Incremental reliability refresh (F14); a failure never breaks the trip flow.</summary>
+    private async Task RefreshReliabilityAsync(Guid userId, Role role, CancellationToken ct)
+    {
+        try
+        {
+            await reliability.RefreshAsync(userId, role, ct);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent refresh created the profile first; the next event or the nightly job recomputes it.
+        }
     }
 
     public async Task<PagedResult<DriverTripDto>> ListAsync(string? status, Paging paging, CancellationToken ct)

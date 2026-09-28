@@ -37,7 +37,7 @@ public class PaymentsTests(PaymentsFixture fixture) : IClassFixture<PaymentsFixt
         Assert.Contains("status=authorized", approved.Headers.Location!.ToString());
         var searching = await (await passenger.GetAsync($"/api/v1/passenger/trips/{first.GetProperty("id").GetString()}")).ReadJsonAsync();
         Assert.Equal("searching", searching.GetProperty("status").GetString());
-        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{first.GetProperty("id").GetString()}/cancel", new { reasonCode = "changed_plans" })).EnsureSuccessStatusCode();
+        (await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{first.GetProperty("id").GetString()}/cancel", new { reasonCode = "changed_mind" })).EnsureSuccessStatusCode();
         Assert.Equal(PaymentStatus.Voided, (await fixture.Factory.WithDbAsync(db => db.Payments.FirstAsync(p => p.Id == Guid.Parse(paymentId!)))).Status);
 
         var second = await (await passenger.PostAsJsonAsync("/api/v1/passenger/trips", PaymentFlow.CardTrip(area, cardId))).ReadJsonAsync();

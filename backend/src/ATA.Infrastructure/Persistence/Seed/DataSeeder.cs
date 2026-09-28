@@ -1,3 +1,4 @@
+using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Identity;
@@ -27,7 +28,113 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedDemandRulesAsync(cancellationToken);
         await SeedMatchingSettingsAsync(cancellationToken);
         await SeedNotificationTemplatesAsync(cancellationToken);
+        await SeedCancellationReasonsAsync(cancellationToken);
+        await SeedCancellationRulesAsync(cancellationToken);
+        await SeedReliabilityThresholdsAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// F14 reasons (doc 09 §F14.6), added by (actor, code) when missing; edited rows are never touched. The four codes the F8 app sends
+    /// (<c>changed_mind</c>, <c>driver_late</c>, <c>wrong_pickup</c>, <c>other</c>) are valid in every passenger stage.
+    /// </summary>
+    private async Task SeedCancellationReasonsAsync(CancellationToken ct)
+    {
+        const string accepted = "[\"after_accept\",\"en_route\"]";
+        const string atPickup = "[\"arrived\",\"waiting\"]";
+        const string afterAccept = "[\"after_accept\",\"en_route\",\"arrived\",\"waiting\"]";
+        (CancellationActor Actor, string Code, string Ar, string En, string? Stages, bool Excusable, bool Emergency, bool Note, bool Selectable)[] reasons =
+        [
+            (CancellationActor.Passenger, "changed_mind", "غيرت رأيي", "I changed my mind", null, false, false, false, true),
+            (CancellationActor.Passenger, "driver_late", "الكابتن تأخر", "The driver is late", null, false, false, false, true),
+            (CancellationActor.Passenger, "driver_too_far", "الكابتن بعيد", "The driver is too far", accepted, false, false, false, true),
+            (CancellationActor.Passenger, "wrong_pickup", "موقع الالتقاط خاطئ", "Wrong pickup location", null, false, false, false, true),
+            (CancellationActor.Passenger, "found_other_ride", "وجدت وسيلة أخرى", "I found another ride", null, false, false, false, true),
+            (CancellationActor.Passenger, "driver_asked_to_cancel", "الكابتن طلب الإلغاء", "The driver asked me to cancel", afterAccept, true, false, false, true),
+            (CancellationActor.Passenger, "driver_not_moving", "الكابتن لا يتحرك", "The driver is not moving", accepted, true, false, false, true),
+            (CancellationActor.Passenger, "safety_concern", "قلق على السلامة", "Safety concern", null, false, true, false, true),
+            (CancellationActor.Passenger, "other", "سبب آخر", "Other", null, false, false, true, true),
+            (CancellationActor.Driver, "passenger_not_responding", "الراكب لا يرد", "The passenger is not responding", atPickup, false, false, false, true),
+            (CancellationActor.Driver, "passenger_asked_to_cancel", "الراكب طلب الإلغاء", "The passenger asked me to cancel", null, true, false, false, true),
+            (CancellationActor.Driver, "wrong_pickup_location", "موقع الالتقاط خاطئ", "Wrong pickup location", null, false, false, false, true),
+            (CancellationActor.Driver, "pickup_too_far", "موقع الالتقاط بعيد", "The pickup is too far", accepted, false, false, false, true),
+            (CancellationActor.Driver, "vehicle_issue", "عطل في المركبة", "Vehicle issue", null, true, false, false, true),
+            (CancellationActor.Driver, "safety_concern", "قلق على السلامة", "Safety concern", null, false, true, false, true),
+            (CancellationActor.Driver, "other", "سبب آخر", "Other", null, false, false, true, true),
+            (CancellationActor.Driver, "passenger_no_show", "الراكب لم يحضر", "The passenger did not show up", "[\"no_show\"]", false, false, false, false),
+            (CancellationActor.System, "no_drivers", "لا يوجد كباتن", "No drivers available", null, false, false, false, false),
+            (CancellationActor.System, "payment_failed", "فشل الدفع", "Payment failed", null, false, false, false, false),
+            (CancellationActor.System, "admin_cancelled", "ألغتها الإدارة", "Cancelled by support", null, false, false, false, false),
+            (CancellationActor.System, "scheduled_driver_unavailable", "الكابتن المحجوز غير متاح", "The reserved driver is unavailable", null, false, false, false, false),
+        ];
+        var existing = (await db.CancellationReasons.Select(r => new { r.Actor, r.Code }).ToListAsync(ct)).Select(r => (r.Actor, r.Code)).ToHashSet();
+        var order = 0;
+        foreach (var r in reasons)
+        {
+            order++;
+            if (existing.Contains((r.Actor, r.Code)))
+            {
+                continue;
+            }
+
+            db.CancellationReasons.Add(new CancellationReason
+            {
+                Code = r.Code, Actor = r.Actor, NameAr = r.Ar, NameEn = r.En, Stages = r.Stages, IsExcusable = r.Excusable, IsEmergency = r.Emergency,
+                RequiresNote = r.Note, IsSelectable = r.Selectable, SortOrder = order, IsActive = true,
+            });
+        }
+    }
+
+    /// <summary>City-wide rules of §F14.6, seeded once while the table is empty (admin deletions are not resurrected).</summary>
+    private async Task SeedCancellationRulesAsync(CancellationToken ct)
+    {
+        if (await db.CancellationRules.AnyAsync(ct))
+        {
+            return;
+        }
+
+        CancellationRule Rule(string name, CancellationActor actor, CancellationStage stage, int window, CancellationFeeType type, decimal? amount, decimal? min, decimal compensation, int points) => new()
+        {
+            Name = name, Actor = actor, Stage = stage, FreeWindowSeconds = window, FeeType = type, FeeAmount = amount, MinFee = min,
+            DriverCompensationPercent = compensation, PenaltyPoints = points, Priority = 0, IsActive = true,
+        };
+
+        db.CancellationRules.AddRange(
+            Rule("Passenger — before accept", CancellationActor.Passenger, CancellationStage.BeforeAccept, 0, CancellationFeeType.None, null, null, 0m, 0),
+            Rule("Passenger — after accept", CancellationActor.Passenger, CancellationStage.AfterAccept, 120, CancellationFeeType.Fixed, 5m, null, 50m, 1),
+            Rule("Passenger — driver en route", CancellationActor.Passenger, CancellationStage.EnRoute, 120, CancellationFeeType.Fixed, 10m, null, 70m, 2),
+            Rule("Passenger — driver arrived", CancellationActor.Passenger, CancellationStage.Arrived, 0, CancellationFeeType.PricingRule, null, null, 80m, 2),
+            Rule("Passenger — waiting", CancellationActor.Passenger, CancellationStage.Waiting, 0, CancellationFeeType.PricingRule, null, 10m, 80m, 3),
+            Rule("Passenger — no-show", CancellationActor.Passenger, CancellationStage.NoShow, 0, CancellationFeeType.PricingRule, null, 10m, 80m, 4),
+            Rule("Driver — after accept", CancellationActor.Driver, CancellationStage.AfterAccept, 60, CancellationFeeType.None, null, null, 0m, 2),
+            Rule("Driver — en route", CancellationActor.Driver, CancellationStage.EnRoute, 0, CancellationFeeType.None, null, null, 0m, 3),
+            Rule("Driver — arrived", CancellationActor.Driver, CancellationStage.Arrived, 0, CancellationFeeType.None, null, null, 0m, 4),
+            Rule("Driver — waiting", CancellationActor.Driver, CancellationStage.Waiting, 0, CancellationFeeType.None, null, null, 0m, 2));
+    }
+
+    /// <summary>The restriction ladder of §F14.6, added by (role, level) when missing.</summary>
+    private async Task SeedReliabilityThresholdsAsync(CancellationToken ct)
+    {
+        (Role Role, RestrictionLevel Level, int Points, decimal Rate, int? Hours, decimal? Factor, decimal? Reduction, int Order)[] ladder =
+        [
+            (Role.Driver, RestrictionLevel.Warning, 4, 0.10m, null, null, null, 1),
+            (Role.Driver, RestrictionLevel.MatchingDeprioritized, 8, 0.15m, null, 0.70m, null, 2),
+            (Role.Driver, RestrictionLevel.IncentivesReduced, 12, 0.20m, null, 0.60m, 50m, 3),
+            (Role.Driver, RestrictionLevel.TemporarilyRestricted, 18, 0.30m, 24, null, null, 4),
+            (Role.Driver, RestrictionLevel.Suspended, 30, 0.45m, null, null, null, 5),
+            (Role.Passenger, RestrictionLevel.Warning, 4, 0.15m, null, null, null, 1),
+            (Role.Passenger, RestrictionLevel.TemporarilyRestricted, 12, 0.35m, 24, null, null, 4),
+            (Role.Passenger, RestrictionLevel.Suspended, 25, 0.50m, null, null, null, 5),
+        ];
+        var existing = (await db.ReliabilityThresholds.Select(t => new { t.Role, t.Level }).ToListAsync(ct)).Select(t => (t.Role, t.Level)).ToHashSet();
+        foreach (var t in ladder.Where(t => !existing.Contains((t.Role, t.Level))))
+        {
+            db.ReliabilityThresholds.Add(new ReliabilityThreshold
+            {
+                Role = t.Role, Level = t.Level, MinPenaltyPoints = t.Points, MinCancellationRate = t.Rate, MinTripsForRate = 10, RestrictionHours = t.Hours,
+                DeprioritizeFactor = t.Factor, IncentiveReductionPercent = t.Reduction, SortOrder = t.Order, IsActive = true,
+            });
+        }
     }
 
     /// <summary>One template per catalogue event and default channel (F13), from the code defaults; existing rows are never touched.</summary>

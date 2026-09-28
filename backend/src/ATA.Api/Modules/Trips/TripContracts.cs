@@ -61,9 +61,10 @@ public sealed record CreateTripRequest(
     Guid? QuoteId,
     Guid? PaymentMethodId = null);
 
-public sealed record CancelTripRequest(string? ReasonCode, string? Note);
+public sealed record CancelTripRequest(string? ReasonCode, string? Note, decimal? ExpectedFee = null, int? ExpectedPenaltyPoints = null);
 
-public sealed record AdminCancelTripRequest(string? Reason);
+/// <summary>F14: <c>atFault</c> (default <c>none</c>) decides who the cancellation counts against; <c>chargeFee</c> applies the matching rule's fee.</summary>
+public sealed record AdminCancelTripRequest(string? Reason, ATA.Domain.Cancellation.AtFault? AtFault = null, bool? ChargeFee = null);
 
 public sealed record RejectOfferRequest(string? ReasonCode);
 
@@ -111,7 +112,8 @@ public sealed record TripDto(
     IReadOnlyList<TripEventDto> Events,
     ATA.Api.Modules.Payments.TripPaymentDto? Payment = null,
     decimal? CollectCashAmount = null,
-    decimal DiscountTotal = 0m);
+    decimal DiscountTotal = 0m,
+    ATA.Api.Modules.Cancellation.TripCancellationDto? Cancellation = null);
 
 public sealed record OfferPassengerDto(string? FirstName, decimal RatingAvg);
 
@@ -190,7 +192,9 @@ public sealed record AdminTripDetailDto(
     TripTimelineDto Timeline,
     IReadOnlyList<AdminTripEventDto> Events,
     IReadOnlyList<AdminTripOfferDto> Offers,
-    IReadOnlyList<RoutePointDto> Route);
+    IReadOnlyList<RoutePointDto> Route,
+    ATA.Api.Modules.Cancellation.TripCancellationDto? Cancellation = null,
+    IReadOnlyList<decimal[]>? PlannedRoute = null);
 
 public sealed record LiveDriverDto(Guid DriverId, string? Name, decimal Lat, decimal Lng, bool IsOnline, string Status, string? CategoryCode, Guid? CurrentTripId, decimal? Heading, DateTime UpdatedAt);
 

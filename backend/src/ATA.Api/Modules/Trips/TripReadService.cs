@@ -88,7 +88,40 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             await PaymentForAsync(trip.Id, ct),
             // Only the driver sees the cash to collect once the trip is completed (including a card that fell back to cash).
             viewer == TripViewer.Driver && trip.Status == TripStatus.Completed && trip.PaymentMethod == PaymentMethodKind.Cash ? trip.FinalFare : null,
-            trip.DiscountTotal);
+            trip.DiscountTotal,
+            await CancellationForAsync(trip, viewer, lang, ct));
+    }
+
+    /// <summary>
+    /// <c>Trip.cancellation</c> (F14): the passenger sees the fee, the driver the compensation instead, admins everything; <c>null</c> unless the trip
+    /// has a <c>cancellation_events</c> row.
+    /// </summary>
+    public async Task<ATA.Api.Modules.Cancellation.TripCancellationDto?> CancellationForAsync(Trip trip, TripViewer viewer, Language lang, CancellationToken ct)
+    {
+        if (trip.Status is not (TripStatus.Cancelled or TripStatus.NoDrivers))
+        {
+            return null;
+        }
+
+        var row = await (from ce in db.CancellationEvents.AsNoTracking()
+                         join r in db.CancellationReasons.AsNoTracking() on ce.ReasonId equals r.Id into reasons
+                         from r in reasons.DefaultIfEmpty()
+                         where ce.TripId == trip.Id
+                         select new { e = ce, NameAr = r == null ? null : r.NameAr, NameEn = r == null ? null : r.NameEn }).FirstOrDefaultAsync(ct);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var e = row.e;
+        var admin = viewer == TripViewer.Admin;
+        var passenger = viewer == TripViewer.Passenger || admin;
+        var driver = viewer == TripViewer.Driver || admin;
+        return new ATA.Api.Modules.Cancellation.TripCancellationDto(
+            admin ? e.Id : null, admin ? e.Actor : null, e.Stage, e.ReasonCode, lang.PickOptional(row.NameAr, row.NameEn), admin ? e.Note : null, e.AtFault,
+            passenger ? e.FeeAmount : null, passenger ? e.FeeCharged : null, e.FeeStatus, driver ? e.CompensationAmount : null,
+            admin || (viewer == TripViewer.Passenger && e.AtFault == ATA.Domain.Cancellation.AtFault.Passenger) || (viewer == TripViewer.Driver && e.AtFault == ATA.Domain.Cancellation.AtFault.Driver) ? e.PenaltyPoints : null,
+            e.ExcuseStatus, admin ? e.ReviewNote : null);
     }
 
     /// <summary><c>trip.payment</c>: the latest gateway payment of the trip with its card (card trips only).</summary>
@@ -112,18 +145,23 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
     {
         var participants = await ParticipantsAsync(trip, ct);
         var dto = await BuildAsync(trip, TripViewer.Driver, lang, ct);
-        var passengerDto = dto with { Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null };
+        var passengerDto = dto with
+        {
+            Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null,
+            Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Passenger, lang, ct),
+        };
         await notifier.TripUpdatedAsync(participants.PassengerUserId, passengerDto, ct);
         if (participants.DriverUserId is { } driverUserId)
         {
             await notifier.TripUpdatedAsync(driverUserId, dto, ct);
         }
 
-        await notifier.TripUpdatedForAdminsAsync(passengerDto with { Pin = null }, ct);
+        var adminDto = passengerDto with { Pin = null, Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Admin, lang, ct) };
+        await notifier.TripUpdatedForAdminsAsync(adminDto, ct);
         return responder switch
         {
             TripViewer.Passenger => passengerDto,
-            TripViewer.Admin => passengerDto with { Pin = null },
+            TripViewer.Admin => adminDto,
             _ => dto,
         };
     }

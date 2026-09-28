@@ -56,6 +56,9 @@ public class Trip : AuditableEntity
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public DateTime? CancelledAt { get; set; }
+    /// <summary>F12: planned route as a JSON array <c>[[lat,lng],…]</c> (straight segments pickup → stops → dropoff until a maps provider exists).</summary>
+    public string? PlannedRoute { get; set; }
+    public Safety.PlannedRouteSource PlannedRouteSource { get; set; } = Safety.PlannedRouteSource.Straight;
 
     public ICollection<TripStop> Stops { get; set; } = [];
     public ICollection<TripEvent> Events { get; set; } = [];

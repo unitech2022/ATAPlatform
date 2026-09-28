@@ -129,6 +129,52 @@ public sealed class RefundService(
         return await ToDtoAsync(refund, ct);
     }
 
+    /// <summary>
+    /// F14: refunds a charged cancellation fee in full (<c>reason_code = cancellation_fee_waived</c>) after an excuse is approved — to the card when it was
+    /// captured from the trip authorization, otherwise to the passenger wallet. The review itself is the approval, so the refund is executed at once.
+    /// </summary>
+    public async Task<RefundDto> RefundCancellationFeeAsync(Guid tripId, Guid passengerUserId, decimal amount, bool toCard, string reason, CancellationToken ct)
+    {
+        var payment = toCard
+            ? await db.Payments.Where(p => p.TripId == tripId && p.Purpose == PaymentPurpose.Trip && (p.Status == PaymentStatus.Captured || p.Status == PaymentStatus.PartiallyRefunded))
+                .OrderByDescending(p => p.CreatedAt).FirstOrDefaultAsync(ct)
+            : null;
+        var now = clock.UtcNow;
+        var refund = new Refund
+        {
+            RefundNumber = string.Empty,
+            PaymentId = payment?.Id,
+            TripId = tripId,
+            UserId = passengerUserId,
+            Amount = amount,
+            Type = RefundType.Full,
+            Destination = payment is null ? RefundDestination.Wallet : RefundDestination.OriginalMethod,
+            ReasonCode = RefundReasonCode.CancellationFeeWaived,
+            Reason = reason.Length > 500 ? reason[..500] : reason,
+            RequestedBy = currentUser.UserId,
+            Status = RefundStatus.Approved,
+            ApprovedBy = currentUser.UserId,
+            ApprovedAt = now,
+        };
+        db.Refunds.Add(refund);
+        audit.Log("refund.create", EntityType, refund.Id, null, Snapshot(refund));
+        for (var attempt = 0; ; attempt++)
+        {
+            refund.RefundNumber = await SequenceNumbers.NextAsync(db.Refunds.Select(r => r.RefundNumber), $"R-{now:yyyyMMdd}-", 5, attempt, ct);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                break;
+            }
+            catch (DbUpdateException) when (attempt < 3)
+            {
+            }
+        }
+
+        await ProcessAsync(refund, ct);
+        return await ToDtoAsync(refund, ct);
+    }
+
     public async Task<RefundDto> ApproveAsync(Guid id, CancellationToken ct)
     {
         var refund = Guard.NotFound(await db.Refunds.FirstOrDefaultAsync(r => r.Id == id, ct));

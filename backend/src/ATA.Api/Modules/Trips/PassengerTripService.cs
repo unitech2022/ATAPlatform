@@ -31,7 +31,9 @@ public sealed class PassengerTripService(
     INotificationDispatcher notifications,
     CardTripPaymentService cardPayments,
     PaymentService paymentService,
-    IOptions<PaymentsOptions> paymentOptions)
+    IOptions<PaymentsOptions> paymentOptions,
+    Cancellation.CancellationEngine cancellations,
+    Cancellation.ReliabilityService reliability)
 {
     private const int TripNumberRetries = 3;
 
@@ -64,6 +66,8 @@ public sealed class PassengerTripService(
         var passenger = await LoadPassengerAsync(ct);
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == passenger.UserId, ct);
         user.EnsureActive();
+        // F14: a temporarily restricted or suspended passenger cannot request trips (403 account_restricted).
+        await reliability.EnsureNotRestrictedAsync(passenger.UserId, Role.Passenger, ct);
 
         var active = await db.Trips.AsNoTracking()
             .Where(t => t.PassengerId == passenger.Id && Trip.ActiveStatuses.Contains(t.Status))
@@ -121,6 +125,8 @@ public sealed class PassengerTripService(
             RequestedAt = now,
             PinCodeHash = string.Empty,
             PinCodeProtected = string.Empty,
+            PlannedRoute = Safety.PlannedRoutes.Serialize(Safety.PlannedRoutes.Straight(pickup.Lat, pickup.Lng, stops.Select(st => (st.Lat!.Value, st.Lng!.Value)), request.Dropoff!.Lat!.Value, request.Dropoff.Lng!.Value)),
+            PlannedRouteSource = Domain.Safety.PlannedRouteSource.Straight,
         };
         var pin = pins.Create(trip.Id);
         trip.PinCodeHash = pin.Hash;
@@ -191,28 +197,17 @@ public sealed class PassengerTripService(
         return await reads.BuildAsync(trip, TripViewer.Passenger, lang, ct);
     }
 
+    /// <summary>F14: goes through the cancellation engine (reason catalogue, stage fee / free window, <c>expectedFee</c> guard).</summary>
     public async Task<TripDto> CancelAsync(Guid tripId, CancelTripRequest request, Language lang, CancellationToken ct)
     {
         new Validator()
             .Require(nameof(request.ReasonCode), request.ReasonCode, 60)
             .Rule(nameof(request.Note), request.Note is null || request.Note.Length <= 500, "max_length:500")
+            .Rule(nameof(request.ExpectedFee), request.ExpectedFee is null or >= 0, "must be positive")
             .ThrowIfInvalid();
 
         var (trip, passenger) = await LoadOwnAsync(tripId, ct);
-        var now = clock.UtcNow;
-        var hadDriver = trip.HasDriver;
-        var participants = await reads.ParticipantsAsync(trip, ct);
-        trip.Cancel(CancelledBy.Passenger, request.ReasonCode!.Trim(), now);
-        await reads.ReleaseDriverAsync(trip, now, ct);
-        events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.Passenger, passenger.UserId,
-            data: new { reasonCode = trip.CancellationReason, note = request.Note?.Trim(), hadDriver });
-        if (hadDriver && participants.DriverUserId is { } driverUserId)
-        {
-            await notifications.DispatchAsync(TripNotifications.Cancelled(trip, driverUserId), ct);
-        }
-
-        await db.SaveChangesAsync(ct);
-        await cardPayments.ReleaseAsync(trip.Id, ct);
+        await cancellations.CancelAsync(trip, new Cancellation.CancelCommand(TripActor.Passenger, passenger.UserId, request.ReasonCode!.Trim(), request.Note, request.ExpectedFee), ct);
         return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
     }
 

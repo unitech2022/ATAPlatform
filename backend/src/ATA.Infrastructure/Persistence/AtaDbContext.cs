@@ -1,4 +1,5 @@
 using ATA.Domain.Admin;
+using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
@@ -9,6 +10,7 @@ using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
 using ATA.Domain.Payments;
 using ATA.Domain.Pricing;
+using ATA.Domain.Safety;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +81,22 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
     public DbSet<NotificationCampaign> NotificationCampaigns => Set<NotificationCampaign>();
     public DbSet<DocumentExpiryNotice> DocumentExpiryNotices => Set<DocumentExpiryNotice>();
+
+    public DbSet<TripShare> TripShares => Set<TripShare>();
+    public DbSet<TrustedContact> TrustedContacts => Set<TrustedContact>();
+    public DbSet<SafetyCase> SafetyCases => Set<SafetyCase>();
+    public DbSet<SafetyCaseNote> SafetyCaseNotes => Set<SafetyCaseNote>();
+    public DbSet<SafetyCaseAttachment> SafetyCaseAttachments => Set<SafetyCaseAttachment>();
+    public DbSet<SafetyAlert> SafetyAlerts => Set<SafetyAlert>();
+    public DbSet<TripMessage> TripMessages => Set<TripMessage>();
+    public DbSet<LostItemReport> LostItemReports => Set<LostItemReport>();
+
+    public DbSet<CancellationReason> CancellationReasons => Set<CancellationReason>();
+    public DbSet<CancellationRule> CancellationRules => Set<CancellationRule>();
+    public DbSet<CancellationEvent> CancellationEvents => Set<CancellationEvent>();
+    public DbSet<ReliabilityProfile> ReliabilityProfiles => Set<ReliabilityProfile>();
+    public DbSet<ReliabilityThreshold> ReliabilityThresholds => Set<ReliabilityThreshold>();
+    public DbSet<ReliabilityAdjustment> ReliabilityAdjustments => Set<ReliabilityAdjustment>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

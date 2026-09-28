@@ -234,16 +234,19 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 
         var missingReason = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { note = "x" });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, missingReason.StatusCode);
+        // F14: the reason code must be an active, selectable passenger reason of the catalogue.
+        var unknownReason = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { reasonCode = "changed_plans" });
+        Assert.Equal("cancellation_reason_invalid", await unknownReason.ErrorCodeAsync());
 
-        var cancelled = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { reasonCode = "changed_plans", note = "لاحقاً" });
+        var cancelled = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { reasonCode = "changed_mind", note = "لاحقاً" });
         Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
         var body = await cancelled.ReadJsonAsync();
         Assert.Equal("cancelled", body.GetProperty("status").GetString());
         Assert.Equal("passenger", body.GetProperty("cancelledBy").GetString());
-        Assert.Equal("changed_plans", body.GetProperty("cancellationReason").GetString());
+        Assert.Equal("changed_mind", body.GetProperty("cancellationReason").GetString());
         Assert.Contains(body.GetProperty("events").EnumerateArray(), e => e.GetProperty("type").GetString() == "cancelled" && e.GetProperty("actor").GetString() == "passenger");
 
-        var again = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { reasonCode = "changed_plans" });
+        var again = await passenger.PostAsJsonAsync($"/api/v1/passenger/trips/{tripId}/cancel", new { reasonCode = "changed_mind" });
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
         Assert.Equal(JsonValueKind.Null, (await (await passenger.GetAsync("/api/v1/passenger/trips/active")).ReadJsonAsync()).ValueKind);
         Assert.Equal(HttpStatusCode.Created, (await passenger.PostAsJsonAsync("/api/v1/passenger/trips", TripFlow.Request(area))).StatusCode);

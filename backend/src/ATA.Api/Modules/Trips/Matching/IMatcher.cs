@@ -44,7 +44,8 @@ public sealed class NoFavoriteDrivers : IFavoriteDriverProvider
     public Task<IReadOnlySet<Guid>> FavoriteDriverIdsAsync(Guid passengerId, CancellationToken ct) => Task.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>());
 }
 
-public sealed record DriverReliability(decimal AcceptanceRate, decimal CancellationRate, bool IsBlocked)
+/// <summary><paramref name="MatchingFactor"/> multiplies the final score (F14 <c>deprioritize_factor</c>; 1 when not deprioritised).</summary>
+public sealed record DriverReliability(decimal AcceptanceRate, decimal CancellationRate, bool IsBlocked, decimal MatchingFactor = 1m)
 {
     public static readonly DriverReliability Neutral = new(1m, 0m, false);
 }
@@ -249,7 +250,7 @@ public sealed class ScoringMatcher(
             }
 
             var eta = pricing.EtaSeconds(distance * FlatPricing.RoadFactor);
-            var score = Score(weights, distance, maxRadius, eta, row.RatingAvg, stats, row.Tier, favoriteIds.Contains(row.Id));
+            var score = decimal.Round(Score(weights, distance, maxRadius, eta, row.RatingAvg, stats, row.Tier, favoriteIds.Contains(row.Id)) * Math.Clamp(stats.MatchingFactor, 0m, 1m), 4, MidpointRounding.AwayFromZero);
             candidates.Add(new DriverCandidate(row.Id, row.UserId, row.VehicleId, (int)Math.Round(distance), eta, score));
         }
 
