@@ -89,3 +89,12 @@
 
 ## لوحة الإدارة
 - صفحة الرحلات (فلاتر، جدول، تفاصيل مع الجدول الزمني والأحداث)، صفحة Live Map (Leaflet + OpenStreetMap مع تحديث من `/admin/live` أو SignalR).
+
+## ملاحظات التنفيذ الفعلي (الخلفية — مُسلَّم)
+
+- أعمدة إضافية: `trips.pin_code_protected` (رمز PIN محمي بـ Data Protection ليُعاد للراكب) و`trips.driver_earnings` (يُثبَّت عند الإكمال). `drivers.current_trip_id` بدون FK لتجنب دورة مفاتيح.
+- أكواد أخطاء: `trip_active_exists` (409)، `offer_expired` (409)، `pin_invalid` (400 مع `attemptsLeft`)، `pin_locked` (429).
+- الاستعلامات `/…/active` تعيد `200` مع `null` عند عدم وجود عنصر نشط.
+- الدفع عند الإكمال: محفظة → قيد `trip_payment` للراكب و`trip_earning` للسائق مقابل `trip_revenue`؛ نقدي → `trip_earning` مقابل `cash_collected`. رصيد غير كافٍ أو بطاقة (لا بوابة بعد) → تحويل تلقائي إلى نقدي مع حدث `payment_fallback_cash`.
+- إعدادات: `Trips:FreeWaitingMinutes`, `Trips:ScheduledLeadMinutes`, `Matching:{Enabled,RadiusMeters,OfferTimeoutSeconds,SearchTimeoutSeconds,AllowUpgrade,LocationMaxAgeSeconds,PollIntervalSeconds}`, `Realtime:LiveSnapshotEnabled`.
+- CORS يسمح بـ credentials لعمل SignalR من لوحة الإدارة.
