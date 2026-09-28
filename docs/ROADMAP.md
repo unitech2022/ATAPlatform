@@ -36,8 +36,8 @@
 | F6 | **بوابة السائق** (متاح/غير متصل، ملخص الأرباح، المستندات والمركبة، الإعدادات) | drivers | `driver_dashboard` | — | السائقون | ✅ مُسلَّم |
 | F7 | **الشاشة الرئيسية للراكب** (الخريطة، المحطات، الفئات، أفضّل سائقة، طريقة الدفع، الطلب) | — (F8) | `passenger_home` | — | — | ✅ واجهة (الطلب الفعلي في F8) |
 | F8 | **دورة الرحلة** (Trips/Stops/Events، الحالات، PIN، السائق المعيّن، التتبع SignalR) | trips module | `trip` (راكب + سائق) | — | الرحلات + Live Map | ✅ مُسلَّم |
-| F9 | **المطابقة** (بحث جغرافي، أهلية، Score، عرض، مهلة، التالي) | matching + driver_locations | استقبال الطلب للسائق | — | قواعد المطابقة | 🔨 قيد التنفيذ |
-| F10 | **التسعير والمناطق والطلب** (Base+Distance+Time+Fees+Waiting×Demand−Discount، Zones، Demand Levels، Offer Your Price) | pricing + zones | تقدير السعر واقتراح السعر | — | Pricing Rules / Zones / Demand | 🔨 قيد التنفيذ |
+| F9 | **المطابقة** (بحث جغرافي، أهلية، Score، عرض، مهلة، التالي) | matching + driver_locations | استقبال الطلب للسائق | — | قواعد المطابقة | ✅ مُسلَّم |
+| F10 | **التسعير والمناطق والطلب** (Base+Distance+Time+Fees+Waiting×Demand−Discount، Zones، Demand Levels، Offer Your Price) | pricing + zones | تقدير السعر واقتراح السعر | — | Pricing Rules / Zones / Demand | ✅ مُسلَّم |
 | F11 | **المدفوعات** (بوابة الدفع + Tokenization، مدى/Visa/MC/Apple Pay، الاسترداد، التسويات والسحب) | payments + payouts | طرق الدفع، السحب للسائق | — | Payments & Settlements | ⏳ |
 | F12 | **السلامة** (مشاركة الرحلة، جهات موثوقة، طوارئ، كشف التوقف/الانحراف، البلاغات) | safety | `safety` | — | Safety Cases | ⏳ |
 | F13 | **الإشعارات الفورية** (OneSignal عبر External ID، Tags للدور واللغة، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ⏳ |
@@ -50,4 +50,4 @@
 | F20 | **التقارير والصلاحيات** (KPIs، Roles & Permissions، MFA للإدارة) | reporting + rbac | — | — | Reports / Roles | ⏳ |
 | F21 | **الجاهزية التشغيلية** (Observability، Backups، Retention، المواءمة التنظيمية) | infra | — | — | — | ⏳ |
 
-كل ميزة تُسلَّم كـ commit مستقل على فرع `claude/system-readiness-bc02lz` مع تحديث هذا الملف. F1–F8 مُسلَّمة على الطبقات الأربع؛ الجاري الآن F9 وF10.
+كل ميزة تُسلَّم كـ commit مستقل على فرع `claude/system-readiness-bc02lz` مع تحديث هذا الملف. F1–F10 مُسلَّمة على الطبقات الأربع ومُتحقَّق منها على MySQL 8 فعلي؛ الجاري الآن F11–F21.
