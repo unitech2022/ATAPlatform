@@ -5,13 +5,19 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace ATA.Infrastructure.Persistence;
 
-/// <summary>Used only by <c>dotnet ef</c> at design time; no database connection is opened for migrations scaffolding.</summary>
+/// <summary>
+/// Used only by <c>dotnet ef</c> at design time. Scaffolding opens no connection; <c>database update</c>
+/// targets <c>ConnectionStrings__Default</c> when set, otherwise the local development database.
+/// </summary>
 public sealed class AtaDbContextFactory : IDesignTimeDbContextFactory<AtaDbContext>
 {
+    private const string DevelopmentConnectionString = "Server=localhost;Port=3306;Database=ata;User=ata;Password=ata;";
+
     public AtaDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
         var options = new DbContextOptionsBuilder<AtaDbContext>()
-            .UseAtaMySql("Server=localhost;Port=3306;Database=ata;User=ata;Password=ata;")
+            .UseAtaMySql(string.IsNullOrWhiteSpace(connectionString) ? DevelopmentConnectionString : connectionString)
             .Options;
         return new AtaDbContext(options, new SystemClock());
     }

@@ -1,3 +1,5 @@
+using ATA.Api.Modules.Pricing;
+
 namespace ATA.Api.Modules.Trips.Realtime;
 
 /// <summary>Real-time fan-out of trip events; the SignalR implementation is the only transport in F8.</summary>
@@ -14,4 +16,7 @@ public interface ITripNotifier
     Task OfferExpiredAsync(Guid userId, Guid offerId, CancellationToken ct);
 
     Task LiveSnapshotAsync(LiveSnapshotDto snapshot, CancellationToken ct);
+
+    /// <summary>A zone's demand level moved (admins group).</summary>
+    Task DemandChangedAsync(DemandChangedEvent change, CancellationToken ct);
 }

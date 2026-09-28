@@ -1,6 +1,7 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Drivers;
 using ATA.Api.Modules.Passengers;
+using ATA.Api.Modules.Pricing;
 using ATA.Domain.Trips;
 
 namespace ATA.Api.Modules.Trips;
@@ -22,9 +23,10 @@ public static class TripEndpoints
                 Results.Ok(await service.ListAsync(status, Paging.From(page, pageSize), http.GetLanguage(), ct)))
             .Produces<PagedResult<TripSummaryDto>>();
 
+        // Alias of POST /pricing/quote kept from F8; returns the same payload.
         trips.MapPost("/estimate", async (EstimateRequest request, PassengerTripService service, HttpContext http, CancellationToken ct) =>
-                Results.Ok(await service.EstimateAsync(request, http.GetLanguage(), ct)))
-            .Produces<EstimateResponse>();
+                Results.Ok(await service.QuoteAsync(request, http.GetLanguage(), ct)))
+            .Produces<QuoteResponse>();
 
         trips.MapPost("/", async (CreateTripRequest request, PassengerTripService service, HttpContext http, CancellationToken ct) =>
             {
@@ -32,7 +34,8 @@ public static class TripEndpoints
                 return Results.Created($"/api/v1/passenger/trips/{trip.Id}", trip);
             })
             .Produces<TripDto>(StatusCodes.Status201Created)
-            .Produces<ErrorEnvelope>(StatusCodes.Status409Conflict);
+            .Produces<ErrorEnvelope>(StatusCodes.Status409Conflict)
+            .Produces<ErrorEnvelope>(StatusCodes.Status422UnprocessableEntity);
 
         trips.MapGet("/active", async (PassengerTripService service, HttpContext http, CancellationToken ct) =>
                 JsonOrNull(await service.GetActiveAsync(http.GetLanguage(), ct)))

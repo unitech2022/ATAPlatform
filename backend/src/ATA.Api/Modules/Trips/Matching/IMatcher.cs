@@ -1,28 +1,163 @@
+using ATA.Api.Modules.Pricing;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
+using ATA.Domain.Matching;
+using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace ATA.Api.Modules.Trips.Matching;
 
-public sealed record MatchCriteria(decimal PickupLat, decimal PickupLng, Guid RideCategoryId, bool PreferFemaleDriver, IReadOnlyCollection<Guid> ExcludedDriverIds);
+/// <summary>
+/// What to search for. <paramref name="RadiusMeters"/> overrides the settings radius (used by the expanding rounds); <paramref name="TripId"/>
+/// excludes drivers already offered the trip and <paramref name="PassengerId"/> enables the favourite-driver bonus.
+/// </summary>
+public sealed record MatchCriteria(
+    decimal PickupLat,
+    decimal PickupLng,
+    Guid RideCategoryId,
+    bool PreferFemaleDriver,
+    IReadOnlyCollection<Guid> ExcludedDriverIds,
+    int? RadiusMeters = null,
+    Guid? PassengerId = null,
+    Guid? TripId = null);
 
-public sealed record DriverCandidate(Guid DriverId, Guid UserId, Guid VehicleId, int DistanceMeters, int EtaSeconds);
+public sealed record DriverCandidate(Guid DriverId, Guid UserId, Guid VehicleId, int DistanceMeters, int EtaSeconds, decimal Score);
 
-/// <summary>Finds eligible drivers for a pickup, nearest first. <see cref="SimpleMatcher"/> is replaced by the F9 engine.</summary>
+/// <summary>Finds eligible drivers for a pickup, best score first (<see cref="ScoringMatcher"/> is the F9 engine).</summary>
 public interface IMatcher
 {
     Task<IReadOnlyList<DriverCandidate>> FindCandidatesAsync(MatchCriteria criteria, CancellationToken ct);
 }
 
-/// <summary>
-/// Online, approved drivers without a current trip whose active vehicle is in the requested category (or a higher one when
-/// <c>Matching:AllowUpgrade</c>), female when requested, within <c>Matching:RadiusMeters</c>, ordered by Haversine distance.
-/// The SQL query only applies a bounding box; the exact distance is computed in memory so it runs on MySQL and SQLite alike.
-/// </summary>
-public sealed class SimpleMatcher(AtaDbContext db, IPricingService pricing, IOptions<MatchingOptions> options, IClock clock) : IMatcher
+/// <summary>F16 hook: the passenger's favourite drivers get the <c>favorite</c> score bonus. No favourites exist before F16.</summary>
+public interface IFavoriteDriverProvider
 {
+    Task<IReadOnlySet<Guid>> FavoriteDriverIdsAsync(Guid passengerId, CancellationToken ct);
+}
+
+public sealed class NoFavoriteDrivers : IFavoriteDriverProvider
+{
+    public Task<IReadOnlySet<Guid>> FavoriteDriverIdsAsync(Guid passengerId, CancellationToken ct) => Task.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>());
+}
+
+public sealed record DriverReliability(decimal AcceptanceRate, decimal CancellationRate, bool IsBlocked)
+{
+    public static readonly DriverReliability Neutral = new(1m, 0m, false);
+}
+
+/// <summary>F14 hook: acceptance/cancellation rates over the last 30 days and temporary blocks. The default reads the F8 counters and trips.</summary>
+public interface IDriverReliabilityProvider
+{
+    Task<IReadOnlyDictionary<Guid, DriverReliability>> GetAsync(IReadOnlyCollection<Guid> driverIds, DateTime now, CancellationToken ct);
+}
+
+public sealed class CounterDriverReliability(AtaDbContext db) : IDriverReliabilityProvider
+{
+    private static readonly TimeSpan Window = TimeSpan.FromDays(30);
+
+    public async Task<IReadOnlyDictionary<Guid, DriverReliability>> GetAsync(IReadOnlyCollection<Guid> driverIds, DateTime now, CancellationToken ct)
+    {
+        var ids = driverIds.ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<Guid, DriverReliability>();
+        }
+
+        var counters = await db.Drivers.AsNoTracking().Where(d => ids.Contains(d.Id)).Select(d => new { d.Id, d.AcceptanceCount, d.RejectionCount }).ToListAsync(ct);
+        var since = now - Window;
+        var trips = await db.Trips.AsNoTracking()
+            .Where(t => t.DriverId != null && ids.Contains(t.DriverId!.Value) && t.AssignedAt >= since)
+            .GroupBy(t => t.DriverId!.Value)
+            .Select(g => new { DriverId = g.Key, Assigned = g.Count(), Cancelled = g.Count(t => t.Status == TripStatus.Cancelled && t.CancelledBy == CancelledBy.Driver) })
+            .ToListAsync(ct);
+        var cancellations = trips.ToDictionary(t => t.DriverId, t => t.Assigned == 0 ? 0m : (decimal)t.Cancelled / t.Assigned);
+        return counters.ToDictionary(
+            c => c.Id,
+            c =>
+            {
+                var offers = c.AcceptanceCount + c.RejectionCount;
+                var acceptance = offers == 0 ? 1m : (decimal)c.AcceptanceCount / offers;
+                return new DriverReliability(acceptance, cancellations.GetValueOrDefault(c.Id), false);
+            });
+    }
+}
+
+/// <summary>Effective matching parameters for a zone/category (a <c>matching_settings</c> row or the <c>Matching:*</c> defaults).</summary>
+public sealed record ResolvedMatchingSettings(
+    Guid? SettingsId,
+    int RadiusMeters,
+    int MaxRadiusMeters,
+    int RadiusStepMeters,
+    int OfferTimeoutSeconds,
+    int SearchTimeoutSeconds,
+    int MaxCandidates,
+    MatchingWeights Weights,
+    bool AllowCategoryUpgrade,
+    bool PreferFavoriteDriver);
+
+/// <summary>Process-wide cache of active <c>matching_settings</c>; invalidated by the admin endpoints.</summary>
+public sealed class MatchingSettingsCache
+{
+    private IReadOnlyList<MatchingSettings>? _rows;
+
+    public IReadOnlyList<MatchingSettings>? Rows
+    {
+        get => Volatile.Read(ref _rows);
+        set => Volatile.Write(ref _rows, value);
+    }
+
+    public void Invalidate() => Rows = null;
+}
+
+/// <summary>Resolves settings zone+category → zone → category → global → <c>Matching:*</c> configuration.</summary>
+public sealed class MatchingSettingsProvider(AtaDbContext db, MatchingSettingsCache cache, IOptions<MatchingOptions> options)
+{
+    private readonly MatchingOptions _options = options.Value;
+
+    public async Task<ResolvedMatchingSettings> ResolveAsync(Guid? zoneId, Guid rideCategoryId, CancellationToken ct)
+    {
+        var rows = cache.Rows;
+        if (rows is null)
+        {
+            rows = await db.MatchingSettings.AsNoTracking().Where(m => m.IsActive).ToListAsync(ct);
+            cache.Rows = rows;
+        }
+
+        var row = rows
+            .Where(m => (m.ZoneId == null || m.ZoneId == zoneId) && (m.RideCategoryId == null || m.RideCategoryId == rideCategoryId))
+            .OrderByDescending(m => (m.ZoneId != null ? 2 : 0) + (m.RideCategoryId != null ? 1 : 0))
+            .ThenByDescending(m => m.UpdatedAt)
+            .FirstOrDefault();
+        if (row is null)
+        {
+            return new ResolvedMatchingSettings(null, _options.RadiusMeters, _options.MaxRadiusMeters, _options.RadiusStepMeters, _options.OfferTimeoutSeconds,
+                _options.SearchTimeoutSeconds, _options.MaxCandidates, MatchingWeights.Default, _options.AllowUpgrade, true);
+        }
+
+        return new ResolvedMatchingSettings(row.Id, row.RadiusMeters, row.MaxRadiusMeters, row.RadiusStepMeters, row.OfferTimeoutSeconds, row.SearchTimeoutSeconds,
+            row.MaxCandidates, row.ParseWeights(), row.AllowCategoryUpgrade || _options.AllowUpgrade, row.PreferFavoriteDriver);
+    }
+}
+
+/// <summary>
+/// The F9 matcher. Geographic search (bounding box in SQL, Haversine in memory) inside the round's radius, eligibility filters (online,
+/// approved, free, fresh location, category match or upgrade, gender, zone allows the category, no expired documents, not blocked, not
+/// already offered the trip) and a weighted score in [0, 1]:
+/// <c>distance: 1 − d/maxRadius · eta: 1 − eta/900 · rating: (rating − 3)/2 · acceptance rate · 1 − cancellation rate · tier · favourite</c>.
+/// </summary>
+public sealed class ScoringMatcher(
+    AtaDbContext db,
+    IPricingService pricing,
+    ZoneResolver zones,
+    MatchingSettingsProvider settings,
+    IFavoriteDriverProvider favorites,
+    IDriverReliabilityProvider reliability,
+    IOptions<MatchingOptions> options,
+    IClock clock) : IMatcher
+{
+    private const double MaxEtaSeconds = 900d;
     private readonly MatchingOptions _options = options.Value;
 
     public async Task<IReadOnlyList<DriverCandidate>> FindCandidatesAsync(MatchCriteria criteria, CancellationToken ct)
@@ -33,17 +168,30 @@ public sealed class SimpleMatcher(AtaDbContext db, IPricingService pricing, IOpt
             return [];
         }
 
-        var categoryIds = _options.AllowUpgrade
+        var now = clock.UtcNow;
+        var zone = await zones.ResolveAsync(criteria.PickupLat, criteria.PickupLng, now, ct);
+        if (zone is not null && !zone.AllowsCategory(category.Id))
+        {
+            return [];
+        }
+
+        var resolved = await settings.ResolveAsync(zone?.Id, category.Id, ct);
+        var radius = criteria.RadiusMeters ?? resolved.RadiusMeters;
+        var categoryIds = resolved.AllowCategoryUpgrade
             ? await db.RideCategories.AsNoTracking().Where(c => c.IsActive && c.SortOrder >= category.SortOrder).Select(c => c.Id).ToListAsync(ct)
             : [category.Id];
 
-        var (deltaLat, deltaLng) = Geo.BoundingBox(criteria.PickupLat, _options.RadiusMeters);
+        var (deltaLat, deltaLng) = Geo.BoundingBox(criteria.PickupLat, radius);
         var minLat = criteria.PickupLat - deltaLat;
         var maxLat = criteria.PickupLat + deltaLat;
         var minLng = criteria.PickupLng - deltaLng;
         var maxLng = criteria.PickupLng + deltaLng;
-        var freshAfter = clock.UtcNow.AddSeconds(-_options.LocationMaxAgeSeconds);
+        var freshAfter = now.AddSeconds(-_options.LocationMaxAgeSeconds);
         var excluded = criteria.ExcludedDriverIds.ToList();
+        if (criteria.TripId is { } tripId)
+        {
+            excluded.AddRange(await db.TripOffers.AsNoTracking().Where(o => o.TripId == tripId).Select(o => o.DriverId).ToListAsync(ct));
+        }
 
         var query = from loc in db.DriverLocations.AsNoTracking()
                     join d in db.Drivers.AsNoTracking() on loc.DriverId equals d.Id
@@ -53,7 +201,7 @@ public sealed class SimpleMatcher(AtaDbContext db, IPricingService pricing, IOpt
                           && loc.UpdatedAt >= freshAfter
                           && loc.Lat >= minLat && loc.Lat <= maxLat && loc.Lng >= minLng && loc.Lng <= maxLng
                           && !excluded.Contains(d.Id)
-                    select new { d.Id, d.UserId, VehicleId = v.Id, loc.Lat, loc.Lng, d.Gender };
+                    select new { d.Id, d.UserId, VehicleId = v.Id, loc.Lat, loc.Lng, d.Gender, d.RatingAvg, d.Tier };
 
         if (criteria.PreferFemaleDriver)
         {
@@ -61,11 +209,57 @@ public sealed class SimpleMatcher(AtaDbContext db, IPricingService pricing, IOpt
         }
 
         var rows = await query.ToListAsync(ct);
-        return rows
+        var inRange = rows
             .Select(r => (Row: r, Distance: Geo.HaversineMeters(criteria.PickupLat, criteria.PickupLng, r.Lat, r.Lng)))
-            .Where(x => x.Distance <= _options.RadiusMeters)
-            .OrderBy(x => x.Distance)
-            .Select(x => new DriverCandidate(x.Row.Id, x.Row.UserId, x.Row.VehicleId, (int)Math.Round(x.Distance), pricing.EtaSeconds(x.Distance * FlatPricing.RoadFactor)))
+            .Where(x => x.Distance <= radius)
             .ToList();
+        if (inRange.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = inRange.Select(x => x.Row.Id).ToList();
+        var today = DateOnly.FromDateTime(now);
+        var expiredDocuments = (await db.DriverDocuments.AsNoTracking()
+            .Where(doc => ids.Contains(doc.DriverId) && doc.ExpiresAt != null && doc.ExpiresAt < today && doc.Status != DocumentStatus.Rejected)
+            .Select(doc => doc.DriverId).ToListAsync(ct)).ToHashSet();
+        var reliabilities = await reliability.GetAsync(ids, now, ct);
+        var favoriteIds = criteria.PassengerId is { } passengerId && resolved.PreferFavoriteDriver
+            ? await favorites.FavoriteDriverIdsAsync(passengerId, ct)
+            : new HashSet<Guid>();
+
+        var weights = resolved.Weights;
+        var maxRadius = Math.Max(resolved.MaxRadiusMeters, radius);
+        var candidates = new List<DriverCandidate>(inRange.Count);
+        foreach (var (row, distance) in inRange)
+        {
+            var stats = reliabilities.GetValueOrDefault(row.Id, DriverReliability.Neutral);
+            if (expiredDocuments.Contains(row.Id) || stats.IsBlocked)
+            {
+                continue;
+            }
+
+            var eta = pricing.EtaSeconds(distance * FlatPricing.RoadFactor);
+            var score = Score(weights, distance, maxRadius, eta, row.RatingAvg, stats, row.Tier, favoriteIds.Contains(row.Id));
+            candidates.Add(new DriverCandidate(row.Id, row.UserId, row.VehicleId, (int)Math.Round(distance), eta, score));
+        }
+
+        return candidates.OrderByDescending(c => c.Score).ThenBy(c => c.DistanceMeters).ToList();
     }
+
+    public static decimal Score(MatchingWeights w, double distanceMeters, double maxRadiusMeters, int etaSeconds, decimal rating, DriverReliability stats, DriverTier tier, bool favorite)
+    {
+        var normDistance = Clamp(1m - (decimal)(distanceMeters / maxRadiusMeters));
+        var normEta = Clamp(1m - (decimal)(etaSeconds / MaxEtaSeconds));
+        var normRating = Clamp((rating - 3m) / 2m);
+        var normAcceptance = Clamp(stats.AcceptanceRate);
+        var normCancellation = Clamp(1m - stats.CancellationRate);
+        var normTier = tier switch { DriverTier.Platinum => 1m, DriverTier.Gold => 0.75m, DriverTier.Silver => 0.5m, _ => 0.25m };
+        var normFavorite = favorite ? 1m : 0m;
+        var sum = w.Distance * normDistance + w.Eta * normEta + w.Rating * normRating + w.Acceptance * normAcceptance
+                  + w.Cancellation * normCancellation + w.Tier * normTier + w.Favorite * normFavorite;
+        return decimal.Round(sum / w.Sum, 4, MidpointRounding.AwayFromZero);
+    }
+
+    private static decimal Clamp(decimal value) => Math.Clamp(value, 0m, 1m);
 }

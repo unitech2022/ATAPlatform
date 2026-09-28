@@ -39,9 +39,16 @@ public sealed record AdminPassengerListItemDto(Guid Id, string? FullName, string
 
 public sealed record UserStatusChangeDto(Guid UserId, UserStatus Status);
 
+/// <summary>
+/// Admin view of a ride category. Prices come from <c>pricing_rules</c> (F10); the flat pricing columns are kept only as the
+/// <c>FlatPricing</c> fallback used when no rule matches (<see cref="PricingSource"/> says which one currently applies city-wide).
+/// </summary>
 public sealed record RideCategoryAdminDto(
     Guid Id, string Code, string NameAr, string NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte Seats, byte MaxStops, int SortOrder, bool IsActive,
-    decimal BaseFare, decimal PerKm, decimal PerMinute, decimal BookingFee, decimal MinFare, decimal DriverSharePercent);
+    string PricingSource, int PricingRulesCount, RideCategoryFallbackPricingDto FallbackPricing);
+
+/// <summary>F8 flat pricing inputs (<c>ride_categories</c> columns); only used when no pricing rule matches.</summary>
+public sealed record RideCategoryFallbackPricingDto(decimal BaseFare, decimal PerKm, decimal PerMinute, decimal BookingFee, decimal MinFare, decimal DriverSharePercent);
 
 public sealed record RideCategoryUpsertRequest(
     string? Code, string? NameAr, string? NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte? Seats, byte? MaxStops, int? SortOrder, bool? IsActive,

@@ -1,6 +1,8 @@
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Identity;
+using ATA.Domain.Matching;
+using ATA.Domain.Pricing;
 using ATA.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,12 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedRideCategoriesAsync(cancellationToken);
         await SeedDocumentTypesAsync(cancellationToken);
         await SeedAdminAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await SeedZonesAsync(cancellationToken);
+        await SeedDemandLevelsAsync(cancellationToken);
+        await SeedPricingRulesAsync(cancellationToken);
+        await SeedDemandRulesAsync(cancellationToken);
+        await SeedMatchingSettingsAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -62,6 +70,108 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
                 current.DriverSharePercent = category.DriverSharePercent;
             }
         }
+    }
+
+    /// <summary>The Riyadh <c>city_default</c> zone: a generous rectangle around the city that catches every pickup with no dedicated zone.</summary>
+    private async Task SeedZonesAsync(CancellationToken ct)
+    {
+        if (await db.Zones.AnyAsync(z => z.Id == SeedIds.ZoneRiyadhDefault || (z.CityId == SeedIds.CityRiyadh && z.Code == Zone.CityDefaultCode), ct))
+        {
+            return;
+        }
+
+        db.Zones.Add(new Zone
+        {
+            Id = SeedIds.ZoneRiyadhDefault, CityId = SeedIds.CityRiyadh, Code = Zone.CityDefaultCode, NameAr = "الرياض (افتراضي)", NameEn = "Riyadh (default)",
+            Polygon = "[[24.20,46.00],[24.20,47.30],[25.60,47.30],[25.60,46.00],[24.20,46.00]]",
+            CenterLat = 24.7135517m, CenterLng = 46.6752957m, Priority = 0, IsActive = true,
+        });
+    }
+
+    private async Task SeedDemandLevelsAsync(CancellationToken ct)
+    {
+        var existing = await db.DemandLevels.Select(l => l.Code).ToListAsync(ct);
+        DemandLevel[] levels =
+        [
+            new() { Id = SeedIds.DemandLevels.Normal, Code = DemandLevel.Normal, NameAr = "طبيعي", NameEn = "Normal", Multiplier = 1.00m, Color = "#19B7A5", SortOrder = 1 },
+            new() { Id = SeedIds.DemandLevels.Moderate, Code = DemandLevel.Moderate, NameAr = "متوسط", NameEn = "Moderate", Multiplier = 1.20m, Color = "#123650", SortOrder = 2 },
+            new() { Id = SeedIds.DemandLevels.High, Code = DemandLevel.High, NameAr = "مرتفع", NameEn = "High", Multiplier = 1.50m, Color = "#E0A100", SortOrder = 3 },
+            new() { Id = SeedIds.DemandLevels.VeryHigh, Code = DemandLevel.VeryHigh, NameAr = "مرتفع جداً", NameEn = "Very high", Multiplier = 1.90m, Color = "#C23B4A", SortOrder = 4 },
+        ];
+        db.DemandLevels.AddRange(levels.Where(l => !existing.Contains(l.Code)));
+    }
+
+    /// <summary>
+    /// One city-wide pricing rule per ride category, migrated from the F8 <c>ride_categories</c> pricing columns (which stay as the
+    /// <c>FlatPricing</c> fallback), each with the example <c>night</c> multiplier 00:00–05:00 ×1.15.
+    /// </summary>
+    private async Task SeedPricingRulesAsync(CancellationToken ct)
+    {
+        var categories = await db.RideCategories.ToListAsync(ct);
+        var withRules = await db.PricingRules.Where(r => r.ZoneId == null).Select(r => r.RideCategoryId).Distinct().ToListAsync(ct);
+        var ruleIds = new Dictionary<Guid, Guid>
+        {
+            [SeedIds.RideCategories.Saver] = SeedIds.PricingRules.Saver,
+            [SeedIds.RideCategories.Economy] = SeedIds.PricingRules.Economy,
+            [SeedIds.RideCategories.Comfort] = SeedIds.PricingRules.Comfort,
+            [SeedIds.RideCategories.Family] = SeedIds.PricingRules.Family,
+            [SeedIds.RideCategories.Premium] = SeedIds.PricingRules.Premium,
+            [SeedIds.RideCategories.Airport] = SeedIds.PricingRules.Airport,
+        };
+        foreach (var category in categories.Where(c => !withRules.Contains(c.Id)))
+        {
+            var rule = new PricingRule
+            {
+                Id = ruleIds.GetValueOrDefault(category.Id, Guid.CreateVersion7()),
+                RideCategoryId = category.Id,
+                ZoneId = null,
+                Name = $"{category.NameEn} — city default",
+                BaseFare = category.BaseFare,
+                PerKm = category.PerKm,
+                PerMinute = category.PerMinute,
+                BookingFee = category.BookingFee,
+                ServiceFeePercent = 0m,
+                MinFare = category.MinFare,
+                WaitingPerMinute = category.PerMinute,
+                FreeWaitingMinutes = 3,
+                CancellationFee = 0m,
+                DriverSharePercent = category.DriverSharePercent,
+                EffectiveFrom = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                Priority = 0,
+                IsActive = true,
+            };
+            rule.TimeMultipliers.Add(new PricingTimeMultiplier { PricingRuleId = rule.Id, DayOfWeek = null, FromTime = new TimeOnly(0, 0), ToTime = new TimeOnly(5, 0), Multiplier = 1.15m, Label = "night" });
+            db.PricingRules.Add(rule);
+        }
+    }
+
+    private async Task SeedDemandRulesAsync(CancellationToken ct)
+    {
+        if (await db.DemandRules.AnyAsync(ct))
+        {
+            return;
+        }
+
+        db.DemandRules.Add(new DemandRule
+        {
+            Id = SeedIds.DemandRuleDefault, ZoneId = null, RideCategoryId = null, Metric = DemandMetrics.RequestsPerDriver, WindowMinutes = 10,
+            ThresholdModerate = 0.8m, ThresholdHigh = 1.5m, ThresholdVeryHigh = 2.5m, IsActive = true,
+        });
+    }
+
+    private async Task SeedMatchingSettingsAsync(CancellationToken ct)
+    {
+        if (await db.MatchingSettings.AnyAsync(m => m.ZoneId == null && m.RideCategoryId == null, ct))
+        {
+            return;
+        }
+
+        db.MatchingSettings.Add(new MatchingSettings
+        {
+            Id = SeedIds.MatchingSettingsDefault, ZoneId = null, RideCategoryId = null,
+            RadiusMeters = 5000, MaxRadiusMeters = 12000, RadiusStepMeters = 2500, OfferTimeoutSeconds = 20, SearchTimeoutSeconds = 120, MaxCandidates = 8,
+            Weights = MatchingWeights.Default.ToJson(), AllowCategoryUpgrade = false, PreferFavoriteDriver = true, IsActive = true,
+        });
     }
 
     private async Task SeedDocumentTypesAsync(CancellationToken ct)

@@ -22,5 +22,7 @@ public static class ErrorCodes
     public const string OfferExpired = "offer_expired";
     public const string PinInvalid = "pin_invalid";
     public const string PinLocked = "pin_locked";
+    public const string OfferOutOfRange = "offer_out_of_range";
+    public const string QuoteExpired = "quote_expired";
     public const string InternalError = "internal_error";
 }

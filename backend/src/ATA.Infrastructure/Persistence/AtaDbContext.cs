@@ -4,8 +4,10 @@ using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Files;
 using ATA.Domain.Identity;
+using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
+using ATA.Domain.Pricing;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,20 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<TripEvent> TripEvents => Set<TripEvent>();
     public DbSet<DriverLocation> DriverLocations => Set<DriverLocation>();
     public DbSet<DriverLocationHistory> DriverLocationHistory => Set<DriverLocationHistory>();
+
+    public DbSet<Zone> Zones => Set<Zone>();
+    public DbSet<ZoneCategorySetting> ZoneCategorySettings => Set<ZoneCategorySetting>();
+    public DbSet<PricingRule> PricingRules => Set<PricingRule>();
+    public DbSet<PricingTimeMultiplier> PricingTimeMultipliers => Set<PricingTimeMultiplier>();
+    public DbSet<DemandLevel> DemandLevels => Set<DemandLevel>();
+    public DbSet<DemandRule> DemandRules => Set<DemandRule>();
+    public DbSet<DemandOverride> DemandOverrides => Set<DemandOverride>();
+    public DbSet<DemandSnapshot> DemandSnapshots => Set<DemandSnapshot>();
+    public DbSet<FareQuote> FareQuotes => Set<FareQuote>();
+
+    public DbSet<MatchingSettings> MatchingSettings => Set<MatchingSettings>();
+    public DbSet<MatchingAttempt> MatchingAttempts => Set<MatchingAttempt>();
+    public DbSet<MatchingCandidate> MatchingCandidates => Set<MatchingCandidate>();
 
     public DbSet<RideCategory> RideCategories => Set<RideCategory>();
     public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
@@ -108,6 +124,12 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
                     break;
                 case DriverLocationHistory history when entry.State == EntityState.Added && history.RecordedAt == default:
                     history.RecordedAt = now;
+                    break;
+                case MatchingAttempt attempt when entry.State == EntityState.Added && attempt.StartedAt == default:
+                    attempt.StartedAt = now;
+                    break;
+                case DemandSnapshot snapshot when entry.State == EntityState.Added && snapshot.ComputedAt == default:
+                    snapshot.ComputedAt = now;
                     break;
             }
         }

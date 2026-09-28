@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using ATA.Api.Common;
+using ATA.Api.Modules.Pricing;
 using ATA.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -41,6 +42,7 @@ public static class TripHubEvents
     public const string OfferReceived = "OfferReceived";
     public const string OfferExpired = "OfferExpired";
     public const string LiveSnapshot = "LiveSnapshot";
+    public const string DemandChanged = "DemandChanged";
 }
 
 public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifier
@@ -62,6 +64,9 @@ public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifi
 
     public Task LiveSnapshotAsync(LiveSnapshotDto snapshot, CancellationToken ct) =>
         hub.Clients.Group(TripsHub.AdminsGroup).SendAsync(TripHubEvents.LiveSnapshot, snapshot, ct);
+
+    public Task DemandChangedAsync(DemandChangedEvent change, CancellationToken ct) =>
+        hub.Clients.Group(TripsHub.AdminsGroup).SendAsync(TripHubEvents.DemandChanged, change, ct);
 }
 
 /// <summary>Pushes <c>LiveSnapshot</c> to the admins group every <see cref="RealtimeOptions.LiveSnapshotSeconds"/> seconds.</summary>

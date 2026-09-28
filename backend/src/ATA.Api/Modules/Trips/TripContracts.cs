@@ -20,9 +20,13 @@ public sealed class MatchingOptions
 {
     public const string Section = "Matching";
     public bool Enabled { get; set; } = true;
+    /// <summary>Defaults used when no <c>matching_settings</c> row applies to the trip's zone/category.</summary>
     public int RadiusMeters { get; set; } = 5000;
+    public int MaxRadiusMeters { get; set; } = 12000;
+    public int RadiusStepMeters { get; set; } = 2500;
     public int OfferTimeoutSeconds { get; set; } = 20;
     public int SearchTimeoutSeconds { get; set; } = 120;
+    public int MaxCandidates { get; set; } = 8;
     public bool AllowUpgrade { get; set; }
     public int PollIntervalSeconds { get; set; } = 2;
     /// <summary>Drivers whose last location is older than this are not matched.</summary>
@@ -42,10 +46,6 @@ public sealed record PlaceRequest(string? Name, string? Address, decimal? Lat, d
 
 public sealed record EstimateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt);
 
-public sealed record EstimateCategoryDto(Guid RideCategoryId, string Code, string Name, int? EtaMinutes, decimal EstimatedFare, decimal DriverNetEarnings);
-
-public sealed record EstimateResponse(int DistanceMeters, int DurationSeconds, IReadOnlyList<EstimateCategoryDto> Categories);
-
 public sealed record CreateTripRequest(
     PlaceRequest? Pickup,
     PlaceRequest? Dropoff,
@@ -57,7 +57,8 @@ public sealed record CreateTripRequest(
     bool? PreferFemaleDriver,
     PricingMode? PricingMode,
     decimal? OfferedPrice,
-    string? RiderNote);
+    string? RiderNote,
+    Guid? QuoteId);
 
 public sealed record CancelTripRequest(string? ReasonCode, string? Note);
 
@@ -122,7 +123,9 @@ public sealed record OfferDto(
     decimal PassengerPrice,
     decimal DriverNetEarnings,
     DateTime ExpiresAt,
-    OfferPassengerDto Passenger);
+    OfferPassengerDto Passenger,
+    int Round,
+    bool PassengerOffered);
 
 public sealed record DriverLocationEvent(Guid TripId, decimal Lat, decimal Lng, decimal? Heading, int EtaSeconds);
 

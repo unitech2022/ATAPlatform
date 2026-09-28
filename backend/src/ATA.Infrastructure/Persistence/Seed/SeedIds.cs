@@ -15,6 +15,29 @@ public static class SeedIds
         public static readonly Guid Airport = Guid.Parse("019985f0-0000-7000-8000-000000000106");
     }
 
+    public static readonly Guid ZoneRiyadhDefault = Guid.Parse("019985f0-0000-7000-8000-000000000301");
+    public static readonly Guid DemandRuleDefault = Guid.Parse("019985f0-0000-7000-8000-000000000501");
+    public static readonly Guid MatchingSettingsDefault = Guid.Parse("019985f0-0000-7000-8000-000000000601");
+
+    public static class DemandLevels
+    {
+        public static readonly Guid Normal = Guid.Parse("019985f0-0000-7000-8000-000000000401");
+        public static readonly Guid Moderate = Guid.Parse("019985f0-0000-7000-8000-000000000402");
+        public static readonly Guid High = Guid.Parse("019985f0-0000-7000-8000-000000000403");
+        public static readonly Guid VeryHigh = Guid.Parse("019985f0-0000-7000-8000-000000000404");
+    }
+
+    /// <summary>City-wide pricing rule per seeded ride category (same suffix as the category, in the 07xx range).</summary>
+    public static class PricingRules
+    {
+        public static readonly Guid Saver = Guid.Parse("019985f0-0000-7000-8000-000000000701");
+        public static readonly Guid Economy = Guid.Parse("019985f0-0000-7000-8000-000000000702");
+        public static readonly Guid Comfort = Guid.Parse("019985f0-0000-7000-8000-000000000703");
+        public static readonly Guid Family = Guid.Parse("019985f0-0000-7000-8000-000000000704");
+        public static readonly Guid Premium = Guid.Parse("019985f0-0000-7000-8000-000000000705");
+        public static readonly Guid Airport = Guid.Parse("019985f0-0000-7000-8000-000000000706");
+    }
+
     public static class DocumentTypes
     {
         public static readonly Guid NationalId = Guid.Parse("019985f0-0000-7000-8000-000000000201");

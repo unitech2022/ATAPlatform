@@ -1,3 +1,4 @@
+using ATA.Api.Modules.Pricing;
 using ATA.Api.Modules.Trips.Matching;
 using ATA.Domain.Common;
 using ATA.Infrastructure.Persistence;
@@ -35,6 +36,7 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("RateLimiting:OtpPerIpPerHour", "10000");
         // Background loops are driven explicitly from tests (RunMatcherAsync) so results are deterministic under the fake clock.
         builder.UseSetting("Matching:Enabled", "false");
+        builder.UseSetting("Demand:Enabled", "false");
         builder.UseSetting("Realtime:LiveSnapshotEnabled", "false");
 
         builder.ConfigureServices(services =>
@@ -61,6 +63,13 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     {
         var matcher = Services.GetServices<IHostedService>().OfType<MatchingBackgroundService>().Single();
         return await matcher.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one demand pass (snapshots per zone + <c>DemandChanged</c>) exactly like the background service would.</summary>
+    public async Task<int> RunDemandAsync()
+    {
+        var demand = Services.GetServices<IHostedService>().OfType<DemandBackgroundService>().Single();
+        return await demand.RunOnceAsync(CancellationToken.None);
     }
 
     public async Task<T> WithDbAsync<T>(Func<AtaDbContext, Task<T>> action)

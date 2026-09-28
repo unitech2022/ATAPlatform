@@ -33,6 +33,8 @@ public static class ErrorCatalog
         [ErrorCodes.OfferExpired] = new(StatusCodes.Status409Conflict, "انتهت صلاحية العرض", "The offer has expired"),
         [ErrorCodes.PinInvalid] = new(StatusCodes.Status400BadRequest, "رمز الرحلة غير صحيح", "The trip PIN is incorrect"),
         [ErrorCodes.PinLocked] = new(StatusCodes.Status429TooManyRequests, "تم تجاوز عدد محاولات إدخال رمز الرحلة", "Too many PIN attempts for this trip"),
+        [ErrorCodes.OfferOutOfRange] = new(StatusCodes.Status422UnprocessableEntity, "السعر المقترح خارج النطاق المسموح", "The offered price is outside the allowed range"),
+        [ErrorCodes.QuoteExpired] = new(StatusCodes.Status422UnprocessableEntity, "انتهت صلاحية عرض السعر، اطلب تسعيرة جديدة", "The fare quote has expired, request a new one"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

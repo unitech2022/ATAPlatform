@@ -33,9 +33,10 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         Assert.Equal(HttpStatusCode.OK, estimate.StatusCode);
         var estimateBody = await estimate.ReadJsonAsync();
         Assert.True(estimateBody.GetProperty("distanceMeters").GetInt32() > 5000);
+        // F10: the estimate is an alias of POST /pricing/quote (per-category `total`, breakdown and offer bounds).
         var economy = estimateBody.GetProperty("categories").EnumerateArray().Single(c => c.GetProperty("code").GetString() == "economy");
-        Assert.True(economy.GetProperty("estimatedFare").GetDecimal() > 12m);
-        Assert.True(economy.GetProperty("driverNetEarnings").GetDecimal() < economy.GetProperty("estimatedFare").GetDecimal());
+        Assert.True(economy.GetProperty("total").GetDecimal() > 12m);
+        Assert.True(economy.GetProperty("driverNetEarnings").GetDecimal() < economy.GetProperty("total").GetDecimal());
         Assert.Equal(1, economy.GetProperty("etaMinutes").GetInt32());
 
         var created = await passenger.PostAsJsonAsync("/api/v1/passenger/trips", TripFlow.Request(area, paymentMethod: "wallet"));
@@ -46,7 +47,7 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         Assert.StartsWith("T-20260928-", trip.GetProperty("tripNumber").GetString());
         Assert.Equal(JsonValueKind.Null, trip.GetProperty("pin").ValueKind);
         Assert.Equal(JsonValueKind.Null, trip.GetProperty("driver").ValueKind);
-        Assert.Equal(economy.GetProperty("estimatedFare").GetDecimal(), trip.GetProperty("estimatedFare").GetDecimal());
+        Assert.Equal(economy.GetProperty("total").GetDecimal(), trip.GetProperty("estimatedFare").GetDecimal());
 
         var duplicate = await passenger.PostAsJsonAsync("/api/v1/passenger/trips", TripFlow.Request(area));
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
@@ -61,7 +62,7 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         var offer = await (await near.GetAsync("/api/v1/driver/offers/active")).ReadJsonAsync();
         Assert.Equal(tripId, offer.GetProperty("tripId").GetString());
         Assert.True(offer.GetProperty("distanceToPickupMeters").GetInt32() < 300);
-        Assert.Equal(economy.GetProperty("estimatedFare").GetDecimal(), offer.GetProperty("passengerPrice").GetDecimal());
+        Assert.Equal(economy.GetProperty("total").GetDecimal(), offer.GetProperty("passengerPrice").GetDecimal());
 
         var accepted = await near.PostAsync($"/api/v1/driver/offers/{offer.GetProperty("id").GetString()}/accept", null);
         Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
@@ -113,7 +114,10 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         Assert.True(fare > trip.GetProperty("estimatedFare").GetDecimal(), "waiting time is billed");
 
         var dbTrip = await fixture.Factory.WithDbAsync(db => db.Trips.FirstAsync(t => t.Id == Guid.Parse(tripId)));
-        Assert.Equal(decimal.Round(fare * 0.8m, 2), dbTrip.DriverEarnings);
+        // F10: total = round(core + booking fee, 0.5); the driver's net is 80% of the core (subtotal × multipliers), so the booking fee is not shared.
+        var core = TripFlow.EconomyCore(dbTrip.FinalDistanceM!.Value, dbTrip.FinalDurationS!.Value, dbTrip.WaitingSeconds);
+        Assert.Equal(TripFlow.RoundToHalf(core + 2m), fare);
+        Assert.Equal(decimal.Round(core * 0.8m, 2), dbTrip.DriverEarnings);
         var passengerBalance = await fixture.Factory.WithDbAsync(db => db.Wallets.Where(w => w.UserId == passengerUserId && w.Kind == WalletKind.Passenger).Select(w => w.Balance).FirstAsync());
         Assert.Equal(200m - fare, passengerBalance);
         var nearUserId = Guid.Parse(nearAuth.GetProperty("user").GetProperty("id").GetString()!);
@@ -178,7 +182,11 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         var transactions = await fixture.Factory.WithDbAsync(db => db.WalletTransactions.Where(t => t.ReferenceId == Guid.Parse(tripId)).ToListAsync());
         var earning = Assert.Single(transactions);
         Assert.Equal(TransactionType.TripEarning, earning.Type);
-        Assert.Equal(decimal.Round(fare * 0.8m, 2), earning.Amount);
+        var dbTrip = await fixture.Factory.WithDbAsync(db => db.Trips.FirstAsync(t => t.Id == Guid.Parse(tripId)));
+        Assert.Equal(dbTrip.DriverEarnings, earning.Amount);
+        var core = TripFlow.EconomyCore(dbTrip.FinalDistanceM!.Value, dbTrip.FinalDurationS!.Value, dbTrip.WaitingSeconds);
+        Assert.Equal(TripFlow.RoundToHalf(core + 2m), fare);
+        Assert.Equal(decimal.Round(core * 0.8m, 2), earning.Amount);
         var entries = await fixture.Factory.WithDbAsync(db => db.LedgerEntries.Where(e => e.TransactionId == earning.Id).ToListAsync());
         Assert.Contains(entries, e => e.Account == LedgerAccounts.CashCollected && e.Debit == earning.Amount);
         Assert.Equal(entries.Sum(e => e.Debit), entries.Sum(e => e.Credit));
@@ -402,8 +410,8 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 /// <summary>Shared steps for trip tests: approved online drivers, trip requests and the driver-side transitions.</summary>
 public static class TripFlow
 {
-    /// <summary>Distinct pickup areas (≈7.8 km apart) so drivers left online by one test never match another test's trip.</summary>
-    public static (decimal Lat, decimal Lng) Area(int index) => (24.50m + 0.07m * index, 46.60m);
+    /// <summary>Distinct pickup areas (≈13 km apart, beyond the 12 km maximum matching radius) so drivers left online by one test never match another test's trip.</summary>
+    public static (decimal Lat, decimal Lng) Area(int index) => (24.30m + 0.12m * index, 46.60m);
 
     public static object Route((decimal Lat, decimal Lng) area) => new
     {
@@ -414,7 +422,7 @@ public static class TripFlow
         bookingType = "now",
     };
 
-    public static object Request((decimal Lat, decimal Lng) area, string paymentMethod = "cash", bool preferFemaleDriver = false) => new
+    public static object Request((decimal Lat, decimal Lng) area, string paymentMethod = "cash", bool preferFemaleDriver = false, string? quoteId = null, string pricingMode = "fixed", decimal? offeredPrice = null) => new
     {
         pickup = new { name = "المنزل", address = "شارع الملك فهد", lat = area.Lat, lng = area.Lng },
         dropoff = new { name = "العمل", address = "طريق الملك عبدالله", lat = area.Lat + 0.05m, lng = area.Lng + 0.05m },
@@ -423,7 +431,9 @@ public static class TripFlow
         bookingType = "now",
         paymentMethod,
         preferFemaleDriver,
-        pricingMode = "fixed",
+        pricingMode,
+        offeredPrice,
+        quoteId,
         riderNote = "بجانب البوابة",
     };
 
@@ -490,6 +500,17 @@ public static class TripFlow
         (await driver.PostAsJsonAsync($"/api/v1/driver/trips/{tripId}/verify-pin", new { pin })).EnsureSuccessStatusCode();
         (await driver.PostAsync($"/api/v1/driver/trips/{tripId}/start", null)).EnsureSuccessStatusCode();
     }
+
+    /// <summary>Seeded economy rule (8 + 1.8/km + 0.35/min, waiting 0.35/min, min 12) without time/demand multipliers.</summary>
+    public static decimal EconomyCore(int distanceMeters, int durationSeconds, int waitingSeconds)
+    {
+        var subtotal = 8m + Round2(1.8m * distanceMeters / 1000m) + Round2(0.35m * durationSeconds / 60m) + Round2(0.35m * waitingSeconds / 60m);
+        return Math.Max(subtotal, 12m);
+    }
+
+    public static decimal Round2(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    public static decimal RoundToHalf(decimal value) => decimal.Round(value * 2m, 0, MidpointRounding.AwayFromZero) / 2m;
 
     public static HubConnection Hub(ApiFixture fixture, string accessToken) => new HubConnectionBuilder()
         .WithUrl(new Uri(fixture.Factory.Server.BaseAddress, $"hubs/trips?access_token={accessToken}"), o =>

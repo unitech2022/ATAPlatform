@@ -2,10 +2,12 @@ using System.Text.Json;
 using ATA.Api.Common;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Passengers;
-using ATA.Api.Modules.Trips.Matching;
+using ATA.Api.Modules.Pricing;
+using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
+using ATA.Domain.Pricing;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +20,7 @@ public sealed class PassengerTripService(
     ICurrentUser currentUser,
     IClock clock,
     IPricingService pricing,
-    IMatcher matcher,
+    QuoteService quotes,
     TripReadService reads,
     TripEventRecorder events,
     TripPinService pins,
@@ -27,30 +29,11 @@ public sealed class PassengerTripService(
 {
     private const int TripNumberRetries = 3;
 
-    public async Task<EstimateResponse> EstimateAsync(EstimateRequest request, Language lang, CancellationToken ct)
+    /// <summary><c>POST /pricing/quote</c> (and its alias <c>/passenger/trips/estimate</c>): prices every category and stores the quotes.</summary>
+    public async Task<QuoteResponse> QuoteAsync(EstimateRequest request, Language lang, CancellationToken ct)
     {
-        var now = clock.UtcNow;
-        new Validator().Route(request.Pickup, request.Dropoff, request.Stops).Booking(request.BookingType, request.ScheduledAt, now).ThrowIfInvalid();
-        await LoadPassengerAsync(ct);
-
-        var categories = await db.RideCategories.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.SortOrder).ToListAsync(ct);
-        if (request.RideCategoryId is { } requestedId)
-        {
-            new Validator().Rule(nameof(request.RideCategoryId), categories.Any(c => c.Id == requestedId), "unknown or inactive ride category").ThrowIfInvalid();
-        }
-
-        var pickup = request.Pickup!.Point();
-        var route = pricing.EstimateRoute(pickup, (request.Stops ?? []).Select(s => s.Point()).ToList(), request.Dropoff!.Point());
-        var items = new List<EstimateCategoryDto>(categories.Count);
-        foreach (var category in categories)
-        {
-            var quote = pricing.Quote(category, route.DistanceMeters, route.DurationSeconds);
-            var nearest = (await matcher.FindCandidatesAsync(new MatchCriteria(pickup.Lat, pickup.Lng, category.Id, false, []), ct)).FirstOrDefault();
-            int? eta = nearest is null ? null : Math.Max(1, (int)Math.Ceiling(nearest.EtaSeconds / 60d));
-            items.Add(new EstimateCategoryDto(category.Id, category.Code, lang.Pick(category.NameAr, category.NameEn), eta, quote.Fare, quote.DriverNetEarnings));
-        }
-
-        return new EstimateResponse(route.DistanceMeters, route.DurationSeconds, items);
+        var passenger = await LoadPassengerAsync(ct);
+        return await quotes.QuoteAsync(request, passenger.Id, lang, ct);
     }
 
     public async Task<TripDto> CreateAsync(CreateTripRequest request, Language lang, CancellationToken ct)
@@ -86,9 +69,14 @@ public sealed class PassengerTripService(
         var pickup = request.Pickup!.Point();
         var stops = request.Stops ?? [];
         var route = pricing.EstimateRoute(pickup, stops.Select(s => s.Point()).ToList(), request.Dropoff!.Point());
-        var quote = pricing.Quote(category!, route.DistanceMeters, route.DurationSeconds);
         var pricingMode = request.PricingMode ?? PricingMode.Fixed;
         var offered = pricingMode == PricingMode.Offer ? request.OfferedPrice : null;
+        var pickupAt = request.BookingType == BookingType.Scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : now;
+        var quote = await ResolveQuoteAsync(request.QuoteId, passenger.Id, category!, pickup, request.Dropoff!.Point(), route, pickupAt, now, ct);
+        if (offered is { } offeredPrice && (offeredPrice < quote.OfferMin || offeredPrice > quote.OfferMax))
+        {
+            throw new DomainException(ErrorCodes.OfferOutOfRange, new { quote.OfferMin, quote.OfferMax, offeredPrice });
+        }
 
         var trip = new Trip
         {
@@ -109,9 +97,9 @@ public sealed class PassengerTripService(
             PaymentMethod = request.PaymentMethod ?? passenger.DefaultPaymentMethod,
             PricingMode = pricingMode,
             OfferedPrice = offered,
-            EstimatedDistanceM = route.DistanceMeters,
-            EstimatedDurationS = route.DurationSeconds,
-            EstimatedFare = offered ?? quote.Fare,
+            EstimatedDistanceM = quote.DistanceM,
+            EstimatedDurationS = quote.DurationS,
+            EstimatedFare = offered ?? quote.Total,
             RiderNote = string.IsNullOrWhiteSpace(request.RiderNote) ? null : request.RiderNote.Trim(),
             RequestedAt = now,
             PinCodeHash = string.Empty,
@@ -126,8 +114,9 @@ public sealed class PassengerTripService(
         }
 
         db.Trips.Add(trip);
+        quote.UsedTripId = trip.Id;
         events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
-            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver });
+            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId });
         trip.StartSearching();
         events.Add(trip.Id, TripEventTypes.SearchStarted, TripActor.System);
 
@@ -205,6 +194,33 @@ public sealed class PassengerTripService(
             JsonNamingPolicy.SnakeCaseLower.ConvertName(x.Trip.Status.ToString()), x.Trip.FinalFare ?? x.Trip.EstimatedFare,
             lang.Pick(x.Category.NameAr, x.Category.NameEn))).ToList();
         return paging.Result(items, total);
+    }
+
+    /// <summary>
+    /// The quote that fixes the trip's price: the referenced <c>fare_quotes</c> row (or its sibling for the chosen category) when it is
+    /// still valid, otherwise a fresh calculation stored as an already-used quote so the driver share and demand level stay with the trip.
+    /// </summary>
+    private async Task<FareQuote> ResolveQuoteAsync(Guid? quoteId, Guid passengerId, RideCategory category, GeoPoint pickup, GeoPoint dropoff, RouteEstimate route, DateTime pickupAt, DateTime now, CancellationToken ct)
+    {
+        if (quoteId is null)
+        {
+            var fresh = await quotes.QuoteForTripAsync(category, pickup, dropoff, route, pickupAt, passengerId, ct);
+            db.FareQuotes.Add(fresh);
+            return fresh;
+        }
+
+        var referenced = await db.FareQuotes.FirstOrDefaultAsync(q => q.Id == quoteId && q.PassengerId == passengerId, ct);
+        new Validator().Rule("quoteId", referenced is not null, "unknown quote").ThrowIfInvalid();
+        var quote = referenced!.RideCategoryId == category.Id
+            ? referenced
+            : await db.FareQuotes.FirstOrDefaultAsync(q => q.GroupId == referenced.GroupId && q.RideCategoryId == category.Id, ct);
+        new Validator().Rule("quoteId", quote is not null, "the quote has no price for this ride category").ThrowIfInvalid();
+        if (!quote!.IsUsableAt(now))
+        {
+            throw new DomainException(ErrorCodes.QuoteExpired, new { quoteId = quote.Id, quote.ExpiresAt, used = quote.UsedTripId is not null });
+        }
+
+        return quote;
     }
 
     private async Task<PassengerProfile> LoadPassengerAsync(CancellationToken ct)

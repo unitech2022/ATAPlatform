@@ -81,8 +81,12 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         return new UserStatusChangeDto(user.Id, user.Status);
     }
 
-    public async Task<List<RideCategoryAdminDto>> ListRideCategoriesAsync(CancellationToken ct) =>
-        await db.RideCategories.AsNoTracking().OrderBy(c => c.SortOrder).Select(c => ToDto(c)).ToListAsync(ct);
+    public async Task<List<RideCategoryAdminDto>> ListRideCategoriesAsync(CancellationToken ct)
+    {
+        var categories = await db.RideCategories.AsNoTracking().OrderBy(c => c.SortOrder).ToListAsync(ct);
+        var ruleCounts = await RuleCountsAsync(ct);
+        return categories.Select(c => ToDto(c, ruleCounts.GetValueOrDefault(c.Id))).ToList();
+    }
 
     public async Task<RideCategoryAdminDto> CreateRideCategoryAsync(RideCategoryUpsertRequest request, CancellationToken ct)
     {
@@ -96,16 +100,17 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         var category = new RideCategory { Code = code, NameAr = request.NameAr!.Trim(), NameEn = request.NameEn!.Trim() };
         Apply(category, request);
         db.RideCategories.Add(category);
-        audit.Log("ride_category.create", "ride_category", category.Id, null, ToDto(category));
+        audit.Log("ride_category.create", "ride_category", category.Id, null, ToDto(category, 0));
         await db.SaveChangesAsync(ct);
-        return ToDto(category);
+        return ToDto(category, 0);
     }
 
     public async Task<RideCategoryAdminDto> UpdateRideCategoryAsync(Guid id, RideCategoryUpsertRequest request, CancellationToken ct)
     {
         ValidateCategory(request, requireCode: false);
         var category = Guard.NotFound(await db.RideCategories.FirstOrDefaultAsync(c => c.Id == id, ct));
-        var before = ToDto(category);
+        var rules = await db.PricingRules.CountAsync(r => r.RideCategoryId == id && r.IsActive, ct);
+        var before = ToDto(category, rules);
         if (!string.IsNullOrWhiteSpace(request.Code))
         {
             var code = request.Code.Trim().ToLowerInvariant();
@@ -118,9 +123,9 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         }
 
         Apply(category, request);
-        audit.Log("ride_category.update", "ride_category", category.Id, before, ToDto(category));
+        audit.Log("ride_category.update", "ride_category", category.Id, before, ToDto(category, rules));
         await db.SaveChangesAsync(ct);
-        return ToDto(category);
+        return ToDto(category, rules);
     }
 
     public async Task DeleteRideCategoryAsync(Guid id, CancellationToken ct)
@@ -132,7 +137,7 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         }
 
         db.RideCategories.Remove(category);
-        audit.Log("ride_category.delete", "ride_category", category.Id, ToDto(category), null);
+        audit.Log("ride_category.delete", "ride_category", category.Id, ToDto(category, 0), null);
         await db.SaveChangesAsync(ct);
     }
 
@@ -189,7 +194,14 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         if (request.DriverSharePercent is not null) category.DriverSharePercent = request.DriverSharePercent.Value;
     }
 
-    private static RideCategoryAdminDto ToDto(RideCategory c) =>
+    private async Task<Dictionary<Guid, int>> RuleCountsAsync(CancellationToken ct)
+    {
+        var rows = await db.PricingRules.AsNoTracking().Where(r => r.IsActive).GroupBy(r => r.RideCategoryId).Select(g => new { g.Key, Count = g.Count() }).ToListAsync(ct);
+        return rows.ToDictionary(r => r.Key, r => r.Count);
+    }
+
+    private static RideCategoryAdminDto ToDto(RideCategory c, int activeRules) =>
         new(c.Id, c.Code, c.NameAr, c.NameEn, c.DescriptionAr, c.DescriptionEn, c.Icon, c.Seats, c.MaxStops, c.SortOrder, c.IsActive,
-            c.BaseFare, c.PerKm, c.PerMinute, c.BookingFee, c.MinFare, c.DriverSharePercent);
+            activeRules > 0 ? "pricing_rules" : "flat_pricing_fallback", activeRules,
+            new RideCategoryFallbackPricingDto(c.BaseFare, c.PerKm, c.PerMinute, c.BookingFee, c.MinFare, c.DriverSharePercent));
 }

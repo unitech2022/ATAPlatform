@@ -5,31 +5,38 @@ namespace ATA.Api.Modules.Trips;
 
 internal static class TripValidation
 {
-    public static Validator Place(this Validator v, string prefix, PlaceRequest? place, bool required)
+    /// <summary>
+    /// Validates a place. Quotes only need coordinates (<paramref name="requireLabels"/> = false);
+    /// creating a trip also needs the display name and address.
+    /// </summary>
+    public static Validator Place(this Validator v, string prefix, PlaceRequest? place, bool required, bool requireLabels = true)
     {
         if (place is null)
         {
             return required ? v.Fail(prefix, "required") : v;
         }
 
+        if (requireLabels)
+        {
+            v.Require($"{prefix}.name", place.Name, 120).Require($"{prefix}.address", place.Address, 500);
+        }
+
         return v
-            .Require($"{prefix}.name", place.Name, 120)
-            .Require($"{prefix}.address", place.Address, 500)
             .Require($"{prefix}.lat", place.Lat)
             .Require($"{prefix}.lng", place.Lng)
             .Rule($"{prefix}.lat", place.Lat is null or (>= -90 and <= 90), "out of range")
             .Rule($"{prefix}.lng", place.Lng is null or (>= -180 and <= 180), "out of range");
     }
 
-    public static Validator Route(this Validator v, PlaceRequest? pickup, PlaceRequest? dropoff, List<PlaceRequest>? stops)
+    public static Validator Route(this Validator v, PlaceRequest? pickup, PlaceRequest? dropoff, List<PlaceRequest>? stops, bool requireLabels = true)
     {
-        v.Place("pickup", pickup, required: true).Place("dropoff", dropoff, required: true);
+        v.Place("pickup", pickup, required: true, requireLabels).Place("dropoff", dropoff, required: true, requireLabels);
         if (stops is not null)
         {
             v.Rule("stops", stops.Count <= 5, "must be at most 5");
             for (var i = 0; i < stops.Count; i++)
             {
-                v.Place($"stops[{i}]", stops[i], required: true);
+                v.Place($"stops[{i}]", stops[i], required: true, requireLabels);
             }
         }
 

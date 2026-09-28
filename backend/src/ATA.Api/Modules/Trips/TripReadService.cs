@@ -1,6 +1,7 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
+using ATA.Domain.Matching;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -108,6 +109,7 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
                                select new { u.FullName, p.RatingAvg }).FirstAsync(ct);
         var stops = trip.Stops.Count > 0 ? trip.Stops.ToList() : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct);
         var firstName = passenger.FullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        var round = await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id).OrderByDescending(a => a.Round).Select(a => (int?)a.Round).FirstOrDefaultAsync(ct) ?? 1;
         return new OfferDto(
             offer.Id,
             trip.Id,
@@ -120,12 +122,34 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             trip.EstimatedFare,
             offer.DriverNetEarnings,
             offer.ExpiresAt,
-            new OfferPassengerDto(firstName, passenger.RatingAvg));
+            new OfferPassengerDto(firstName, passenger.RatingAvg),
+            round,
+            trip.PricingMode == PricingMode.Offer);
     }
 
-    /// <summary>Clears the driver's current trip and expires any open offers for the trip (used on cancel/complete/no_drivers).</summary>
+    /// <summary>
+    /// Clears the driver's current trip, expires any open offers and closes the open matching round for the trip
+    /// (used on cancel/complete/no_drivers).
+    /// </summary>
     public async Task ReleaseDriverAsync(Trip trip, DateTime now, CancellationToken ct)
     {
+        var outcome = trip.Status switch
+        {
+            TripStatus.Cancelled => MatchingOutcome.Cancelled,
+            TripStatus.NoDrivers => MatchingOutcome.Timeout,
+            _ => MatchingOutcome.Assigned,
+        };
+        var openAttempts = await db.MatchingAttempts.Include(a => a.Candidates).Where(a => a.TripId == trip.Id && a.FinishedAt == null).ToListAsync(ct);
+        foreach (var attempt in openAttempts)
+        {
+            foreach (var candidate in attempt.Candidates.Where(c => c.Offered && c.Response == null))
+            {
+                candidate.Response = CandidateResponse.Expired;
+            }
+
+            attempt.Finish(outcome, now);
+        }
+
         if (trip.DriverId is { } driverId)
         {
             await db.Drivers.Where(d => d.Id == driverId && d.CurrentTripId == trip.Id).ExecuteUpdateAsync(s => s.SetProperty(d => d.CurrentTripId, (Guid?)null), ct);

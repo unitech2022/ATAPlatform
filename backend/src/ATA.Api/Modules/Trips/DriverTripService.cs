@@ -1,9 +1,12 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Drivers;
 using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Pricing;
+using ATA.Api.Modules.Trips.Matching;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
+using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
@@ -22,6 +25,7 @@ public sealed class DriverTripService(
     TripEventRecorder events,
     TripPinService pins,
     TripPaymentService payments,
+    MatchingRecorder matching,
     NotificationService notifications,
     ITripNotifier notifier,
     IOptions<TripOptions> options)
@@ -121,6 +125,8 @@ public sealed class DriverTripService(
         driver.AcceptanceCount++;
         await db.DriverLocations.Where(l => l.DriverId == driver.Id).ExecuteUpdateAsync(s => s.SetProperty(l => l.CurrentTripId, trip.Id), ct);
 
+        await matching.RecordResponseAsync(trip.Id, driver.Id, CandidateResponse.Accepted, ct);
+        await matching.CloseOpenAttemptAsync(trip.Id, MatchingOutcome.Assigned, now, ct);
         events.Add(trip.Id, TripEventTypes.OfferAccepted, TripActor.Driver, driver.UserId, data: new { offerId = offer.Id });
         events.Add(trip.Id, TripEventTypes.DriverAssigned, TripActor.System, data: new { driverId = driver.Id, vehicleId = vehicle?.Id, etaSeconds = offer.EtaSeconds });
 
@@ -141,6 +147,7 @@ public sealed class DriverTripService(
         var offer = Guard.NotFound(await db.TripOffers.FirstOrDefaultAsync(o => o.Id == offerId && o.DriverId == driver.Id, ct));
         offer.Reject(clock.UtcNow);
         driver.RejectionCount++;
+        await matching.RecordResponseAsync(offer.TripId, driver.Id, CandidateResponse.Rejected, ct);
         events.Add(offer.TripId, TripEventTypes.OfferRejected, TripActor.Driver, driver.UserId,
             data: new { offerId = offer.Id, driverId = driver.Id, reasonCode = request?.ReasonCode?.Trim() });
         await db.SaveChangesAsync(ct);
@@ -201,9 +208,11 @@ public sealed class DriverTripService(
 
         var (trip, driver) = await LoadOwnAsync(tripId, ct);
         var now = clock.UtcNow;
+        var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
+        var freeWaitingMinutes = await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct);
         try
         {
-            trip.VerifyPin(pins.Matches(trip, request.Pin!), _options.PinMaxAttempts, _options.FreeWaitingMinutes * 60, now);
+            trip.VerifyPin(pins.Matches(trip, request.Pin!), _options.PinMaxAttempts, freeWaitingMinutes * 60, now);
         }
         catch (DomainException ex) when (ex.Code is ErrorCodes.PinInvalid or ErrorCodes.PinLocked)
         {
@@ -228,7 +237,11 @@ public sealed class DriverTripService(
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 
-    /// <summary>Completes the trip, computes the final fare and settles payment in a single transaction.</summary>
+    /// <summary>
+    /// Completes the trip, computes the final fare and settles payment in a single transaction. The final fare re-runs the pricing
+    /// engine with the actual distance/duration/waiting at the trip's request time and the demand multiplier locked in the quote; in
+    /// <c>offer</c> mode the offered price is the fare. The driver's net is the quoted share of the (subtotal × multipliers) core.
+    /// </summary>
     public async Task<TripDto> CompleteAsync(Guid tripId, CompleteTripRequest? request, Language lang, CancellationToken ct)
     {
         new Validator()
@@ -244,9 +257,22 @@ public sealed class DriverTripService(
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
         var distance = request?.FinalDistanceMeters ?? trip.EstimatedDistanceM;
         var duration = request?.FinalDurationSeconds ?? trip.EstimatedDurationS;
-        var quote = pricing.Quote(category, distance, duration, trip.WaitingSeconds);
-        var fare = trip.PricingMode == PricingMode.Offer && trip.OfferedPrice is { } offered ? offered : quote.Fare;
-        var driverEarnings = decimal.Round(fare * category.DriverSharePercent / 100m, 2, MidpointRounding.AwayFromZero);
+        var quote = await db.FareQuotes.AsNoTracking().FirstOrDefaultAsync(q => q.UsedTripId == trip.Id, ct);
+        var pickupAt = trip.ScheduledAt ?? trip.RequestedAt;
+        var calculation = await pricing.CalculateAsync(new FareRequest(category, new GeoPoint(trip.PickupLat, trip.PickupLng), new GeoPoint(trip.DropoffLat, trip.DropoffLng),
+            distance, duration, pickupAt, trip.WaitingSeconds, quote is null ? null : QuoteService.LockedDemandOf(quote)), ct);
+        decimal fare, driverEarnings;
+        if (trip.PricingMode == PricingMode.Offer && trip.OfferedPrice is { } offered)
+        {
+            fare = offered;
+            driverEarnings = PricingMath.Round2(offered * (quote?.DriverSharePercent ?? calculation.DriverSharePercent) / 100m);
+        }
+        else
+        {
+            fare = calculation.Total;
+            driverEarnings = calculation.DriverNetEarnings;
+        }
+
         var participants = await reads.ParticipantsAsync(trip, ct);
 
         var strategy = db.Database.CreateExecutionStrategy();
@@ -258,7 +284,7 @@ public sealed class DriverTripService(
             driver.CurrentTripId = null;
             await reads.ReleaseDriverAsync(trip, now, ct);
             events.Add(trip.Id, TripEventTypes.Completed, TripActor.Driver, driver.UserId, request?.FinalLat, request?.FinalLng,
-                new { finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod });
+                new { finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod, breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source });
             notifications.Add(participants.PassengerUserId, NotificationTypes.TripCompleted,
                 ("انتهت الرحلة", "Trip completed"),
                 ($"وصلت بسلامة. أجرة الرحلة {trip.TripNumber}: {fare:0.00} ر.س ({PaymentLabel(trip.PaymentMethod, Language.Ar)}).", $"You have arrived. Trip {trip.TripNumber} fare: SAR {fare:0.00} ({PaymentLabel(trip.PaymentMethod, Language.En)})."),
