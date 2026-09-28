@@ -59,25 +59,31 @@ backend/
 - Idempotency-Key header للعمليات المالية (تُفعّل بالكامل في الخطوة 3).
 - OpenAPI في `/openapi/v1.json` + Scalar UI في التطوير على `/docs`.
 
-## التطبيق `mobile_app/` (Flutter)
+## التطبيق `mobile_app/` (Flutter) — Feature-first + Clean Architecture + Cubit
 
 ```
 lib/
-  main.dart                 # bootstrap + ProviderScope
-  app/                      # router (go_router), theme, localization (ar/en)
-  core/                     # api client (dio + interceptors), storage (secure), env, result/errors
-  design/                   # tokens (colors, shadows, radii), widgets (AtaButton, AtaCard, Keypad, OtpBoxes, Toggle, SettingRow, StatCard, AtaIcon, BottomNav)
+  main.dart                 # bootstrap + DI + BlocObserver
+  app/                      # router (go_router), theme, l10n wiring
+  core/                     # di (get_it), network (dio + interceptors), storage, errors (Failure), utils
+  design/                   # tokens + widgets مشتركة (AtaButton, AtaCard, Keypad, OtpBoxes, AtaToggle, StatCard, SettingRow, BottomNav, MapCanvas, AtaIcon)
   features/
-    auth/                   # language, role, phone, otp, driver_pending
-    passenger/
-      home/ rides/ wallet/ safety/ account/
-    driver/
-      overview/ documents/ settings/ pending/
+    <feature>/
+      data/                 # models (json), datasources (remote/local), repository implementations
+      domain/               # entities, repository interfaces, usecases (كلاس لكل حالة استخدام)
+      presentation/         # cubit/ (Cubit + State immutable), pages/, widgets/
   l10n/                     # app_ar.arb, app_en.arb
 ```
 
-- إدارة الحالة: Riverpod. التوجيه: go_router. الشبكة: dio. التخزين الآمن: flutter_secure_storage. الترجمة: flutter_localizations + intl (gen-l10n).
-- الخريطة: `google_maps_flutter` تُضاف في الخطوة 2؛ في الخطوة 1 خريطة مرسومة (SVG-like) مطابقة للتصميم.
+الميزات (features): `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`, `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`.
+
+قواعد إلزامية:
+- إدارة الحالة بـ **flutter_bloc / Cubit فقط**. **يُمنع `setState`** في كل التطبيق؛ كل حالة شاشة (إدخال لوحة الأرقام، OTP، المفاتيح، التبويبات، العدّادات، المحطات، الفئة المختارة…) تعيش في Cubit بحالة غير قابلة للتغيير (`equatable` + `copyWith`).
+- الواجهات `StatelessWidget` تستخدم `BlocBuilder`/`BlocSelector`/`BlocListener`. لا منطق أعمال داخل الـWidgets.
+- الـCubit يستدعي Use Cases فقط؛ الـUse Case يستدعي واجهة Repository؛ التنفيذ في `data/`. النتائج `Either<Failure, T>` (fpdart).
+- ملفات صغيرة (< 250 سطر)، لا أرقام سحرية، تسمية موحدة، اختبارات `bloc_test` للـCubits الرئيسية.
+- التوجيه: go_router. الشبكة: dio. التخزين الآمن: flutter_secure_storage. الترجمة: gen-l10n.
+- الخريطة: `google_maps_flutter` تُضاف في الخطوة 2؛ في الخطوة 1 خريطة مرسومة (CustomPainter) مطابقة للتصميم.
 
 ## الموقع `website/` ولوحة الإدارة `dashboard/`
 
