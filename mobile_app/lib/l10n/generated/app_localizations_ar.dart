@@ -994,4 +994,312 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get driverNotApproved => 'لم يتم اعتماد حسابك بعد';
+
+  @override
+  String get tripEyebrow => 'رحلتك الحالية';
+
+  @override
+  String tripNumberLabel(String number) {
+    return 'رحلة $number';
+  }
+
+  @override
+  String etaChip(String eta) {
+    return 'يصل خلال $eta';
+  }
+
+  @override
+  String get etaUnknown => 'جارٍ حساب وقت الوصول';
+
+  @override
+  String get driverAssignedTitle => 'تم تعيين كابتن لرحلتك';
+
+  @override
+  String get driverEnRouteTitle => 'الكابتن في طريقه إليك';
+
+  @override
+  String get driverArrivedTitle => 'الكابتن وصل';
+
+  @override
+  String get waitingCopy => 'الكابتن بانتظارك عند نقطة الالتقاط';
+
+  @override
+  String get waitingTimerLabel => 'مدة الانتظار';
+
+  @override
+  String get pinTitle => 'رمز بدء الرحلة';
+
+  @override
+  String get pinCopy => 'أخبر الكابتن بهذا الرمز عند صعودك';
+
+  @override
+  String get callDriver => 'اتصال';
+
+  @override
+  String get shareTrip => 'مشاركة';
+
+  @override
+  String shareTripText(
+    String number,
+    String driver,
+    String vehicle,
+    String plate,
+  ) {
+    return 'رحلتي مع ATA رقم $number. الكابتن: $driver، المركبة: $vehicle ($plate).';
+  }
+
+  @override
+  String ratingValue(String rating) {
+    return 'تقييم $rating';
+  }
+
+  @override
+  String vehicleLine(String make, String model, String color) {
+    return '$make $model · $color';
+  }
+
+  @override
+  String get inTripTitle => 'رحلتك جارية';
+
+  @override
+  String get inTripCopy => 'استرخِ، سنعلمك عند الوصول إلى وجهتك.';
+
+  @override
+  String get readyToStartTitle => 'جاهز للانطلاق';
+
+  @override
+  String get readyToStartCopy => 'تم التحقق من الرمز، ستنطلق الرحلة الآن.';
+
+  @override
+  String get receiptTitle => 'وصلت بسلامة';
+
+  @override
+  String get receiptCopy => 'شكراً لاستخدامك ATA، إليك ملخص رحلتك.';
+
+  @override
+  String get receiptFare => 'الأجرة';
+
+  @override
+  String get receiptDistance => 'المسافة';
+
+  @override
+  String get receiptDuration => 'المدة';
+
+  @override
+  String get receiptPayment => 'طريقة الدفع';
+
+  @override
+  String kmValue(String km) {
+    return '$km كم';
+  }
+
+  @override
+  String metersValue(String meters) {
+    return '$meters م';
+  }
+
+  @override
+  String get rateTrip => 'قيّم الرحلة';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String get cancelledTitle => 'تم إلغاء الرحلة';
+
+  @override
+  String get cancelledCopy => 'يمكنك طلب رحلة جديدة في أي وقت.';
+
+  @override
+  String get noDriversTitle => 'لم نجد كابتن قريباً';
+
+  @override
+  String get noDriversCopy =>
+      'كل الكباتن مشغولون حالياً، حاول مرة أخرى بعد قليل.';
+
+  @override
+  String get retryRequest => 'طلب رحلة جديدة';
+
+  @override
+  String get cancelTrip => 'إلغاء الرحلة';
+
+  @override
+  String get cancelReasonTitle => 'لماذا تريد الإلغاء؟';
+
+  @override
+  String get cancelReasonCopy => 'اختر السبب لإلغاء الرحلة مباشرة.';
+
+  @override
+  String get reasonChangedMind => 'غيّرت رأيي';
+
+  @override
+  String get reasonDriverLate => 'الكابتن تأخر';
+
+  @override
+  String get reasonWrongPickup => 'موقع الانطلاق غير صحيح';
+
+  @override
+  String get reasonOther => 'سبب آخر';
+
+  @override
+  String get keepTrip => 'الاستمرار في الرحلة';
+
+  @override
+  String get offeredPriceLabel => 'اقتراح سعر';
+
+  @override
+  String get offeredPriceHint => 'اختياري: اقترح السعر الذي يناسبك';
+
+  @override
+  String offeredPriceActive(String price) {
+    return 'سعرك المقترح: $price';
+  }
+
+  @override
+  String get offeredPriceClear => 'إزالة';
+
+  @override
+  String get tripActiveExists => 'لديك رحلة نشطة بالفعل';
+
+  @override
+  String get offerExpiredError => 'انتهت صلاحية هذا العرض';
+
+  @override
+  String pinInvalid(int attempts) {
+    return 'الرمز غير صحيح، المحاولات المتبقية: $attempts';
+  }
+
+  @override
+  String get pinLocked => 'تم قفل التحقق من الرمز، تواصل مع الدعم';
+
+  @override
+  String get callFailed => 'تعذر بدء الاتصال';
+
+  @override
+  String get offerEyebrow => 'طلب جديد';
+
+  @override
+  String get offerTitle => 'رحلة جديدة بالقرب منك';
+
+  @override
+  String offerSecondsLeft(int seconds) {
+    return '$seconds ث';
+  }
+
+  @override
+  String get offerDistanceToPickup => 'المسافة إليك';
+
+  @override
+  String get offerEta => 'الوصول للراكب';
+
+  @override
+  String get offerTripDistance => 'مسافة الرحلة';
+
+  @override
+  String get offerPassengerPrice => 'سعر الراكب';
+
+  @override
+  String get offerNetEarnings => 'صافي أرباحك';
+
+  @override
+  String get offerPassenger => 'الراكب';
+
+  @override
+  String get acceptOffer => 'قبول الرحلة';
+
+  @override
+  String get rejectOffer => 'رفض';
+
+  @override
+  String get offerExpiredTitle => 'انتهى العرض';
+
+  @override
+  String get offerExpiredCopy => 'سيصلك الطلب التالي فور توفره.';
+
+  @override
+  String get pickupTitle => 'نقطة الالتقاط';
+
+  @override
+  String get dropoffTitle => 'الوجهة';
+
+  @override
+  String stopN(int n) {
+    return 'محطة $n';
+  }
+
+  @override
+  String get driverTripEyebrow => 'الرحلة الحالية';
+
+  @override
+  String get actionEnRoute => 'انطلقت إلى الراكب';
+
+  @override
+  String get actionArrived => 'وصلت';
+
+  @override
+  String get actionStart => 'ابدأ الرحلة';
+
+  @override
+  String get actionComplete => 'إنهاء الرحلة';
+
+  @override
+  String get enterPinTitle => 'أدخل رمز الراكب';
+
+  @override
+  String get enterPinCopy => 'اطلب من الراكب رمز بدء الرحلة المكوّن من 4 أرقام';
+
+  @override
+  String get verifyPinAction => 'تأكيد الرمز';
+
+  @override
+  String get stageDriverAssigned => 'تم قبول الرحلة';
+
+  @override
+  String get stageEnRoute => 'في الطريق إلى الراكب';
+
+  @override
+  String get stageArrived => 'وصلت إلى نقطة الالتقاط';
+
+  @override
+  String get stageWaiting => 'بانتظار الراكب';
+
+  @override
+  String get stagePinVerified => 'جاهز للانطلاق';
+
+  @override
+  String get stageInTrip => 'الرحلة جارية';
+
+  @override
+  String get stageCompleted => 'اكتملت الرحلة';
+
+  @override
+  String get callPassenger => 'اتصال بالراكب';
+
+  @override
+  String get backToDashboard => 'العودة إلى لوحة السائق';
+
+  @override
+  String get earningsLine => 'أرباحك من الرحلة';
+
+  @override
+  String get driverTripCompletedCopy =>
+      'أحسنت! تمت إضافة أرباح الرحلة إلى محفظتك.';
+
+  @override
+  String get driverTripCancelledCopy =>
+      'تم إلغاء هذه الرحلة، ستصلك طلبات جديدة قريباً.';
+
+  @override
+  String get locationDenied => 'يحتاج التطبيق إذن الموقع لاستقبال الرحلات';
+
+  @override
+  String get locationDeniedForever =>
+      'فعّل إذن الموقع لتطبيق ATA من إعدادات الجهاز';
+
+  @override
+  String get locationServiceDisabled =>
+      'فعّل خدمة الموقع (GPS) لاستقبال الرحلات';
+
+  @override
+  String get locationStreaming => 'موقعك يُشارك مع الركاب';
 }

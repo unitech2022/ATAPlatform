@@ -2,18 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-/// Turns a stream (a cubit's state stream) into a [Listenable] for
+/// Turns one or more streams (cubit state streams) into a [Listenable] for
 /// `GoRouter.refreshListenable`.
 class StreamRefreshListenable extends ChangeNotifier {
-  StreamRefreshListenable(Stream<Object?> stream) {
-    _subscription = stream.listen((_) => notifyListeners());
+  StreamRefreshListenable(Stream<Object?> stream)
+    : this.merge(<Stream<Object?>>[stream]);
+
+  StreamRefreshListenable.merge(List<Stream<Object?>> streams) {
+    for (final Stream<Object?> stream in streams) {
+      _subscriptions.add(stream.listen((_) => notifyListeners()));
+    }
   }
 
-  late final StreamSubscription<Object?> _subscription;
+  final List<StreamSubscription<Object?>> _subscriptions =
+      <StreamSubscription<Object?>>[];
 
   @override
   void dispose() {
-    _subscription.cancel();
+    for (final StreamSubscription<Object?> subscription in _subscriptions) {
+      subscription.cancel();
+    }
     super.dispose();
   }
 }

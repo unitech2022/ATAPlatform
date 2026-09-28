@@ -13,8 +13,11 @@ abstract final class AppRoutes {
 
   static const String driver = '/driver';
   static const String driverPending = '/driver/pending';
+  static const String driverOffer = '/driver/offer';
+  static const String driverTrip = '/driver/trip';
 
   static const String home = '/home';
+  static const String trip = '/trip';
   static const String rides = '/rides';
   static const String wallet = '/wallet';
   static const String walletTopUp = '/wallet/top-up';
@@ -30,6 +33,10 @@ abstract final class AppRoutes {
   static const String roleParam = 'role';
 
   static String phoneFor(UserRole role) => '$phone?$roleParam=${role.apiValue}';
+
+  /// Full-screen map pages of the rider (no bottom navigation).
+  static bool isMapPage(String location) =>
+      location == home || location == trip;
 
   /// Tabs of the floating bottom navigation, in order.
   static const List<String> passengerTabs = <String>[

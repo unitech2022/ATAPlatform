@@ -18,6 +18,35 @@ abstract final class Env {
     defaultValue: true,
   );
 
+  /// Explicit SignalR hub URL (`--dart-define=HUB_URL=...`). When empty the
+  /// hub URL is derived from [apiBaseUrl].
+  static const String hubUrlOverride = String.fromEnvironment('HUB_URL');
+
+  /// Emits a fake Riyadh position instead of using the GPS
+  /// (`--dart-define=SIMULATE_LOCATION=true`, handy on emulators).
+  static const bool simulateLocation = bool.fromEnvironment(
+    'SIMULATE_LOCATION',
+  );
+
   /// Reported to the API in the `device.appVersion` field.
   static const String appVersion = '1.0.0';
+
+  static const String _apiSuffix = '/api/v1';
+  static const String _hubPath = '/hubs/trips';
+
+  /// `<API origin>/hubs/trips` unless [hubUrlOverride] is set.
+  static String get hubUrl =>
+      hubUrlOverride.isNotEmpty ? hubUrlOverride : hubUrlFor(apiBaseUrl);
+
+  /// Strips the `/api/v1` suffix from [baseUrl] and appends the hub path.
+  static String hubUrlFor(String baseUrl) {
+    String origin = baseUrl.trim();
+    while (origin.endsWith('/')) {
+      origin = origin.substring(0, origin.length - 1);
+    }
+    if (origin.endsWith(_apiSuffix)) {
+      origin = origin.substring(0, origin.length - _apiSuffix.length);
+    }
+    return '$origin$_hubPath';
+  }
 }

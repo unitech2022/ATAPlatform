@@ -3,6 +3,7 @@ import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/features/auth/domain/entities/driver_summary.dart';
 import 'package:ata_app/features/auth/domain/entities/user_role.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_state.dart';
+import 'package:ata_app/features/trip/presentation/cubit/trip_presence.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fakes.dart';
@@ -69,5 +70,48 @@ void main() {
       AppRoutes.driver,
     );
     expect(resolveRedirect(approved, AppRoutes.driver), isNull);
+  });
+
+  test('an active trip pins the rider to /trip', () {
+    final SessionState rider = SessionState.authenticated(
+      testSession.copyWith(
+        user: testUser.copyWith(termsAcceptedAt: DateTime.utc(2026)),
+      ),
+    );
+    const TripPresence presence = TripPresence(hasPassengerTrip: true);
+    expect(
+      resolveRedirect(rider, AppRoutes.home, presence: presence),
+      AppRoutes.trip,
+    );
+    expect(resolveRedirect(rider, AppRoutes.trip, presence: presence), isNull);
+    expect(resolveRedirect(rider, AppRoutes.trip), AppRoutes.home);
+  });
+
+  test('drivers are sent to the trip, then the offer, then the dashboard', () {
+    final SessionState driver = SessionState.authenticated(
+      testSession.copyWith(
+        activeRole: UserRole.driver,
+        driver: const DriverSummary(
+          applicationNumber: 'ATA-1',
+          applicationStatus: DriverApplicationStatus.approved,
+        ),
+      ),
+    );
+    const TripPresence both = TripPresence(hasDriverTrip: true, hasOffer: true);
+    expect(
+      resolveRedirect(driver, AppRoutes.driver, presence: both),
+      AppRoutes.driverTrip,
+    );
+    const TripPresence offer = TripPresence(hasOffer: true);
+    expect(
+      resolveRedirect(driver, AppRoutes.driver, presence: offer),
+      AppRoutes.driverOffer,
+    );
+    expect(
+      resolveRedirect(driver, AppRoutes.driverOffer, presence: offer),
+      isNull,
+    );
+    expect(resolveRedirect(driver, AppRoutes.driverOffer), AppRoutes.driver);
+    expect(resolveRedirect(driver, AppRoutes.driverTrip), AppRoutes.driver);
   });
 }

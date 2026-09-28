@@ -11,6 +11,7 @@ import 'package:ata_app/design/widgets/screen_title.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/online_status_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/online_status_state.dart';
+import 'package:ata_app/features/trip/presentation/widgets/location_notice.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -84,6 +85,7 @@ class DriverHero extends StatelessWidget {
                   const SizedBox(height: AtaSpacing.sm),
                   InlineError(message: failureText(state.failure!, l10n)),
                 ],
+                if (state.isOnline) const LocationNotice(),
               ],
             );
           },

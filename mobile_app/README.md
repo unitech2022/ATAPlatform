@@ -3,8 +3,10 @@
 Rider + driver app for the ATA ride-hailing platform. Step 1 covers sign-in
 (language, role, phone, OTP), rider onboarding, the rider home (painted map +
 request sheet), rides, wallet, safety, account, driver onboarding status and
-the approved-driver dashboard. Trip dispatch, live tracking and Google Maps
-arrive in Step 2.
+the approved-driver dashboard. F8 adds the trip lifecycle: real ride
+requests, dispatch offers for drivers, the passenger/driver trip screens,
+live updates over SignalR and driver location streaming. Google Maps arrives
+with the Maps integration (the map is still the painted canvas).
 
 ## Run
 
@@ -21,6 +23,8 @@ flutter run \
 | `API_BASE_URL`      | `http://10.0.2.2:5000/api/v1`    | Backend base URL (`10.0.2.2` = host machine on Android)   |
 | `DRIVER_PORTAL_URL` | `http://10.0.2.2:5173/driver`    | Website page opened by "الانتقال لموقع رفع المستندات"     |
 | `SHOW_DEV_OTP`      | `true`                           | Show the `devCode` returned by the API on the OTP screen  |
+| `HUB_URL`           | derived: `<API origin>/hubs/trips` | SignalR trips hub (JWT sent as `access_token` query param) |
+| `SIMULATE_LOCATION` | `false`                          | Emit a fake Riyadh position instead of the GPS (emulators / tests) |
 
 Quality gates:
 
@@ -35,6 +39,30 @@ When the backend runs with `Otp:DevMode=true` it does not send an SMS and
 returns the code as `devCode` in `POST /auth/otp/request`. The OTP screen
 shows it as a small badge ("رمز التطوير: 1234") while `SHOW_DEV_OTP` is
 true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
+
+### Trip lifecycle (F8)
+
+- Rider: the home sheet estimates (`POST /passenger/trips/estimate`) and
+  creates the trip (`POST /passenger/trips`, `pricingMode: fixed`, or `offer`
+  when a price is suggested). The app-wide `ActiveTripCubit` watches
+  `GET /passenger/trips/active` merged with the hub `TripUpdated` /
+  `DriverLocation` events; while a trip exists the router pins the rider to
+  `/trip` (searching → driver card with ETA, PIN, call/share → waiting timer →
+  in trip → receipt / cancelled / no drivers). Cancelling asks for a reason.
+- Driver: going online starts `DriverOfferCubit` (`GET /driver/offers/active`
+  + `OfferReceived` / `OfferExpired`, 20 s countdown, `/driver/offer`) and
+  `LocationStreamCubit` (`geolocator`, 10 m distance filter, `PUT
+  /driver/location` every 3–5 s). `DriverTripCubit` drives `/driver/trip`:
+  en-route → arrived → PIN entry (`verify-pin`) → start → complete, or cancel
+  with a reason. The driver feed restores an active trip on app start.
+- Realtime: `TripRealtimeDataSource` (`signalr_netcore`) connects to
+  `HUB_URL?access_token=<jwt>` with automatic reconnect; `TripWatcher` merges
+  hub events with polling (every 5 s, backing off while the hub is
+  connected) into one stream, so the UI works without the socket.
+- Platform: `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` and the `tel:`
+  query are declared in `AndroidManifest.xml`;
+  `NSLocationWhenInUseUsageDescription` and `LSApplicationQueriesSchemes`
+  (`tel`) in `Info.plist`.
 
 ### Fonts and assets
 
@@ -66,7 +94,7 @@ lib/
 ```
 
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
-`safety`, `account`, `notifications`, `driver_dashboard`, `catalog`.
+`safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`.
 
 ### Rules
 
@@ -85,7 +113,12 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
   use cases. Tests register fake repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
   splash, signed-out → `/auth/*`, new rider → terms, driver not approved →
-  `/driver/pending`, approved driver → `/driver`, rider → `/home`.
+  `/driver/pending`, approved driver → `/driver`, rider → `/home`. The trip
+  cubits add: rider with an active trip → `/trip`, driver with an active trip
+  → `/driver/trip`, driver with a pending offer → `/driver/offer`.
+- App-wide trip cubits live in `TripCubits` (bootstrap): it binds them to the
+  session (passenger feed for riders, driver feed for approved drivers, all
+  stopped on sign-out) and feeds the router's `refreshListenable`.
 - Lints: `flutter_lints` plus `prefer_const_constructors`,
   `always_use_package_imports`, `avoid_print`, trailing commas, single quotes.
 - Files stay small (< ~250 lines); constants replace magic numbers
@@ -104,7 +137,12 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `NotificationPrefsCubit` | account            | notification toggles (optimistic)                 |
 | `DeleteAccountCubit`     | account            | `DELETE /me` confirmation                         |
 | `NotificationsCubit`     | notifications      | inbox + unread badge                              |
-| `HomeCubit`              | passenger_home     | categories, stops, time, payment, female driver, request |
+| `HomeCubit`              | passenger_home     | categories, stops, time, payment, female driver, price offer |
+| `TripRequestCubit`       | trip               | estimate + `POST /passenger/trips`, cancel while searching |
+| `ActiveTripCubit`        | trip (app-wide)    | passenger trip feed, driver ETA, waiting timer, cancel, dismiss |
+| `DriverOfferCubit`       | trip (app-wide)    | offer feed while online, 20 s countdown, accept / reject |
+| `DriverTripCubit`        | trip (app-wide)    | driver trip feed, next step, PIN entry, cancel            |
+| `LocationStreamCubit`    | trip (app-wide)    | permission, GPS stream, `PUT /driver/location`           |
 | `RidesCubit`             | rides              | trip history                                      |
 | `WalletCubit`            | wallet             | balance + payment methods                         |
 | `TopUpCubit`             | wallet             | amount, confirm, success                          |
@@ -116,8 +154,9 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 
 ## API
 
-Typed clients for sections 1–7 of `docs/05-api-contract.md` live in each
-feature's `data/datasources`. `core/network/api_client.dart` adds
+Typed clients for sections 1–7 of `docs/05-api-contract.md` and the F8
+endpoints of `docs/06-feature-f8-trip-lifecycle.md` live in each feature's
+`data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope
 `{ error: { code, message, details } }` to `AppException` → `Failure`.

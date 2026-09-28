@@ -1,4 +1,5 @@
 import 'package:ata_app/core/di/injector.dart';
+import 'package:ata_app/core/env/env.dart';
 import 'package:ata_app/core/storage/preferences_storage.dart';
 import 'package:ata_app/features/account/data/datasources/account_remote_data_source.dart';
 import 'package:ata_app/features/account/data/repositories/account_repository_impl.dart';
@@ -25,12 +26,23 @@ import 'package:ata_app/features/passenger_home/domain/repositories/passenger_re
 import 'package:ata_app/features/rides/data/datasources/rides_remote_data_source.dart';
 import 'package:ata_app/features/rides/data/repositories/rides_repository_impl.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
+import 'package:ata_app/features/trip/data/datasources/signalr_trip_realtime_data_source.dart';
+import 'package:ata_app/features/trip/data/datasources/trip_realtime_data_source.dart';
+import 'package:ata_app/features/trip/data/datasources/trip_remote_data_source.dart';
+import 'package:ata_app/features/trip/data/repositories/geolocator_location_repository.dart';
+import 'package:ata_app/features/trip/data/repositories/simulated_location_repository.dart';
+import 'package:ata_app/features/trip/data/repositories/trip_repository_impl.dart';
+import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
+import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
 import 'package:ata_app/features/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:ata_app/features/wallet/data/repositories/wallet_repository_impl.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
 
 /// Registers data sources and repository implementations.
-void registerData() {
+void registerData({
+  String hubUrl = '',
+  bool simulateLocation = Env.simulateLocation,
+}) {
   getIt
     ..registerLazySingleton<AuthLocalDataSource>(
       () => AuthLocalDataSource(tokens: getIt(), prefs: getIt()),
@@ -75,5 +87,22 @@ void registerData() {
       () => DriverDashboardRepositoryImpl(
         DriverDashboardRemoteDataSource(getIt()),
       ),
+    )
+    ..registerLazySingleton<TripRealtimeDataSource>(
+      () => SignalRTripRealtimeDataSource(
+        hubUrl: hubUrl.isEmpty ? Env.hubUrl : hubUrl,
+        tokens: getIt(),
+      ),
+    )
+    ..registerLazySingleton<TripRepository>(
+      () => TripRepositoryImpl(
+        remote: TripRemoteDataSource(getIt()),
+        realtime: getIt(),
+      ),
+    )
+    ..registerLazySingleton<LocationRepository>(
+      () => simulateLocation
+          ? const SimulatedLocationRepository()
+          : const GeolocatorLocationRepository(),
     );
 }

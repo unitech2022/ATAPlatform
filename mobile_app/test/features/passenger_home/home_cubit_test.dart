@@ -65,15 +65,21 @@ void main() {
   );
 
   blocTest<HomeCubit, HomeState>(
-    'request and cancel toggle the searching state',
+    'the price offer starts from the estimate, steps and clears',
     build: build,
     act: (HomeCubit cubit) async {
       await cubit.loadCategories();
       cubit
-        ..requestRide()
-        ..cancelRequest();
+        ..toggleOfferedPrice()
+        ..adjustOfferedPrice(-HomeCubit.offeredPriceStep)
+        ..adjustOfferedPrice(-100);
+      expect(cubit.state.offeredPrice, HomeCubit.minOfferedPrice);
+      cubit.toggleOfferedPrice();
     },
-    verify: (HomeCubit cubit) => expect(cubit.state.isSearching, isFalse),
+    verify: (HomeCubit cubit) {
+      expect(cubit.state.hasOfferedPrice, isFalse);
+      expect(cubit.state.canRequest, isTrue);
+    },
   );
 
   blocTest<HomeCubit, HomeState>(

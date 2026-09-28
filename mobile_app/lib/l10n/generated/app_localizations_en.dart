@@ -1005,4 +1005,315 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get driverNotApproved => 'Your account is not approved yet';
+
+  @override
+  String get tripEyebrow => 'Your current trip';
+
+  @override
+  String tripNumberLabel(String number) {
+    return 'Trip $number';
+  }
+
+  @override
+  String etaChip(String eta) {
+    return 'Arrives in $eta';
+  }
+
+  @override
+  String get etaUnknown => 'Calculating arrival time';
+
+  @override
+  String get driverAssignedTitle => 'A captain has been assigned';
+
+  @override
+  String get driverEnRouteTitle => 'Your captain is on the way';
+
+  @override
+  String get driverArrivedTitle => 'Your captain has arrived';
+
+  @override
+  String get waitingCopy => 'Your captain is waiting at the pickup point';
+
+  @override
+  String get waitingTimerLabel => 'Waiting time';
+
+  @override
+  String get pinTitle => 'Trip start code';
+
+  @override
+  String get pinCopy => 'Tell your captain this code when you board';
+
+  @override
+  String get callDriver => 'Call';
+
+  @override
+  String get shareTrip => 'Share';
+
+  @override
+  String shareTripText(
+    String number,
+    String driver,
+    String vehicle,
+    String plate,
+  ) {
+    return 'My ATA trip $number. Captain: $driver, vehicle: $vehicle ($plate).';
+  }
+
+  @override
+  String ratingValue(String rating) {
+    return 'Rating $rating';
+  }
+
+  @override
+  String vehicleLine(String make, String model, String color) {
+    return '$make $model · $color';
+  }
+
+  @override
+  String get inTripTitle => 'Your trip is in progress';
+
+  @override
+  String get inTripCopy => 'Sit back, we will let you know when you arrive.';
+
+  @override
+  String get readyToStartTitle => 'Ready to go';
+
+  @override
+  String get readyToStartCopy => 'Code verified, your trip is about to start.';
+
+  @override
+  String get receiptTitle => 'You have arrived';
+
+  @override
+  String get receiptCopy =>
+      'Thanks for riding with ATA. Here is your trip summary.';
+
+  @override
+  String get receiptFare => 'Fare';
+
+  @override
+  String get receiptDistance => 'Distance';
+
+  @override
+  String get receiptDuration => 'Duration';
+
+  @override
+  String get receiptPayment => 'Payment';
+
+  @override
+  String kmValue(String km) {
+    return '$km km';
+  }
+
+  @override
+  String metersValue(String meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get rateTrip => 'Rate the trip';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get cancelledTitle => 'Trip cancelled';
+
+  @override
+  String get cancelledCopy => 'You can request a new ride at any time.';
+
+  @override
+  String get noDriversTitle => 'No captain nearby';
+
+  @override
+  String get noDriversCopy =>
+      'All captains are busy right now. Please try again shortly.';
+
+  @override
+  String get retryRequest => 'Request a new ride';
+
+  @override
+  String get cancelTrip => 'Cancel trip';
+
+  @override
+  String get cancelReasonTitle => 'Why do you want to cancel?';
+
+  @override
+  String get cancelReasonCopy => 'Pick a reason to cancel the trip right away.';
+
+  @override
+  String get reasonChangedMind => 'I changed my mind';
+
+  @override
+  String get reasonDriverLate => 'The captain is late';
+
+  @override
+  String get reasonWrongPickup => 'Wrong pickup location';
+
+  @override
+  String get reasonOther => 'Other reason';
+
+  @override
+  String get keepTrip => 'Keep the trip';
+
+  @override
+  String get offeredPriceLabel => 'Suggest a price';
+
+  @override
+  String get offeredPriceHint => 'Optional: propose a price that suits you';
+
+  @override
+  String offeredPriceActive(String price) {
+    return 'Your offer: $price';
+  }
+
+  @override
+  String get offeredPriceClear => 'Clear';
+
+  @override
+  String get tripActiveExists => 'You already have an active trip';
+
+  @override
+  String get offerExpiredError => 'This offer has expired';
+
+  @override
+  String pinInvalid(int attempts) {
+    return 'Incorrect code. Attempts left: $attempts';
+  }
+
+  @override
+  String get pinLocked => 'Code verification is locked. Contact support.';
+
+  @override
+  String get callFailed => 'Could not start the call';
+
+  @override
+  String get offerEyebrow => 'New request';
+
+  @override
+  String get offerTitle => 'A new trip near you';
+
+  @override
+  String offerSecondsLeft(int seconds) {
+    return '${seconds}s';
+  }
+
+  @override
+  String get offerDistanceToPickup => 'Distance to you';
+
+  @override
+  String get offerEta => 'Time to pickup';
+
+  @override
+  String get offerTripDistance => 'Trip distance';
+
+  @override
+  String get offerPassengerPrice => 'Passenger price';
+
+  @override
+  String get offerNetEarnings => 'Your net earnings';
+
+  @override
+  String get offerPassenger => 'Passenger';
+
+  @override
+  String get acceptOffer => 'Accept trip';
+
+  @override
+  String get rejectOffer => 'Decline';
+
+  @override
+  String get offerExpiredTitle => 'Offer expired';
+
+  @override
+  String get offerExpiredCopy =>
+      'The next request will arrive as soon as it is available.';
+
+  @override
+  String get pickupTitle => 'Pickup';
+
+  @override
+  String get dropoffTitle => 'Destination';
+
+  @override
+  String stopN(int n) {
+    return 'Stop $n';
+  }
+
+  @override
+  String get driverTripEyebrow => 'Current trip';
+
+  @override
+  String get actionEnRoute => 'Heading to passenger';
+
+  @override
+  String get actionArrived => 'I have arrived';
+
+  @override
+  String get actionStart => 'Start trip';
+
+  @override
+  String get actionComplete => 'End trip';
+
+  @override
+  String get enterPinTitle => 'Enter the passenger code';
+
+  @override
+  String get enterPinCopy =>
+      'Ask the passenger for the 4-digit trip start code';
+
+  @override
+  String get verifyPinAction => 'Verify code';
+
+  @override
+  String get stageDriverAssigned => 'Trip accepted';
+
+  @override
+  String get stageEnRoute => 'On the way to the passenger';
+
+  @override
+  String get stageArrived => 'At the pickup point';
+
+  @override
+  String get stageWaiting => 'Waiting for the passenger';
+
+  @override
+  String get stagePinVerified => 'Ready to depart';
+
+  @override
+  String get stageInTrip => 'Trip in progress';
+
+  @override
+  String get stageCompleted => 'Trip completed';
+
+  @override
+  String get callPassenger => 'Call passenger';
+
+  @override
+  String get backToDashboard => 'Back to dashboard';
+
+  @override
+  String get earningsLine => 'Your earnings for this trip';
+
+  @override
+  String get driverTripCompletedCopy =>
+      'Well done! The trip earnings were added to your wallet.';
+
+  @override
+  String get driverTripCancelledCopy =>
+      'This trip was cancelled. New requests will arrive soon.';
+
+  @override
+  String get locationDenied => 'ATA needs location access to receive trips';
+
+  @override
+  String get locationDeniedForever =>
+      'Enable location access for ATA in the device settings';
+
+  @override
+  String get locationServiceDisabled =>
+      'Turn on location services (GPS) to receive trips';
+
+  @override
+  String get locationStreaming => 'Your location is shared with passengers';
 }

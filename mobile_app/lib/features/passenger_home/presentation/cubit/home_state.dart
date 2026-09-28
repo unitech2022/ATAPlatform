@@ -4,9 +4,6 @@ import 'package:ata_app/features/passenger_home/domain/entities/fare_estimate.da
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:equatable/equatable.dart';
 
-/// Whether a ride request is in progress (local only in Step 1).
-enum RequestStatus { idle, searching }
-
 /// State of the rider home sheet.
 class HomeState extends Equatable {
   const HomeState({
@@ -18,7 +15,7 @@ class HomeState extends Equatable {
     this.rideTime = RideTime.now,
     this.preferFemaleDriver = false,
     this.payment = PaymentOption.cash,
-    this.requestStatus = RequestStatus.idle,
+    this.offeredPrice,
     this.estimate = const FareEstimate(price: 0, etaMinutes: 0),
   });
 
@@ -30,7 +27,9 @@ class HomeState extends Equatable {
   final RideTime rideTime;
   final bool preferFemaleDriver;
   final PaymentOption payment;
-  final RequestStatus requestStatus;
+
+  /// Optional price proposed by the rider (`pricingMode: offer`).
+  final double? offeredPrice;
   final FareEstimate estimate;
 
   RideCategory? get selectedCategory {
@@ -42,8 +41,8 @@ class HomeState extends Equatable {
 
   int get maxStops => selectedCategory?.maxStops ?? 0;
   bool get canAddStop => stops.length < maxStops;
-  bool get isSearching => requestStatus == RequestStatus.searching;
-  bool get canRequest => selectedCategory != null && !isSearching;
+  bool get canRequest => selectedCategory != null;
+  bool get hasOfferedPrice => offeredPrice != null;
 
   HomeState copyWith({
     List<RideCategory>? categories,
@@ -54,9 +53,10 @@ class HomeState extends Equatable {
     RideTime? rideTime,
     bool? preferFemaleDriver,
     PaymentOption? payment,
-    RequestStatus? requestStatus,
+    double? offeredPrice,
     FareEstimate? estimate,
     bool clearFailure = false,
+    bool clearOfferedPrice = false,
   }) => HomeState(
     categories: categories ?? this.categories,
     loadingCategories: loadingCategories ?? this.loadingCategories,
@@ -68,7 +68,7 @@ class HomeState extends Equatable {
     rideTime: rideTime ?? this.rideTime,
     preferFemaleDriver: preferFemaleDriver ?? this.preferFemaleDriver,
     payment: payment ?? this.payment,
-    requestStatus: requestStatus ?? this.requestStatus,
+    offeredPrice: clearOfferedPrice ? null : offeredPrice ?? this.offeredPrice,
     estimate: estimate ?? this.estimate,
   );
 
@@ -82,7 +82,7 @@ class HomeState extends Equatable {
     rideTime,
     preferFemaleDriver,
     payment,
-    requestStatus,
+    offeredPrice,
     estimate,
   ];
 }

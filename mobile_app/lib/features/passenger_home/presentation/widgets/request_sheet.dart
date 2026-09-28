@@ -14,16 +14,20 @@ import 'package:ata_app/design/widgets/sheet_handle.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/female_driver_option.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/offered_price_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/ride_category_list.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/route_fields.dart';
-import 'package:ata_app/features/passenger_home/presentation/widgets/searching_view.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/time_pills.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
+import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
+import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The white bottom sheet: request form or the "searching" state.
+/// The white bottom sheet with the request form. Once a trip is created the
+/// router moves the rider to `/trip`.
 class RequestSheet extends StatelessWidget {
   const RequestSheet({super.key});
 
@@ -42,16 +46,9 @@ class RequestSheet extends StatelessWidget {
           AtaSpacing.gutter,
           AtaSpacing.gutter + MediaQuery.paddingOf(context).bottom,
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const SheetHandle(),
-            BlocSelector<HomeCubit, HomeState, bool>(
-              selector: (HomeState state) => state.isSearching,
-              builder: (BuildContext context, bool searching) =>
-                  searching ? const SearchingView() : const _RequestForm(),
-            ),
-          ],
+          children: <Widget>[SheetHandle(), _RequestForm()],
         ),
       ),
     );
@@ -91,6 +88,8 @@ class _RequestForm extends StatelessWidget {
         const RideCategoryList(),
         const SizedBox(height: AtaSpacing.lg),
         const PaymentRow(),
+        const SizedBox(height: AtaSpacing.sm),
+        const OfferedPriceRow(),
         const SizedBox(height: AtaSpacing.lg),
         const _RequestButton(),
         const SizedBox(height: AtaSpacing.md),
@@ -126,14 +125,29 @@ class _RequestButton extends StatelessWidget {
         }
         final String name = state.selectedCategory?.name ?? '';
         final String price = l10n.priceWithCurrency(
-          Money.compact(state.estimate.price),
+          Money.compact(state.offeredPrice ?? state.estimate.price),
         );
-        return AtaButton(
-          label: l10n.requestRide(name, price),
-          trailingIcon: AtaIcons.arrow,
-          onPressed: state.canRequest
-              ? context.read<HomeCubit>().requestRide
-              : null,
+        return BlocBuilder<TripRequestCubit, TripRequestState>(
+          builder: (BuildContext context, TripRequestState request) {
+            final TripRequestCubit cubit = context.read<TripRequestCubit>();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (request.failure != null) ...<Widget>[
+                  InlineError(message: failureText(request.failure!, l10n)),
+                  const SizedBox(height: AtaSpacing.sm),
+                ],
+                AtaButton(
+                  label: l10n.requestRide(name, price),
+                  trailingIcon: AtaIcons.arrow,
+                  loading: request.isBusy || request.isSearching,
+                  onPressed: state.canRequest && !request.isBusy
+                      ? () => cubit.request(buildTripRequest(state, l10n))
+                      : null,
+                ),
+              ],
+            );
+          },
         );
       },
     );

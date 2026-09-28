@@ -7,8 +7,8 @@ import 'package:ata_app/features/passenger_home/domain/usecases/update_passenger
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Ride-request sheet: categories, stops, options and the local
-/// "searching" state (real dispatch arrives in Step 2).
+/// Ride-request sheet: categories, stops, options and the optional price
+/// offer. The request itself is sent by `TripRequestCubit`.
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit({
     required this._getRideCategories,
@@ -44,7 +44,6 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void selectCategory(String id) {
-    if (state.isSearching) return;
     final HomeState next = state.copyWith(selectedCategoryId: id);
     // Drop stops that exceed the new category's limit.
     final int max = next.maxStops;
@@ -56,12 +55,12 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void addStop(String name) {
-    if (!state.canAddStop || state.isSearching) return;
+    if (!state.canAddStop) return;
     _emitWithEstimate(state.copyWith(stops: <String>[...state.stops, name]));
   }
 
   void removeStop(int index) {
-    if (index < 0 || index >= state.stops.length || state.isSearching) return;
+    if (index < 0 || index >= state.stops.length) return;
     final List<String> stops = List<String>.of(state.stops)..removeAt(index);
     _emitWithEstimate(state.copyWith(stops: stops));
   }
@@ -80,13 +79,35 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void requestRide() {
-    if (!state.canRequest) return;
-    emit(state.copyWith(requestStatus: RequestStatus.searching));
+  /// Step between two proposed prices and the lowest accepted offer.
+  static const double offeredPriceStep = 5;
+  static const double minOfferedPrice = 5;
+
+  /// Starts a price offer from the current estimate, or clears it.
+  void toggleOfferedPrice() {
+    if (state.hasOfferedPrice) {
+      emit(state.copyWith(clearOfferedPrice: true));
+    } else {
+      emit(state.copyWith(offeredPrice: _roundPrice(state.estimate.price)));
+    }
   }
 
-  void cancelRequest() =>
-      emit(state.copyWith(requestStatus: RequestStatus.idle));
+  void adjustOfferedPrice(double delta) {
+    final double? current = state.offeredPrice;
+    if (current == null) return;
+    final double next = current + delta;
+    emit(
+      state.copyWith(
+        offeredPrice: next < minOfferedPrice ? minOfferedPrice : next,
+      ),
+    );
+  }
+
+  double _roundPrice(double price) {
+    final double rounded =
+        (price / offeredPriceStep).round() * offeredPriceStep;
+    return rounded < minOfferedPrice ? minOfferedPrice : rounded;
+  }
 
   void _emitWithEstimate(HomeState next) {
     final RideCategory? category = next.selectedCategory;

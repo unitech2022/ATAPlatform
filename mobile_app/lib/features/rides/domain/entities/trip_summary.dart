@@ -10,12 +10,13 @@ enum TripStatus {
 
   final String apiValue;
 
-  static TripStatus parse(String? value) {
-    for (final TripStatus status in values) {
-      if (status.apiValue == value) return status;
-    }
-    return active;
-  }
+  /// Maps the raw lifecycle status (`completed`, `cancelled`, `no_drivers`,
+  /// `searching`, `in_trip`, ...) to a list bucket.
+  static TripStatus parse(String? value) => switch (value) {
+    'completed' => completed,
+    'cancelled' || 'no_drivers' => cancelled,
+    _ => active,
+  };
 }
 
 /// `TripSummary` of the API contract (passenger and driver lists).
@@ -27,11 +28,15 @@ class TripSummary extends Equatable {
     required this.status,
     required this.fare,
     required this.categoryName,
+    this.tripNumber = '',
     this.scheduledAt,
     this.completedAt,
+    this.requestedAt,
+    this.earning,
   });
 
   final String id;
+  final String tripNumber;
   final String destinationName;
   final String pickupName;
   final TripStatus status;
@@ -39,13 +44,21 @@ class TripSummary extends Equatable {
   final String categoryName;
   final DateTime? scheduledAt;
   final DateTime? completedAt;
+  final DateTime? requestedAt;
+
+  /// Driver net earning (driver list only).
+  final double? earning;
 
   /// Best timestamp to display.
-  DateTime? get displayDate => completedAt ?? scheduledAt;
+  DateTime? get displayDate => completedAt ?? scheduledAt ?? requestedAt;
+
+  /// Amount shown to the current role: the driver's earning when present.
+  double get displayAmount => earning ?? fare;
 
   @override
   List<Object?> get props => <Object?>[
     id,
+    tripNumber,
     destinationName,
     pickupName,
     status,
@@ -53,5 +66,7 @@ class TripSummary extends Equatable {
     categoryName,
     scheduledAt,
     completedAt,
+    requestedAt,
+    earning,
   ];
 }

@@ -80,7 +80,7 @@ class _DriverTripRow extends StatelessWidget {
       title: l10n.tripRoute(trip.pickupName, trip.destinationName),
       subtitle: when.isEmpty ? status : '$when · $status',
       trailing: Text(
-        l10n.priceWithCurrency(Money.compact(trip.fare)),
+        l10n.priceWithCurrency(Money.compact(trip.displayAmount)),
         style: AtaText.bodyStrong,
       ),
     );

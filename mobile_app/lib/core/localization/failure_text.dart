@@ -9,6 +9,10 @@ abstract final class ErrorCodes {
   static const String rateLimited = 'rate_limited';
   static const String phoneInvalid = 'phone_invalid';
   static const String driverNotApproved = 'driver_not_approved';
+  static const String tripActiveExists = 'trip_active_exists';
+  static const String offerExpired = 'offer_expired';
+  static const String pinInvalid = 'pin_invalid';
+  static const String pinLocked = 'pin_locked';
   static const String attemptsLeft = 'attemptsLeft';
   static const String retryAfterSeconds = 'retryAfterSeconds';
 }
@@ -43,6 +47,14 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       return l10n.phoneInvalid;
     case ErrorCodes.driverNotApproved:
       return l10n.driverNotApproved;
+    case ErrorCodes.tripActiveExists:
+      return l10n.tripActiveExists;
+    case ErrorCodes.offerExpired:
+      return l10n.offerExpiredError;
+    case ErrorCodes.pinInvalid:
+      return l10n.pinInvalid(failure.intDetail(ErrorCodes.attemptsLeft) ?? 0);
+    case ErrorCodes.pinLocked:
+      return l10n.pinLocked;
   }
   return failure.message.isEmpty ? l10n.errorUnexpected : failure.message;
 }

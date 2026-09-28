@@ -22,18 +22,29 @@ import 'package:ata_app/features/driver_onboarding/presentation/pages/driver_pen
 import 'package:ata_app/features/passenger_home/presentation/pages/home_page.dart';
 import 'package:ata_app/features/rides/presentation/pages/rides_page.dart';
 import 'package:ata_app/features/safety/presentation/pages/safety_page.dart';
+import 'package:ata_app/features/trip/presentation/cubit/trip_cubits.dart';
+import 'package:ata_app/features/trip/presentation/pages/active_trip_page.dart';
+import 'package:ata_app/features/trip/presentation/pages/driver_offer_page.dart';
+import 'package:ata_app/features/trip/presentation/pages/driver_trip_page.dart';
 import 'package:ata_app/features/wallet/presentation/pages/top_up_page.dart';
 import 'package:ata_app/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
-/// Builds the app router bound to the [SessionCubit].
-GoRouter createAppRouter(SessionCubit session) {
+/// Builds the app router bound to the [SessionCubit] and the trip cubits
+/// (active trip / offer redirects).
+GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
   return GoRouter(
     initialLocation: AppRoutes.splash,
-    refreshListenable: StreamRefreshListenable(session.stream),
-    redirect: (BuildContext context, GoRouterState state) =>
-        resolveRedirect(session.state, state.matchedLocation),
+    refreshListenable: StreamRefreshListenable.merge(<Stream<Object?>>[
+      session.stream,
+      trips.changes,
+    ]),
+    redirect: (BuildContext context, GoRouterState state) => resolveRedirect(
+      session.state,
+      state.matchedLocation,
+      presence: trips.presence,
+    ),
     routes: <RouteBase>[
       GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashPage()),
       ..._authRoutes,
@@ -45,11 +56,23 @@ GoRouter createAppRouter(SessionCubit session) {
         path: AppRoutes.driver,
         builder: (_, _) => const DriverDashboardPage(),
       ),
+      GoRoute(
+        path: AppRoutes.driverOffer,
+        builder: (_, _) => const DriverOfferPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.driverTrip,
+        builder: (_, _) => const DriverTripPage(),
+      ),
       ShellRoute(
         builder: (BuildContext context, GoRouterState state, Widget child) =>
             PassengerShell(location: state.matchedLocation, child: child),
         routes: <RouteBase>[
           GoRoute(path: AppRoutes.home, builder: (_, _) => const HomePage()),
+          GoRoute(
+            path: AppRoutes.trip,
+            builder: (_, _) => const ActiveTripPage(),
+          ),
           GoRoute(path: AppRoutes.rides, builder: (_, _) => const RidesPage()),
           GoRoute(
             path: AppRoutes.wallet,

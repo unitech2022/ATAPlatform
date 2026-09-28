@@ -22,6 +22,22 @@ import 'package:ata_app/features/notifications/domain/usecases/get_notifications
 import 'package:ata_app/features/notifications/domain/usecases/mark_notifications_read.dart';
 import 'package:ata_app/features/passenger_home/domain/usecases/update_passenger_preferences.dart';
 import 'package:ata_app/features/rides/domain/usecases/get_passenger_trips.dart';
+import 'package:ata_app/features/trip/domain/usecases/accept_offer.dart';
+import 'package:ata_app/features/trip/domain/usecases/advance_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/cancel_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/estimate_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/get_active_offer.dart';
+import 'package:ata_app/features/trip/domain/usecases/get_active_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/get_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/reject_offer.dart';
+import 'package:ata_app/features/trip/domain/usecases/request_location_access.dart';
+import 'package:ata_app/features/trip/domain/usecases/request_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/send_driver_location.dart';
+import 'package:ata_app/features/trip/domain/usecases/verify_pin.dart';
+import 'package:ata_app/features/trip/domain/usecases/watch_active_trip.dart';
+import 'package:ata_app/features/trip/domain/usecases/watch_device_position.dart';
+import 'package:ata_app/features/trip/domain/usecases/watch_driver_location.dart';
+import 'package:ata_app/features/trip/domain/usecases/watch_offers.dart';
 import 'package:ata_app/features/wallet/domain/usecases/get_wallet.dart';
 import 'package:ata_app/features/wallet/domain/usecases/get_wallet_transactions.dart';
 import 'package:ata_app/features/wallet/domain/usecases/top_up_wallet.dart';
@@ -78,5 +94,30 @@ void registerUseCases() {
     ..registerLazySingleton<GetEarningsSummary>(
       () => GetEarningsSummary(getIt()),
     )
-    ..registerLazySingleton<GetDriverTrips>(() => GetDriverTrips(getIt()));
+    ..registerLazySingleton<GetDriverTrips>(() => GetDriverTrips(getIt()))
+    // trip
+    ..registerLazySingleton<EstimateTrip>(() => EstimateTrip(getIt()))
+    ..registerLazySingleton<RequestTrip>(() => RequestTrip(getIt()))
+    ..registerLazySingleton<CancelTrip>(() => CancelTrip(getIt()))
+    ..registerLazySingleton<GetActiveTrip>(() => GetActiveTrip(getIt()))
+    ..registerLazySingleton<GetTrip>(() => GetTrip(getIt()))
+    ..registerLazySingleton<WatchActiveTrip>(() => WatchActiveTrip(getIt()))
+    ..registerLazySingleton<WatchDriverLocation>(
+      () => WatchDriverLocation(getIt()),
+    )
+    ..registerLazySingleton<GetActiveOffer>(() => GetActiveOffer(getIt()))
+    ..registerLazySingleton<WatchOffers>(() => WatchOffers(getIt()))
+    ..registerLazySingleton<AcceptOffer>(() => AcceptOffer(getIt()))
+    ..registerLazySingleton<RejectOffer>(() => RejectOffer(getIt()))
+    ..registerLazySingleton<AdvanceTrip>(() => AdvanceTrip(getIt()))
+    ..registerLazySingleton<VerifyPin>(() => VerifyPin(getIt()))
+    ..registerLazySingleton<SendDriverLocation>(
+      () => SendDriverLocation(getIt()),
+    )
+    ..registerLazySingleton<RequestLocationAccess>(
+      () => RequestLocationAccess(getIt()),
+    )
+    ..registerLazySingleton<WatchDevicePosition>(
+      () => WatchDevicePosition(getIt()),
+    );
 }

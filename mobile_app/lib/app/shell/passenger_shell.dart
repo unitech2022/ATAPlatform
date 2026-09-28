@@ -11,7 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 /// Rider chrome: header on top, page in the middle, floating bottom
-/// navigation (hidden on the map home).
+/// navigation (hidden on the map pages: home and the active trip).
 class PassengerShell extends StatelessWidget {
   const PassengerShell({
     super.key,
@@ -25,7 +25,7 @@ class PassengerShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final bool isHome = location == AppRoutes.home;
+    final bool isHome = AppRoutes.isMapPage(location);
     final int? tabIndex = AppRoutes.tabIndexFor(location);
     return BlocProvider<NotificationsCubit>(
       create: (_) =>

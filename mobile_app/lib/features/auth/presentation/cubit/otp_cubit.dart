@@ -1,20 +1,12 @@
 import 'dart:async';
 
+import 'package:ata_app/core/utils/countdown.dart';
 import 'package:ata_app/features/auth/domain/entities/otp_request.dart';
 import 'package:ata_app/features/auth/domain/entities/user_role.dart';
 import 'package:ata_app/features/auth/domain/usecases/request_otp.dart';
 import 'package:ata_app/features/auth/domain/usecases/verify_otp.dart';
 import 'package:ata_app/features/auth/presentation/cubit/otp_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-/// Emits the remaining seconds once per tick, ending with 0.
-typedef Countdown = Stream<int> Function(int seconds);
-
-/// Default one-second countdown.
-Stream<int> secondsCountdown(int seconds) => Stream<int>.periodic(
-  const Duration(seconds: 1),
-  (int tick) => seconds - tick - 1,
-).take(seconds);
 
 /// Code entry, verification and resend countdown for the OTP screen.
 class OtpCubit extends Cubit<OtpState> {

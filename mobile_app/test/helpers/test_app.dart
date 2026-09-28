@@ -12,12 +12,16 @@ import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
+import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
+import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
+import 'package:ata_app/features/trip/presentation/cubit/trip_cubits.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes.dart';
+import 'trip_fakes.dart';
 
 /// Registers in-memory storage and fake repositories, then the real use cases.
 Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
@@ -35,7 +39,9 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     ..registerSingleton<NotificationsRepository>(FakeNotificationsRepository())
     ..registerSingleton<PassengerRepository>(FakePassengerRepository())
     ..registerSingleton<RidesRepository>(FakeRidesRepository())
-    ..registerSingleton<WalletRepository>(FakeWalletRepository());
+    ..registerSingleton<WalletRepository>(FakeWalletRepository())
+    ..registerSingleton<TripRepository>(FakeTripRepository())
+    ..registerSingleton<LocationRepository>(FakeLocationRepository());
   registerUseCases();
 }
 
@@ -45,15 +51,18 @@ AtaApp buildTestApp() {
     restoreSession: getIt(),
     logout: getIt(),
     events: getIt(),
-  )..restore();
+  );
   final LocaleCubit locale = LocaleCubit(
     getSavedLocale: getIt(),
     changeLanguage: getIt(),
   );
+  final TripCubits trips = TripCubits.fromInjector()..bindSession(session);
+  session.restore();
   return AtaApp(
     sessionCubit: session,
     localeCubit: locale,
-    router: createAppRouter(session),
+    tripCubits: trips,
+    router: createAppRouter(session, trips),
   );
 }
 
