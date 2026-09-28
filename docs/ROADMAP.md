@@ -51,3 +51,23 @@
 | F21 | **الجاهزية التشغيلية** (Observability، Backups، Retention، المواءمة التنظيمية) | infra | — | — | — | ⏳ |
 
 كل ميزة تُسلَّم كـ commit مستقل على فرع `claude/system-readiness-bc02lz` مع تحديث هذا الملف. F1–F10 مُسلَّمة على الطبقات الأربع ومُتحقَّق منها على MySQL 8 فعلي؛ الجاري الآن F11–F21.
+
+## مراجع العقود
+
+كل ميزة متبقية لها مستند عقد يكفي منفّذي الطبقات الأربع (الخلفية، Flutter، الموقع، لوحة الإدارة) للعمل بالتوازي:
+
+| # | الميزة | مستند العقد |
+|---|---|---|
+| F11 | المدفوعات | `docs/08-feature-f11-f13-payments-notifications.md` (§F11) |
+| F12 | السلامة | `docs/09-feature-f12-f14-safety-cancellation.md` (§F12) |
+| F13 | الإشعارات الفورية | `docs/08-feature-f11-f13-payments-notifications.md` (§F13) |
+| F14 | الإلغاء والموثوقية | `docs/09-feature-f12-f14-safety-cancellation.md` (§F14) |
+| F15 | التقييم والعروض والمستويات والحوافز | `docs/10-feature-f15-f16-ratings-promotions-favorites.md` (§F15) |
+| F16 | السائق المفضل | `docs/10-feature-f15-f16-ratings-promotions-favorites.md` (§F16) |
+| F17 | الرحلات المجدولة والمطار | `docs/11-feature-f17-f18-scheduled-airport-support.md` (§F17) |
+| F18 | الدعم | `docs/11-feature-f17-f18-scheduled-airport-support.md` (§F18) |
+| F19 | الشركات | `docs/12-feature-f19-f21-corporate-reports-ops.md` (§F19) |
+| F20 | التقارير والصلاحيات | `docs/12-feature-f19-f21-corporate-reports-ops.md` (§F20) |
+| F21 | الجاهزية التشغيلية | `docs/12-feature-f19-f21-corporate-reports-ops.md` (§F21) |
+
+مراجع مشتركة: حسابات الدفتر المالي وأنواع الحركات والقيود (`08` §F11.3)، كتالوج أحداث الإشعارات (`08` §F13.2)، الروابط العميقة `ata://` (`08` §F13.7)، كتالوج الصلاحيات (`12` §F20.2)، تعريفات مؤشرات الأداء (`12` §F20.6)، مرجع متغيرات البيئة (`12` §F21.10).
