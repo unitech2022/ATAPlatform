@@ -9,10 +9,14 @@ import { ErrorState } from '../components/ErrorState'
 import { Icon } from '../components/Icon'
 import { JsonView } from '../components/JsonView'
 import { MapView } from '../components/MapView'
-import { ReasonModal } from '../components/ReasonModal'
+import { Select, Textarea, Toggle } from '../components/Field'
+import { Modal } from '../components/Modal'
 import { PageSpinner } from '../components/Spinner'
 import { Table, type Column } from '../components/Table'
+import { TripCancellationCard } from '../components/TripCancellationCard'
+import { TripMessagesPanel } from '../components/TripMessagesPanel'
 import { TripPaymentCard } from '../components/TripPaymentCard'
+import { TripSafetyCard } from '../components/TripSafetyCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -21,9 +25,10 @@ import type { TranslationKey } from '../i18n'
 import { matching, trips } from '../lib/admin'
 import { formatDateTime, formatKm, formatMinutes, formatMoney, formatNumber } from '../lib/format'
 import { escapeHtml, L, pinIcon, routeLineStyle, stopIcon } from '../lib/leaflet'
+import { AT_FAULT_KEY, AT_FAULTS } from '../lib/cancellation'
 import { MATCHING_OUTCOME_KEY } from '../lib/pricing'
 import { isTerminalTripStatus, PAYMENT_METHOD_KEY, PRICING_MODE_KEY, TRIP_ACTOR_KEY } from '../lib/trips'
-import type { CandidateResponse, MatchingAttempt, MatchingCandidate, TripDetail, TripEvent, TripTimeline } from '../lib/types'
+import type { AtFault, CandidateResponse, MatchingAttempt, MatchingCandidate, TripDetail, TripEvent, TripTimeline } from '../lib/types'
 
 const TIMELINE_STEPS: { key: keyof TripTimeline; label: TranslationKey }[] = [
   { key: 'requestedAt', label: 'tlRequested' },
@@ -41,9 +46,9 @@ export function TripDetailPage() {
   const query = useQuery(() => trips.get(id), `trip:${id}`)
   const [cancelOpen, setCancelOpen] = useState(false)
 
-  const cancelTrip = async (reason: string) => {
+  const cancelTrip = async (reason: string, atFault: AtFault, chargeFee: boolean) => {
     try {
-      await trips.cancel(id, reason)
+      await trips.cancel(id, reason, { atFault, chargeFee })
       toast.success(t('tripCancelled'))
       setCancelOpen(false)
       query.reload()
@@ -188,6 +193,10 @@ export function TripDetailPage() {
 
       <TripPaymentCard trip={trip} />
 
+      {(isCancelled || trip.cancellation) && <TripCancellationCard trip={trip} onChanged={query.reload} />}
+
+      <TripSafetyCard trip={trip} />
+
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
         <Card title={t('timeline')}>
           <Timeline trip={trip} />
@@ -201,15 +210,102 @@ export function TripDetailPage() {
         <MatchingSection tripId={id} />
       </Card>
 
-      <ReasonModal
-        open={cancelOpen}
-        title={t('cancelTripTitle')}
-        description={`${trip.tripNumber} — ${t('cancelTripCopy')}`}
-        confirmLabel={t('cancelTrip')}
-        onClose={() => setCancelOpen(false)}
-        onConfirm={cancelTrip}
-      />
+      {trip.driver && (
+        <Card title={t('sfTripChat')} flush className="mb-6">
+          <TripMessagesPanel tripId={id} />
+        </Card>
+      )}
+
+      <CancelTripModal open={cancelOpen} tripNumber={trip.tripNumber} hasDriver={Boolean(trip.driver)} onClose={() => setCancelOpen(false)} onConfirm={cancelTrip} />
     </>
+  )
+}
+
+/** Admin cancel (F8) extended by F14: who is at fault and whether the matching rule's fee is charged. */
+function CancelTripModal({
+  open,
+  ...props
+}: {
+  open: boolean
+  tripNumber: string
+  hasDriver: boolean
+  onClose: () => void
+  onConfirm: (reason: string, atFault: AtFault, chargeFee: boolean) => Promise<void>
+}) {
+  return open ? <CancelTripDialog {...props} /> : null
+}
+
+function CancelTripDialog({
+  tripNumber,
+  hasDriver,
+  onClose,
+  onConfirm,
+}: {
+  tripNumber: string
+  hasDriver: boolean
+  onClose: () => void
+  onConfirm: (reason: string, atFault: AtFault, chargeFee: boolean) => Promise<void>
+}) {
+  const { t } = useLang()
+  const [reason, setReason] = useState('')
+  const [atFault, setAtFault] = useState<AtFault>('none')
+  const [chargeFee, setChargeFee] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const submit = async () => {
+    if (!reason.trim()) {
+      setError(t('reasonRequired'))
+      return
+    }
+    setSubmitting(true)
+    try {
+      await onConfirm(reason.trim(), atFault, atFault === 'passenger' && chargeFee)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal
+      open
+      title={t('cancelTripTitle')}
+      description={`${tripNumber} — ${t('cancelTripCopy')}`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>
+            {t('cancel')}
+          </Button>
+          <Button variant="danger" onClick={submit} loading={submitting}>
+            {t('cancelTrip')}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-4">
+        <Textarea
+          id="cancel-reason"
+          label={t('reason')}
+          placeholder={t('reasonPlaceholder')}
+          value={reason}
+          error={error}
+          autoFocus
+          onChange={(event) => {
+            setReason(event.target.value)
+            setError(null)
+          }}
+        />
+        <Select id="cancel-fault" label={t('cxAtFault')} hint={t('cxAdminFaultHint')} value={atFault} onChange={(event) => setAtFault(event.target.value as AtFault)}>
+          {AT_FAULTS.filter((value) => value !== 'driver' || hasDriver).map((value) => (
+            <option key={value} value={value}>
+              {t(AT_FAULT_KEY[value])}
+            </option>
+          ))}
+        </Select>
+        {atFault === 'passenger' && <Toggle checked={chargeFee} onChange={setChargeFee} label={t('cxChargeFee')} description={t('cxChargeFeeCopy')} />}
+      </div>
+    </Modal>
   )
 }
 

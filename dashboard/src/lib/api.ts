@@ -140,6 +140,7 @@ export const api = {
   post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'body'>) =>
     request<T>('POST', path, { ...options, body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
+  patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
   delete: <T>(path: string) => request<T>('DELETE', path),
   /** Fetches a protected binary (e.g. /files/{id}) with the Bearer header. */
   blob: async (path: string, query?: QueryParams) => {

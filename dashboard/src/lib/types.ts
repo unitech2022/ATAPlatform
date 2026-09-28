@@ -314,6 +314,10 @@ export interface TripDetail {
   /** F11 — card payment attached to the trip (null for cash/wallet trips). */
   payment?: TripPayment | null
   discountTotal?: number
+  /** F14 — cancellation event summary (docs/09 §F14.4 "Trip يضاف إليه"); null when not cancelled. */
+  cancellation?: TripCancellation | null
+  /** F12 — planned route `[[lat,lng],…]` used by route-deviation detection (§F12.1). */
+  plannedRoute?: LatLngTuple[] | null
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -1080,4 +1084,478 @@ export interface NotificationDelivery {
   openedAt: string | null
   createdAt: string
   payload?: unknown
+}
+
+// ---------------------------------------------------------------------------
+// F12 — safety (docs/09-feature-f12-f14-safety-cancellation.md §F12.1 / §F12.7)
+// ---------------------------------------------------------------------------
+
+export type SafetyCaseType = 'sos' | 'unexpected_stop' | 'route_deviation' | 'trip_overrun' | 'safety_report'
+export type SafetyCaseSource = 'rider_sos' | 'driver_sos' | 'alert' | 'report' | 'support' | 'admin'
+export type SafetyPriority = 'critical' | 'high' | 'medium' | 'low'
+export type SafetyCaseStatus = 'open' | 'in_progress' | 'escalated' | 'resolved'
+export type SafetyReporterRole = 'passenger' | 'driver' | 'system' | 'admin'
+export type SafetyEscalationTarget = 'police' | 'ambulance' | 'civil_defense' | 'management' | 'other'
+export type SafetyResolutionCode =
+  | 'false_alarm'
+  | 'resolved_contacted'
+  | 'escalated_authorities'
+  | 'action_taken_driver'
+  | 'action_taken_passenger'
+  | 'no_action'
+  | 'other'
+export type SafetyNoteKind = 'note' | 'status_change' | 'assignment' | 'contact_attempt' | 'system'
+export type SafetyReportCategory = 'unsafe_driving' | 'harassment' | 'vehicle_mismatch' | 'driver_mismatch' | 'passenger_misconduct' | 'other'
+
+/** `GET /admin/safety/summary`. */
+export interface SafetySummary {
+  open: Record<SafetyPriority, number>
+  unassigned: number
+  avgFirstResponseSeconds: number | null
+  pendingAlerts: number
+  onDutyAgents: number
+}
+
+/** Row of `GET /admin/safety/cases`; also the payload of `SafetyCaseOpened` / `SafetyCaseUpdated`. */
+export interface SafetyCaseListItem {
+  id: string
+  caseNumber: string
+  type: SafetyCaseType
+  source: SafetyCaseSource
+  priority: SafetyPriority
+  status: SafetyCaseStatus
+  /** Not listed in §F12.7 but present on the hub payload; used for links when available. */
+  tripId?: string | null
+  tripNumber: string | null
+  reporterName: string | null
+  reporterRole: SafetyReporterRole
+  assignedToName: string | null
+  openedAt: string
+  firstResponseAt: string | null
+  /** Age at response time; the UI keeps it ticking from the moment it was received. */
+  ageSeconds: number
+  lastLat?: number | null
+  lastLng?: number | null
+}
+
+export interface SafetyCaseNote {
+  id: string
+  kind: SafetyNoteKind
+  body: string
+  isInternal: boolean
+  authorUserId: string | null
+  authorName?: string | null
+  createdAt: string
+}
+
+export interface SafetyCaseAttachment {
+  id: string
+  fileId: string
+  fileName?: string | null
+  uploadedByName?: string | null
+  createdAt: string
+}
+
+export interface SafetyParty {
+  id: string
+  userId?: string | null
+  fullName: string | null
+  /** Admin case detail returns the full number (§F12.7 "الأطراف بالجوال الكامل"). */
+  phoneNumber: string | null
+}
+
+export interface SafetyCaseTrip {
+  id: string
+  tripNumber: string
+  status: TripStatus
+  pickup: TripPoint
+  dropoff: TripPoint
+  stops?: TripStop[]
+  plannedRoute?: LatLngTuple[] | null
+  rideCategory?: { id: string; code: string; name: string } | null
+  passenger: SafetyParty | null
+  driver: SafetyParty | null
+  vehicle?: TripVehicle | null
+  startedAt?: string | null
+}
+
+export interface SafetyLiveLocation {
+  lat: number
+  lng: number
+  heading?: number | null
+  updatedAt?: string | null
+  /** Which party the point belongs to, when the server says so. */
+  source?: 'reporter' | 'driver' | string | null
+}
+
+export interface NotifiedContact {
+  name: string
+  phoneNumber?: string | null
+}
+
+export interface SafetyCaseDetail extends SafetyCaseListItem {
+  reporterUserId: string | null
+  subjectUserId: string | null
+  subjectName?: string | null
+  reportCategory: SafetyReportCategory | null
+  description: string | null
+  lat: number | null
+  lng: number | null
+  lastLat: number | null
+  lastLng: number | null
+  lastLocationAt: string | null
+  contactsNotified: number
+  assignedToUserId: string | null
+  assignedAt: string | null
+  escalatedTo: SafetyEscalationTarget | null
+  resolutionCode: SafetyResolutionCode | null
+  resolution: string | null
+  reporterCancelledAt: string | null
+  supportTicketId: string | null
+  resolvedAt: string | null
+  trip: SafetyCaseTrip | null
+  liveLocation: SafetyLiveLocation | null
+  alerts: SafetyAlert[]
+  notes: SafetyCaseNote[]
+  attachments: SafetyCaseAttachment[]
+  sharesCount: number
+  /** Count or list of the reporter's trusted contacts that were notified (shape not pinned by §F12.7). */
+  trustedContactsNotified: number | NotifiedContact[] | null
+}
+
+export interface SafetyCaseCreateInput {
+  tripId?: string
+  type: 'safety_report'
+  priority: SafetyPriority
+  description: string
+  subjectUserId?: string
+}
+
+export type SafetyAlertType = 'unexpected_stop' | 'route_deviation' | 'trip_overrun'
+export type SafetyAlertStatus = 'pending_rider' | 'resolved_ok' | 'escalated' | 'no_response' | 'dismissed'
+
+export interface SafetyAlertMetrics {
+  stoppedSeconds?: number | null
+  deviationMeters?: number | null
+  deviationSeconds?: number | null
+  elapsedSeconds?: number | null
+  estimatedSeconds?: number | null
+}
+
+/** Row of `GET /admin/safety/alerts` and payload of `SafetyAlertRaised`. */
+export interface SafetyAlert {
+  id: string
+  tripId: string
+  tripNumber?: string | null
+  type: SafetyAlertType
+  status: SafetyAlertStatus
+  detectedAt: string
+  lat: number | null
+  lng: number | null
+  metrics: SafetyAlertMetrics | null
+  promptedAt?: string | null
+  respondBy: string | null
+  respondedAt?: string | null
+  response?: 'ok' | 'need_help' | null
+  safetyCaseId?: string | null
+  safetyCaseNumber?: string | null
+  dismissedByName?: string | null
+  createdAt?: string
+}
+
+export interface TrustedContact {
+  id: string
+  name: string
+  phoneNumber: string
+  relationship: string | null
+  autoShare: boolean
+  notifyOnSos: boolean
+  createdAt: string
+}
+
+export type TripShareChannel = 'link' | 'sms' | 'auto'
+
+export interface TripShare {
+  id: string
+  url: string
+  channel: TripShareChannel
+  trustedContactName: string | null
+  viewCount: number
+  expiresAt: string | null
+  revokedAt: string | null
+  lastViewedAt?: string | null
+  createdAt: string
+}
+
+export type TripMessageSender = 'passenger' | 'driver' | 'system'
+export type TripMessageKind = 'text' | 'quick_reply' | 'system'
+
+export interface TripMessage {
+  id: string
+  tripId: string
+  senderRole: TripMessageSender
+  senderName?: string | null
+  kind: TripMessageKind
+  body: string
+  quickReplyCode: string | null
+  readAt: string | null
+  createdAt: string
+}
+
+export type LostItemStatus = 'open' | 'driver_contacted' | 'found' | 'returned' | 'not_found' | 'closed'
+export type LostItemCategory = 'phone' | 'wallet' | 'bag' | 'keys' | 'documents' | 'other'
+
+export interface LostItemReport {
+  id: string
+  reportNumber: string
+  tripId: string
+  tripNumber: string | null
+  reporterUserId?: string | null
+  reporterName?: string | null
+  reporterPhone?: string | null
+  contactPhone: string | null
+  driverId: string | null
+  driverName?: string | null
+  itemCategory: LostItemCategory
+  description: string
+  status: LostItemStatus
+  driverResponse: 'found' | 'not_found' | null
+  driverNote?: string | null
+  driverRespondedAt?: string | null
+  supportTicketId: string | null
+  closedAt?: string | null
+  createdAt: string
+  updatedAt?: string
+}
+
+// ---------------------------------------------------------------------------
+// F14 — cancellation & reliability (docs/09 §F14.2 / §F14.4)
+// ---------------------------------------------------------------------------
+
+export type CancellationStage = 'before_accept' | 'after_accept' | 'en_route' | 'arrived' | 'waiting' | 'no_show' | 'scheduled'
+export type RuleStage = Exclude<CancellationStage, 'scheduled'>
+export type ReasonActor = 'passenger' | 'driver' | 'system'
+export type RuleActor = 'passenger' | 'driver'
+export type AtFault = 'passenger' | 'driver' | 'none'
+export type CancellationFeeType = 'none' | 'fixed' | 'percent' | 'pricing_rule'
+export type CancellationFeeStatus = 'none' | 'charged' | 'pending_review' | 'waived' | 'failed' | 'refunded'
+export type ExcuseStatus = 'not_applicable' | 'pending' | 'approved' | 'rejected'
+export type ReliabilityRole = 'passenger' | 'driver'
+export type RestrictionLevel = 'none' | 'warning' | 'matching_deprioritized' | 'incentives_reduced' | 'temporarily_restricted' | 'suspended'
+export type ReliabilityAction = 'add_points' | 'remove_points' | 'set_level' | 'clear_restriction'
+
+/** `Trip.cancellation` (§F14.4) plus the admin-only fields the event carries. */
+export interface TripCancellation {
+  id?: string | null
+  eventId?: string | null
+  actor?: TripActor | null
+  stage: CancellationStage
+  reasonCode: string
+  reasonName: string | null
+  note?: string | null
+  atFault: AtFault
+  fee?: number | null
+  feeCharged?: number | null
+  feeStatus: CancellationFeeStatus
+  compensation?: number | null
+  penaltyPoints?: number | null
+  excuseStatus: ExcuseStatus
+  reviewNote?: string | null
+}
+
+export interface CancellationReason {
+  id: string
+  code: string
+  actor: ReasonActor
+  nameAr: string
+  nameEn: string
+  /** null = every stage. */
+  stages: CancellationStage[] | null
+  isExcusable: boolean
+  isEmergency: boolean
+  requiresNote: boolean
+  isSelectable: boolean
+  sortOrder: number
+  isActive: boolean
+}
+
+export type CancellationReasonInput = Omit<CancellationReason, 'id'>
+
+export interface CancellationRule {
+  id: string
+  name: string
+  actor: RuleActor
+  stage: RuleStage
+  bookingType: BookingType | null
+  rideCategoryId: string | null
+  zoneId: string | null
+  freeWindowSeconds: number
+  feeType: CancellationFeeType
+  feeAmount: number | null
+  feePercent: number | null
+  minFee: number | null
+  maxFee: number | null
+  driverCompensationPercent: number
+  penaltyPoints: number
+  priority: number
+  isActive: boolean
+}
+
+export type CancellationRuleInput = Omit<CancellationRule, 'id'>
+
+export interface CancellationSimulateInput {
+  actor: RuleActor
+  stage: RuleStage
+  bookingType: BookingType
+  rideCategoryId?: string
+  zoneId?: string
+  secondsSinceAnchor: number
+  estimatedFare: number
+}
+
+export interface CancellationSimulateResult {
+  ruleId: string | null
+  ruleName: string | null
+  fee: number
+  compensation: number
+  penaltyPoints: number
+  isFree: boolean
+}
+
+export interface ReliabilityThreshold {
+  id: string
+  role: ReliabilityRole
+  level: Exclude<RestrictionLevel, 'none'>
+  minPenaltyPoints: number | null
+  /** 0..1 */
+  minCancellationRate: number | null
+  minTripsForRate: number
+  restrictionHours: number | null
+  deprioritizeFactor: number | null
+  incentiveReductionPercent: number | null
+  sortOrder: number
+  isActive: boolean
+}
+
+export type ReliabilityThresholdInput = Omit<ReliabilityThreshold, 'id' | 'role' | 'level'>
+
+/** Row of `GET /admin/cancellations`. */
+export interface CancellationEvent {
+  id: string
+  tripId: string
+  tripNumber: string
+  actor: TripActor
+  userId?: string | null
+  userName: string | null
+  atFault: AtFault
+  stage: CancellationStage
+  reasonCode: string
+  reasonName: string | null
+  note?: string | null
+  feeAmount: number
+  feeCharged: number
+  feeStatus: CancellationFeeStatus
+  compensationAmount: number
+  penaltyPoints: number
+  excuseStatus: ExcuseStatus
+  reviewedByName?: string | null
+  reviewedAt?: string | null
+  reviewNote?: string | null
+  createdAt: string
+}
+
+/** Row of `GET /admin/cancellations/excuses`. */
+export interface ExcuseQueueItem extends CancellationEvent {
+  ageHours: number
+  slaBreached: boolean
+  /** Penalty points the matched rule would apply when rejected (when the server exposes them). */
+  pendingPenaltyPoints?: number | null
+}
+
+/** `GET /admin/cancellations/stats` — KPIs of §F14.7; every field optional so partial backends still render. */
+export interface CancellationStats {
+  /** 0..1 */
+  passengerCancellationRate?: number | null
+  /** 0..1 */
+  driverCancellationRate?: number | null
+  cancellationFeeRevenue?: number | null
+  /** Alias some backends use for `cancellationFeeRevenue`. */
+  feeRevenue?: number | null
+  repeatCancellationRate?: number | null
+  driverReliabilityRate?: number | null
+  passengerReliabilityRate?: number | null
+  excuseApprovalRate?: number | null
+  noShowRate?: number | null
+  totalCancellations?: number | null
+}
+
+export interface ReliabilityProfileListItem {
+  userId: string
+  name: string | null
+  phone: string | null
+  role: ReliabilityRole
+  level: RestrictionLevel
+  restrictedUntil: string | null
+  cancellationRate: number
+  reliabilityRate: number
+  penaltyPoints: number
+  noShowCount: number
+  tripsAccepted: number
+  lastComputedAt: string | null
+}
+
+export interface ReliabilityEvent {
+  id?: string
+  tripId: string
+  tripNumber: string | null
+  stage: CancellationStage
+  reasonCode?: string | null
+  reasonName: string | null
+  atFault?: AtFault | null
+  feeCharged: number | null
+  penaltyPoints: number
+  excuseStatus: ExcuseStatus
+  countsTowardRate?: boolean | null
+  createdAt: string
+}
+
+export interface ReliabilityAdjustment {
+  id: string
+  action: ReliabilityAction
+  points: number | null
+  level: RestrictionLevel | null
+  until: string | null
+  reason: string
+  createdByName?: string | null
+  createdAt: string
+}
+
+export interface ReliabilityNextLevel {
+  level: RestrictionLevel
+  minPenaltyPoints: number | null
+  minCancellationRate: number | null
+}
+
+export interface ReliabilityProfileDetail extends ReliabilityProfileListItem {
+  windowDays: number
+  tripsRequested: number
+  tripsCompleted: number
+  cancellationsAtFault: number
+  offersReceived?: number | null
+  offersAccepted?: number | null
+  acceptanceRate?: number | null
+  levelChangedAt?: string | null
+  nextLevel?: ReliabilityNextLevel | null
+  effects?: { matchingFactor: number; incentiveMultiplier: number } | null
+  events: ReliabilityEvent[]
+  adjustments: ReliabilityAdjustment[]
+}
+
+export interface ReliabilityAdjustInput {
+  role: ReliabilityRole
+  action: ReliabilityAction
+  points?: number
+  level?: Exclude<RestrictionLevel, 'none'>
+  until?: string
+  reason: string
 }

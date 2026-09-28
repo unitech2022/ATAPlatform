@@ -1,6 +1,6 @@
 # ATA — لوحة الإدارة (dashboard)
 
-واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10)، والمالية (F11: المدفوعات، الاستردادات، السحوبات، التسويات، المحافظ، الدفتر) والإشعارات (F13: القوالب، الحملات، سجل الإرسال).
+واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10)، والمالية (F11: المدفوعات، الاستردادات، السحوبات، التسويات، المحافظ، الدفتر) والإشعارات (F13: القوالب، الحملات، سجل الإرسال)، والسلامة (F12: مركز الحالات مع تنبيه SOS حيّ، التنبيهات الآلية، المفقودات، قراءة محادثة الرحلة المُدقَّقة) والإلغاء والموثوقية (F14: الأسباب، القواعد مع المحاكي، مراجعة الأعذار، سجل الإلغاءات ومؤشراته، ملفات الموثوقية وسلّم العتبات).
 
 - React 19 + Vite + TypeScript
 - Tailwind CSS v4 (`@theme` بنفس Tokens نظام التصميم في `docs/01-design-system.md`)
@@ -49,20 +49,26 @@ src/
                            trips.ts (مجموعات الحالات/الحالات النهائية)، leaflet.ts (أيقونات العلامات + أنماط المضلعات + إصلاح الأيقونة الافتراضية)،
                            leafletDraw.ts (تحميل leaflet-draw + تعريب أدواته)، pricing.ts (أيام الأسبوع، المضلعات، الأوزان، تحويل التواريخ)،
                            finance.ts (قوائم الحالات والأسباب، تسميات الحسابات والحركات، saveBlob، parseAmount)،
-                           notifications.ts (القنوات والفئات، العناصر النائبة، بيانات المعاينة، أجزاء SMS، تنظيف الجمهور)
+                           notifications.ts (القنوات والفئات، العناصر النائبة، بيانات المعاينة، أجزاء SMS، تنظيف الجمهور)،
+                           safety.ts (أنواع/أولويات/حالات F12، ترتيب الطابور، المؤقتات، المسار المخطط، روابط tel/الخرائط)،
+                           cancellation.ts (المراحل والفاعلون وأنواع الرسوم والمستويات، formatRate، التحقق من القاعدة كما في §F14.3)
   context/                 اللغة، المصادقة، التنبيهات
   hooks/                   useQuery، useDebouncedValue، useApiErrorMessage (+ رسائل أكواد F11/F13)، useUrlState/useUrlSearch (فلاتر متزامنة مع الرابط)، useLiveSnapshot (استطلاع كل 5 ث + SignalR)،
-                           useCurrentDemand (استطلاع كل 30 ث + حدث DemandChanged عبر SignalR)
+                           useCurrentDemand (استطلاع كل 30 ث + حدث DemandChanged عبر SignalR)،
+                           useSafetyFeed (SafetyCaseOpened/Updated وSafetyAlertRaised لمجموعة admins + استطلاع احتياطي كل 10 ث)، useNow (مؤقتات حيّة)
   components/              Icon, Button, Card, StatCard, Badge, Table, Pagination, Modal, Toast, DefinitionList,
                            Field (Input/Select/Textarea/Toggle), EmptyState, Spinner, Sidebar, Topbar, MapView (غلاف Leaflet)،
                            ZonesMap (مضلعات المناطق)، PolygonEditor (leaflet-draw + إدخال JSON)، Tabs، Money، MetaBadge،
-                           RefundModal/RefundActions (الأربع عيون)، MarkPaidModal، CampaignFormModal، DriverFinanceCard، TripPaymentCard، DutyToggle…
+                           RefundModal/RefundActions (الأربع عيون)، MarkPaidModal، CampaignFormModal، DriverFinanceCard، TripPaymentCard، DutyToggle،
+                           SosBanner، SafetyCaseCreateModal، TripMessagesPanel، TripSafetyCard، TripCancellationCard، ExcuseReviewModal،
+                           CancellationKpis، ReliabilityCard…
   layouts/                 RequireAuth (حماية المسارات) + AppLayout (الشريط الجانبي + الشريط العلوي)
   pages/                   Login, Dashboard, Drivers, DriverDetail, Passengers, RideCategories, AuditLogs,
                            Trips, TripDetail, LiveMap, Zones, PricingRules, Demand, MatchingSettings,
                            Payments, PaymentDetail, Refunds, Payouts, PayoutBatches, PayoutBatchDetail, Settlements,
                            SettlementBatchDetail, Wallets, WalletDetail, Ledger, NotificationTemplates, Campaigns,
-                           CampaignDetail, NotificationDeliveries
+                           CampaignDetail, NotificationDeliveries, SafetyCases, SafetyCaseDetail, SafetyAlerts, LostItems,
+                           CancellationReasons, CancellationRules, CancellationExcuses, CancellationEvents, Reliability, ReliabilityProfile
 ```
 
 ## المسارات
@@ -95,7 +101,20 @@ src/
 | `/notifications/campaigns` · `/notifications/campaigns/:id` | الحملات: قائمة بتبويبات الحالة؛ نموذج (الاسم، الفئة، القنوات، الجمهور: الأدوار/المدن/اللغة/الجنس/المستويات/النشاط/مستخدمون محددون + «معاينة العدد»، البدء من قالب أو نص مخصص، الرابط العميق، مسودة/جدولة/إرسال الآن بتأكيد)؛ التفاصيل: الإحصاءات والتقدم (استطلاع أثناء الإرسال)، تعديل/جدولة/إرسال/إلغاء/حذف |
 | `/notifications/deliveries` | سجل الإرسال: فلاتر الحدث/المستخدم/القناة/الحالة/التاريخ/`?campaignId=`، الخطأ والحمولة، إعادة المحاولة |
 
-اختصارات تُحوَّل: `/notification-templates`، `/campaigns`، `/notification-deliveries`، `/notifications`. وفي `/drivers/:id` (المعتمد/الموقوف) بطاقة «المالية» (الرصيد، دين النقد مقابل الحد 500، آخر السحوبات)، وفي `/trips/:id` قسم «الدفع» (الدفعة، الإيصال، استرداد)، وفي `/` بطاقات المالية (المحصّل اليوم، السحوبات والاستردادات المعلّقة، وGMV اليوم إن أعادها الملخص)، وفي الشريط العلوي مفتاح «مناوب» (`/admin/me/duty`) يظهر فقط لمن يستجيب له الخادم.
+| `/safety` | مركز السلامة (F12): بطاقات الملخص (`GET /admin/safety/summary`)، طابور الحالات (`GET /admin/safety/cases`) مرتّب: غير المحلولة ← الأولوية ← الأقدم، مع مؤقت عمر حيّ، تبويبات الحالة وفلاتر الأولوية/النوع/المسؤول (أنا/غير مُسندة)/التاريخ/البحث؛ شريط «حالة طوارئ جديدة» نابض بصرياً بلا صوت عند `SafetyCaseOpened` (critical/SOS) عبر SignalR، ومع انقطاع الـHub استطلاع الحالات المفتوحة كل 10 ث ومقارنتها؛ إنشاء حالة يدوية |
+| `/safety/cases/:id` | تفاصيل الحالة: خريطة (المسار المخطط أو قطع مستقيمة، الالتقاط/الوجهة، موقع البلاغ، آخر موقع للمُبلِّغ، موقع السائق من `LiveSnapshot`)، الرحلة والأطراف بأزرار `tel:` وتسجيل محاولة اتصال، جهات المُبلِّغ الموثوقة (عرض مُدقَّق أثناء الحالة المفتوحة)، التنبيهات، الجدول الزمني والملاحظات (داخلية/مرسلة للمُبلِّغ)، المرفقات، إسناد إليّ، بدء المعالجة، تصعيد مع الجهة، حل برمز الحل، زر الطوارئ 911، محادثة الرحلة (تُحمَّل بطلب صريح لأن القراءة مُدقَّقة) |
+| `/safety/alerts` | التنبيهات الآلية (`GET /admin/safety/alerts`): تبويبات الحالة، فلتر النوع/التاريخ، مقاييس التنبيه ومهلة رد الراكب الحيّة، «تم الاطلاع» (`POST …/dismiss` بملاحظة) و«تحويل إلى حالة» (`POST /admin/safety/cases`)، تحديث حيّ عند `SafetyAlertRaised` |
+| `/lost-items` | المفقودات (`GET /admin/lost-items`): تبويبات الحالة، بحث، رد السائق، تحديث الحالة بملاحظة (`PATCH /admin/lost-items/{id}`) |
+| `/cancellation/events` | سجل الإلغاءات (`GET /admin/cancellations`) بفلاتر الفاعل/المرحلة/المخطئ/حالة الرسوم/العذر/التاريخ/البحث + بطاقات KPIs (`GET /admin/cancellations/stats`) لنفس الفترة |
+| `/cancellation/excuses` | طابور مراجعة الأعذار (افتراضياً «بانتظار المراجعة»): العمر ومؤشر SLA (48 س)، الرسوم المعنية، اعتماد/رفض بملاحظة مع توضيح الأثر (إعفاء/استرداد أو تحصيل ونقاط) |
+| `/cancellation/reasons` | أسباب الإلغاء: فلتر الفاعل، إضافة/تعديل (ثنائي اللغة، المراحل أو «كل المراحل»، قابل للإعذار/طارئ/يتطلب ملاحظة/قابل للاختيار، الترتيب، التفعيل)، حذف (أو تعطيل إن كان مستخدماً) |
+| `/cancellation/rules` | قواعد الإلغاء: فلاتر الفاعل/المرحلة/نوع الحجز، نموذج (المرحلة، نوع الحجز، الفئة، المنطقة، النافذة المجانية، نوع الرسوم ومبلغها/نسبتها وحداها، تعويض السائق، النقاط، الأولوية) مع قيود §F14.3، ومحاكي الرسوم (`POST /admin/cancellation-rules/simulate`) |
+| `/reliability` | ملفات الموثوقية (`GET /admin/reliability-profiles`): الدور، فلتر المستوى، بحث؛ تبويب `?tab=thresholds` لتحرير سلّم العتبات لكل دور (`PUT /admin/reliability-thresholds/{id}`) مع تنبيه عند عدم تصاعد السلّم |
+| `/reliability/:userId?role=` | ملف الموثوقية: المؤشرات المتحركة، المستوى التالي والأثر، أحداث 60 يوماً، التعديلات، تعديل يدوي (نقاط/مستوى حتى تاريخ/رفع التقييد بسبب) |
+
+اختصارات تُحوَّل: `/notification-templates`، `/campaigns`، `/notification-deliveries`، `/notifications`، `/safety/cases` → `/safety`، `/safety/lost-items` → `/lost-items`، `/cancellation` و`/cancellations` → `/cancellation/events`، `/reliability-thresholds`. وفي `/drivers/:id` (المعتمد/الموقوف) بطاقة «المالية» (الرصيد، دين النقد مقابل الحد 500، آخر السحوبات)، وفي `/trips/:id` قسم «الدفع» (الدفعة، الإيصال، استرداد)، وفي `/` بطاقات المالية (المحصّل اليوم، السحوبات والاستردادات المعلّقة، وGMV اليوم إن أعادها الملخص)، وفي الشريط العلوي مفتاح «مناوب» (`/admin/me/duty`) يظهر فقط لمن يستجيب له الخادم.
+
+F12/F14 في الصفحات القائمة: في `/trips/:id` قسم «الإلغاء» (المرحلة، الفاعل، المخطئ، السبب، الرسوم وحالتها، التعويض، النقاط، العذر مع اعتماد/رفض)، قسم «السلامة» (الحالات، التنبيهات، روابط المشاركة)، «محادثة الرحلة» للقراءة، ونافذة الإلغاء الإداري تقبل `atFault` و`chargeFee`؛ في `/drivers/:id` وفي صف كل راكب في `/passengers` بطاقة «الموثوقية» (المستوى، معدل الإلغاء والموثوقية، النقاط، التقييد حتى)؛ وفي `/` بطاقة «السلامة الآن» وبطاقة مؤشرات الإلغاء لآخر 7 أيام (تختفيان عند `403`).
 
 ## ملاحظات
 
@@ -107,4 +126,6 @@ src/
 - صفحة الطلب تستطلع `GET /admin/demand/current` كل 30 ثانية دائماً، ويؤدي حدث `DemandChanged` من الـHub إلى إعادة الجلب فوراً.
 - `leaflet-draw` يعتمد على `window.L` الذي يُنشئه Leaflet؛ لذلك يُستورد دائماً عبر `lib/leafletDraw.ts` بعد `lib/leaflet.ts`. المضلع يُحفظ مغلقاً (`[[lat,lng],…]` مع تكرار النقطة الأولى) ويُحسب المركز تلقائياً.
 - قوائم الإدارة الجديدة (المناطق، القواعد، الإعدادات) تُطلب بصفحة واحدة كبيرة (`pageSize=200`) وتقبل الاستجابة مصفوفةً أو غلافَ صفحات (`unwrapList`).
+- السلامة: لا تنبيه صوتي (تنبيه بصري نابض يحترم `prefers-reduced-motion`). قراءة محادثة الرحلة وجهات الاتصال الموثوقة لا تُطلب إلا بنقرة لأنها مُسجَّلة في `audit_logs`. رقم الطوارئ `911` قيمة `Safety:EmergencyNumber` الافتراضية (لا يكشفها الـAPI).
+- افتراضات F12/F14 غير المنصوص عليها في `docs/09`: `GET /admin/trips/{id}/shares` (بنفس شكل `/safety/trips/{id}/shares`؛ `404` → «غير متاح»)، معامل `tripId` في `/admin/safety/alerts` (مع تصفية محلية)، أسماء حقول `/admin/cancellations/stats` (`passengerCancellationRate`، `driverCancellationRate`، `cancellationFeeRevenue`|`feeRevenue`، …) و`trip`/`liveLocation` في تفاصيل الحالة؛ كلها اختيارية في الأنواع.
 - المالية: حد الاعتماد التلقائي للاسترداد (50) وحد دين النقد (500) قيم افتراضية من `docs/08 §F11.8` تُستخدم للتلميحات فقط؛ الخادم هو المرجع (`409 four_eyes_required`). ملفات CSV تُنزَّل عبر `api.download` (Bearer) مع قراءة `Content-Disposition` إن كشفه الخادم في CORS (`Access-Control-Expose-Headers`)، وإلا يُستخدم رقم الدفعة اسماً للملف.

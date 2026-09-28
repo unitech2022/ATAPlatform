@@ -8,6 +8,7 @@ import { SearchInput } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
 import { ReasonModal } from '../components/ReasonModal'
+import { ReliabilityCard } from '../components/ReliabilityCard'
 import { Table, type Column } from '../components/Table'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
@@ -32,6 +33,7 @@ export function PassengersPage() {
   const debouncedSearch = useDebouncedValue(searchInput.trim())
   const [suspendTarget, setSuspendTarget] = useState<PassengerListItem | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (debouncedSearch === search) return
@@ -91,16 +93,28 @@ export function PassengersPage() {
       key: 'actions',
       header: t('actions'),
       className: 'text-end',
-      render: (row) =>
-        row.status === 'suspended' ? (
-          <Button variant="brand" size="sm" icon="play" loading={busyId === row.id} onClick={() => reinstate(row)}>
-            {t('reinstate')}
+      render: (row) => (
+        <span className="inline-flex gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon="gauge"
+            aria-expanded={expandedId === row.id}
+            onClick={() => setExpandedId((current) => (current === row.id ? null : row.id))}
+          >
+            {t('rlCardTitle')}
           </Button>
-        ) : row.status === 'active' ? (
-          <Button variant="danger-outline" size="sm" icon="pause" onClick={() => setSuspendTarget(row)}>
-            {t('suspend')}
-          </Button>
-        ) : null,
+          {row.status === 'suspended' ? (
+            <Button variant="brand" size="sm" icon="play" loading={busyId === row.id} onClick={() => reinstate(row)}>
+              {t('reinstate')}
+            </Button>
+          ) : row.status === 'active' ? (
+            <Button variant="danger-outline" size="sm" icon="pause" onClick={() => setSuspendTarget(row)}>
+              {t('suspend')}
+            </Button>
+          ) : null}
+        </span>
+      ),
     },
   ]
 
@@ -123,7 +137,13 @@ export function PassengersPage() {
           <ErrorState error={query.error} onRetry={query.reload} />
         ) : (
           <>
-            <Table columns={columns} rows={query.data?.items ?? []} rowKey={(row) => row.id} loading={query.loading} />
+            <Table
+              columns={columns}
+              rows={query.data?.items ?? []}
+              rowKey={(row) => row.id}
+              loading={query.loading}
+              renderExpanded={(row) => (expandedId === row.id ? <ReliabilityCard userId={userIdOf(row)} role="passenger" bare /> : null)}
+            />
             {query.data && (
               <Pagination
                 page={query.data.page}

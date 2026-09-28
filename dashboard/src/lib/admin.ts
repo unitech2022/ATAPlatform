@@ -1,5 +1,47 @@
 import { api } from './api'
 import type {
+  AtFault,
+  BookingType,
+  CancellationEvent,
+  CancellationFeeStatus,
+  CancellationReason,
+  CancellationReasonInput,
+  CancellationRule,
+  CancellationRuleInput,
+  CancellationSimulateInput,
+  CancellationSimulateResult,
+  CancellationStage,
+  CancellationStats,
+  ExcuseQueueItem,
+  ExcuseStatus,
+  LostItemReport,
+  LostItemStatus,
+  ReasonActor,
+  ReliabilityAdjustInput,
+  ReliabilityProfileDetail,
+  ReliabilityProfileListItem,
+  ReliabilityRole,
+  ReliabilityThreshold,
+  ReliabilityThresholdInput,
+  RestrictionLevel,
+  RuleActor,
+  RuleStage,
+  SafetyAlert,
+  SafetyAlertStatus,
+  SafetyAlertType,
+  SafetyCaseCreateInput,
+  SafetyCaseDetail,
+  SafetyCaseListItem,
+  SafetyCaseStatus,
+  SafetyCaseType,
+  SafetyEscalationTarget,
+  SafetyPriority,
+  SafetyResolutionCode,
+  SafetySummary,
+  TripActor,
+  TripMessage,
+  TripShare,
+  TrustedContact,
   AudiencePreview,
   AuditLog,
   Campaign,
@@ -150,7 +192,9 @@ export type TripListQuery = {
 export const trips = {
   list: (query: TripListQuery) => api.get<Paginated<TripListItem>>('/admin/trips', query),
   get: (id: string) => api.get<TripDetail>(`/admin/trips/${id}`),
-  cancel: (id: string, reason: string) => api.post<TripDetail>(`/admin/trips/${id}/cancel`, { reason }),
+  /** F14: `atFault` (default `none`) decides who the cancellation counts against; `chargeFee` applies the matching rule's fee. */
+  cancel: (id: string, reason: string, options: { atFault?: AtFault; chargeFee?: boolean } = {}) =>
+    api.post<TripDetail>(`/admin/trips/${id}/cancel`, { reason, ...options }),
 }
 
 export const live = {
@@ -365,4 +409,131 @@ export const deliveries = {
 export const duty = {
   get: () => api.get<{ onDuty: boolean }>('/admin/me/duty'),
   set: (onDuty: boolean) => api.put<{ onDuty: boolean }>('/admin/me/duty', { onDuty }),
+}
+
+// ---------------------------------------------------------------------------
+// F12 — safety (docs/09 §F12.7 "الإدارة")
+// ---------------------------------------------------------------------------
+
+/** Wraps a bare array answer into a single page so list screens can treat both shapes alike. */
+function asPage<T>(value: Paginated<T> | T[]): Paginated<T> {
+  return Array.isArray(value) ? { items: value, page: 1, pageSize: value.length || 1, total: value.length } : value
+}
+
+export type SafetyCaseListQuery = DateRange &
+  PageQuery & {
+    status?: SafetyCaseStatus | ''
+    priority?: SafetyPriority | ''
+    type?: SafetyCaseType | ''
+    /** `me`, `unassigned` or an admin user id. */
+    assignedTo?: string
+    search?: string
+  }
+
+export type SafetyAlertListQuery = DateRange &
+  PageQuery & {
+    status?: SafetyAlertStatus | ''
+    type?: SafetyAlertType | ''
+    /** Not in §F12.7 — sent for backends that support it; callers still filter by trip client-side. */
+    tripId?: string
+    search?: string
+  }
+
+export const safety = {
+  summary: () => api.get<SafetySummary>('/admin/safety/summary'),
+  cases: (query: SafetyCaseListQuery) =>
+    api.get<Paginated<SafetyCaseListItem> | SafetyCaseListItem[]>('/admin/safety/cases', query).then(asPage),
+  get: (id: string) => api.get<SafetyCaseDetail>(`/admin/safety/cases/${id}`),
+  /** `userId = null` assigns the case to the calling admin. */
+  assign: (id: string, userId: string | null = null) => api.post<SafetyCaseDetail>(`/admin/safety/cases/${id}/assign`, { userId }),
+  setStatus: (id: string, input: { status: 'in_progress' | 'escalated'; escalatedTo?: SafetyEscalationTarget; note?: string }) =>
+    api.post<SafetyCaseDetail>(`/admin/safety/cases/${id}/status`, input),
+  addNote: (id: string, input: { body: string; kind: 'note' | 'contact_attempt'; isInternal: boolean }) =>
+    api.post<SafetyCaseDetail>(`/admin/safety/cases/${id}/notes`, input),
+  resolve: (id: string, input: { resolutionCode: SafetyResolutionCode; resolution: string }) =>
+    api.post<SafetyCaseDetail>(`/admin/safety/cases/${id}/resolve`, input),
+  create: (input: SafetyCaseCreateInput) => api.post<SafetyCaseDetail>('/admin/safety/cases', input),
+  alerts: (query: SafetyAlertListQuery) => api.get<Paginated<SafetyAlert> | SafetyAlert[]>('/admin/safety/alerts', query).then(asPage),
+  dismissAlert: (id: string, note: string) => api.post<SafetyAlert>(`/admin/safety/alerts/${id}/dismiss`, { note }),
+  /** Readable only while the user has an open case; the read is audited server-side. */
+  trustedContacts: (userId: string) => api.get<TrustedContact[]>(`/admin/users/${userId}/trusted-contacts`),
+}
+
+export const tripSafety = {
+  /** Reading the chat is audited as `trip_messages.view` (§F12.7). */
+  messages: (tripId: string) => api.get<TripMessage[] | Paginated<TripMessage>>(`/admin/trips/${tripId}/messages`).then(unwrapList),
+  /**
+   * Assumed endpoint: §F12.7 lists no admin read of `trip_shares`; this mirrors `GET /safety/trips/{id}/shares`.
+   * Callers treat 404 as "not available".
+   */
+  shares: (tripId: string) => api.get<TripShare[] | Paginated<TripShare>>(`/admin/trips/${tripId}/shares`).then(unwrapList),
+}
+
+export type LostItemListQuery = PageQuery & { status?: LostItemStatus | ''; search?: string }
+
+export const lostItems = {
+  list: (query: LostItemListQuery) => api.get<Paginated<LostItemReport> | LostItemReport[]>('/admin/lost-items', query).then(asPage),
+  update: (id: string, status: LostItemStatus, note?: string) =>
+    api.patch<LostItemReport>(`/admin/lost-items/${id}`, { status, note: note || undefined }),
+}
+
+// ---------------------------------------------------------------------------
+// F14 — cancellation & reliability (docs/09 §F14.4 "الإدارة")
+// ---------------------------------------------------------------------------
+
+export const cancellationReasons = {
+  list: (query: { actor?: ReasonActor | '' } = {}) =>
+    api.get<Paginated<CancellationReason> | CancellationReason[]>('/admin/cancellation-reasons', { ...ALL, ...query }).then(unwrapList),
+  create: (input: CancellationReasonInput) => api.post<CancellationReason>('/admin/cancellation-reasons', input),
+  update: (id: string, input: CancellationReasonInput) => api.put<CancellationReason>(`/admin/cancellation-reasons/${id}`, input),
+  /** Deactivates instead of deleting when the reason is already referenced. */
+  remove: (id: string) => api.delete<void>(`/admin/cancellation-reasons/${id}`),
+}
+
+export type CancellationRuleQuery = { actor?: RuleActor | ''; stage?: RuleStage | ''; bookingType?: BookingType | '' }
+
+export const cancellationRules = {
+  list: (query: CancellationRuleQuery = {}) =>
+    api.get<Paginated<CancellationRule> | CancellationRule[]>('/admin/cancellation-rules', { ...ALL, ...query }).then(unwrapList),
+  create: (input: CancellationRuleInput) => api.post<CancellationRule>('/admin/cancellation-rules', input),
+  update: (id: string, input: CancellationRuleInput) => api.put<CancellationRule>(`/admin/cancellation-rules/${id}`, input),
+  remove: (id: string) => api.delete<void>(`/admin/cancellation-rules/${id}`),
+  simulate: (input: CancellationSimulateInput) => api.post<CancellationSimulateResult>('/admin/cancellation-rules/simulate', input),
+}
+
+export const reliabilityThresholds = {
+  list: (role?: ReliabilityRole) =>
+    api.get<Paginated<ReliabilityThreshold> | ReliabilityThreshold[]>('/admin/reliability-thresholds', { ...ALL, role }).then(unwrapList),
+  update: (id: string, input: ReliabilityThresholdInput) => api.put<ReliabilityThreshold>(`/admin/reliability-thresholds/${id}`, input),
+}
+
+export type CancellationListQuery = DateRange &
+  PageQuery & {
+    actor?: TripActor | ''
+    stage?: CancellationStage | ''
+    atFault?: AtFault | ''
+    feeStatus?: CancellationFeeStatus | ''
+    excuseStatus?: ExcuseStatus | ''
+    search?: string
+  }
+
+export type CancellationStatsQuery = DateRange & { cityId?: string; zoneId?: string; rideCategoryId?: string }
+
+export const cancellations = {
+  list: (query: CancellationListQuery) =>
+    api.get<Paginated<CancellationEvent> | CancellationEvent[]>('/admin/cancellations', query).then(asPage),
+  excuses: (query: PageQuery & { status?: ExcuseStatus | '' }) =>
+    api.get<Paginated<ExcuseQueueItem> | ExcuseQueueItem[]>('/admin/cancellations/excuses', query).then(asPage),
+  review: (eventId: string, decision: 'approve' | 'reject', note: string) =>
+    api.post<CancellationEvent>(`/admin/cancellations/${eventId}/review`, { decision, note }),
+  stats: (query: CancellationStatsQuery) => api.get<CancellationStats>('/admin/cancellations/stats', query),
+}
+
+export type ReliabilityProfileQuery = PageQuery & { role?: ReliabilityRole | ''; level?: RestrictionLevel | ''; search?: string }
+
+export const reliabilityProfiles = {
+  list: (query: ReliabilityProfileQuery) =>
+    api.get<Paginated<ReliabilityProfileListItem> | ReliabilityProfileListItem[]>('/admin/reliability-profiles', query).then(asPage),
+  get: (userId: string, role: ReliabilityRole) => api.get<ReliabilityProfileDetail>(`/admin/reliability-profiles/${userId}`, { role }),
+  adjust: (userId: string, input: ReliabilityAdjustInput) => api.post<ReliabilityProfileDetail>(`/admin/reliability-profiles/${userId}/adjust`, input),
 }

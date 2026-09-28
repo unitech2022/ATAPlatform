@@ -5,6 +5,7 @@ import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { DefinitionList } from '../components/DefinitionList'
 import { DriverFinanceCard } from '../components/DriverFinanceCard'
+import { ReliabilityCard } from '../components/ReliabilityCard'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { FilePreviewModal, type FilePreviewTarget } from '../components/FilePreviewModal'
@@ -252,6 +253,7 @@ export function DriverDetailPage() {
       </div>
 
       {(driver.status === 'approved' || driver.status === 'suspended') && <DriverFinanceCard driver={driver} />}
+      {(driver.status === 'approved' || driver.status === 'suspended') && <ReliabilityCard userId={driver.user.id} role="driver" />}
 
       <Card
         className="mb-6"

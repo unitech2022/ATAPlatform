@@ -1,5 +1,12 @@
 import type { TranslationKey } from '../i18n'
 import type {
+  CancellationFeeStatus,
+  ExcuseStatus,
+  LostItemStatus,
+  RestrictionLevel,
+  SafetyAlertStatus,
+  SafetyCaseStatus,
+  SafetyPriority,
   CampaignStatus,
   DeliveryStatus,
   DocumentStatus,
@@ -139,6 +146,66 @@ export const deliveryStatusMeta: Record<DeliveryStatus, StatusMeta> = {
   sent: { tone: 'brand', key: 'deliverySent' },
   failed: { tone: 'danger', key: 'deliveryFailed' },
   skipped: { tone: 'muted', key: 'deliverySkipped' },
+}
+
+// F12 — safety
+
+export const safetyCaseStatusMeta: Record<SafetyCaseStatus, StatusMeta> = {
+  open: { tone: 'danger', key: 'sfStatusOpen' },
+  in_progress: { tone: 'warning', key: 'sfStatusInProgress' },
+  escalated: { tone: 'ink', key: 'sfStatusEscalated' },
+  resolved: { tone: 'brand', key: 'sfStatusResolved' },
+}
+
+export const safetyPriorityMeta: Record<SafetyPriority, StatusMeta> = {
+  critical: { tone: 'danger', key: 'sfPriorityCritical' },
+  high: { tone: 'warning', key: 'sfPriorityHigh' },
+  medium: { tone: 'ink', key: 'sfPriorityMedium' },
+  low: { tone: 'muted', key: 'sfPriorityLow' },
+}
+
+export const safetyAlertStatusMeta: Record<SafetyAlertStatus, StatusMeta> = {
+  pending_rider: { tone: 'warning', key: 'sfAlertPendingRider' },
+  resolved_ok: { tone: 'brand', key: 'sfAlertResolvedOk' },
+  escalated: { tone: 'danger', key: 'sfAlertEscalated' },
+  no_response: { tone: 'danger', key: 'sfAlertNoResponse' },
+  dismissed: { tone: 'muted', key: 'sfAlertDismissed' },
+}
+
+export const lostItemStatusMeta: Record<LostItemStatus, StatusMeta> = {
+  open: { tone: 'warning', key: 'liStatusOpen' },
+  driver_contacted: { tone: 'ink', key: 'liStatusDriverContacted' },
+  found: { tone: 'brand', key: 'liStatusFound' },
+  returned: { tone: 'brand', key: 'liStatusReturned' },
+  not_found: { tone: 'danger', key: 'liStatusNotFound' },
+  closed: { tone: 'muted', key: 'liStatusClosed' },
+}
+
+// F14 — cancellation & reliability
+
+export const feeStatusMeta: Record<CancellationFeeStatus, StatusMeta> = {
+  none: { tone: 'muted', key: 'cxFeeNone' },
+  charged: { tone: 'ink', key: 'cxFeeCharged' },
+  pending_review: { tone: 'warning', key: 'cxFeePendingReview' },
+  waived: { tone: 'brand', key: 'cxFeeWaived' },
+  failed: { tone: 'danger', key: 'cxFeeFailed' },
+  refunded: { tone: 'muted', key: 'cxFeeRefunded' },
+}
+
+export const excuseStatusMeta: Record<ExcuseStatus, StatusMeta> = {
+  not_applicable: { tone: 'muted', key: 'cxExcuseNotApplicable' },
+  pending: { tone: 'warning', key: 'cxExcusePending' },
+  approved: { tone: 'brand', key: 'cxExcuseApproved' },
+  rejected: { tone: 'danger', key: 'cxExcuseRejected' },
+}
+
+export const restrictionLevelMeta: Record<RestrictionLevel, StatusMeta> = {
+  none: { tone: 'brand', key: 'rlLevelNone' },
+  warning: { tone: 'warning', key: 'rlLevelWarning' },
+  matching_deprioritized: { tone: 'warning', key: 'rlLevelDeprioritized' },
+  incentives_reduced: { tone: 'danger', key: 'rlLevelIncentivesReduced' },
+  temporarily_restricted: { tone: 'danger', key: 'rlLevelRestricted' },
+  suspended: { tone: 'ink', key: 'rlLevelSuspended' },
 }
 
 /** Looks up a meta record with an unknown (possibly newer) server value; falls back to a muted raw label. */

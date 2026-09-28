@@ -73,6 +73,40 @@ export const NOTIFICATION_ITEMS: NavItem[] = [
   },
 ]
 
+const tabOf = (search: string) => new URLSearchParams(search).get('tab') ?? ''
+
+/** F12 — safety group ("السلامة"). */
+export const SAFETY_ITEMS: NavItem[] = [
+  {
+    key: 'navSafetyCases',
+    icon: 'siren',
+    to: '/safety',
+    isActive: (pathname) => pathname === '/safety' || pathname.startsWith('/safety/cases'),
+  },
+  { key: 'navSafetyAlerts', icon: 'bell', to: '/safety/alerts', isActive: (pathname) => pathname.startsWith('/safety/alerts') },
+  { key: 'navLostItems', icon: 'box', to: '/lost-items', isActive: (pathname) => pathname.startsWith('/lost-items') },
+]
+
+/** F14 — cancellation & reliability group ("الإلغاء والموثوقية"). */
+export const CANCELLATION_ITEMS: NavItem[] = [
+  { key: 'navCancellationEvents', icon: 'activity', to: '/cancellation/events', isActive: (pathname) => pathname.startsWith('/cancellation/events') },
+  { key: 'navExcuses', icon: 'clock', to: '/cancellation/excuses', isActive: (pathname) => pathname.startsWith('/cancellation/excuses') },
+  { key: 'navCancellationReasons', icon: 'list', to: '/cancellation/reasons', isActive: (pathname) => pathname.startsWith('/cancellation/reasons') },
+  { key: 'navCancellationRules', icon: 'sliders', to: '/cancellation/rules', isActive: (pathname) => pathname.startsWith('/cancellation/rules') },
+  {
+    key: 'navReliability',
+    icon: 'gauge',
+    to: '/reliability',
+    isActive: (pathname, search) => pathname.startsWith('/reliability') && tabOf(search) !== 'thresholds',
+  },
+  {
+    key: 'navReliabilityThresholds',
+    icon: 'layers',
+    to: '/reliability?tab=thresholds',
+    isActive: (pathname, search) => pathname === '/reliability' && tabOf(search) === 'thresholds',
+  },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -81,6 +115,8 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   { items: NAV_ITEMS },
+  { key: 'navGroupSafety', items: SAFETY_ITEMS },
+  { key: 'navGroupCancellation', items: CANCELLATION_ITEMS },
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
   { key: 'navGroupFinance', items: FINANCE_ITEMS },
   { key: 'navGroupNotifications', items: NOTIFICATION_ITEMS },
@@ -116,5 +152,15 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (/^\/notifications\/campaigns\/[^/]+/.test(pathname)) return 'campaignDetailTitle'
   if (pathname.startsWith('/notifications/campaigns')) return 'campaignsTitle'
   if (pathname.startsWith('/notifications/deliveries')) return 'deliveriesTitle'
+  if (/^\/safety\/cases\/[^/]+/.test(pathname)) return 'sfCaseDetailTitle'
+  if (pathname.startsWith('/safety/alerts')) return 'sfAlertsTitle'
+  if (pathname.startsWith('/safety')) return 'sfCenterTitle'
+  if (pathname.startsWith('/lost-items')) return 'liTitle'
+  if (pathname.startsWith('/cancellation/reasons')) return 'cxReasonsTitle'
+  if (pathname.startsWith('/cancellation/rules')) return 'cxRulesTitle'
+  if (pathname.startsWith('/cancellation/excuses')) return 'cxExcusesTitle'
+  if (pathname.startsWith('/cancellation')) return 'cxEventsTitle'
+  if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
+  if (pathname.startsWith('/reliability')) return 'rlTitle'
   return 'appName'
 }

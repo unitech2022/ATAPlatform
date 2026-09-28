@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router'
 import { Badge, DriverStatusBadge } from '../components/Badge'
 import { Button } from '../components/Button'
+import { CancellationKpis } from '../components/CancellationKpis'
 import { Card, DarkCard } from '../components/Card'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
@@ -12,10 +13,11 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { dashboard, drivers, live, payments, payouts, refunds } from '../lib/admin'
+import { cancellations, dashboard, drivers, live, payments, payouts, refunds, safety } from '../lib/admin'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
-import { todayIso } from '../lib/pricing'
-import type { DashboardSummary } from '../lib/types'
+import { daysAgoIso, todayIso } from '../lib/pricing'
+import { formatDuration } from '../lib/safety'
+import type { DashboardSummary, SafetySummary } from '../lib/types'
 
 const STATS: { key: Exclude<keyof DashboardSummary, 'today'>; label: TranslationKey; icon: IconName; tone?: 'brand' | 'danger' }[] = [
   { key: 'pendingDriverApplications', label: 'statPendingApplications', icon: 'document', tone: 'danger' },
@@ -47,6 +49,10 @@ export function DashboardPage() {
   const captured = useQuery(() => payments.list({ status: 'captured', from: today, to: today, page: 1, pageSize: 1 }), `dashboard-captured:${today}`)
   const pendingPayouts = useQuery(() => payouts.list({ status: 'requested', page: 1, pageSize: 1 }), 'dashboard-payouts')
   const pendingRefunds = useQuery(() => refunds.list({ status: 'pending_approval', page: 1, pageSize: 1 }), 'dashboard-refunds')
+  // F12 / F14 — hidden for admins without `safety.manage` / `reports.view` (the calls answer 403).
+  const safetySummary = useQuery(() => safety.summary(), 'dashboard-safety')
+  const kpiFrom = daysAgoIso(6)
+  const cancellationStats = useQuery(() => cancellations.stats({ from: kpiFrom, to: today }), `dashboard-cancellations:${kpiFrom}:${today}`)
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
     ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
@@ -96,6 +102,26 @@ export function DashboardPage() {
               <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={t('finance')} />
             </Link>
           ))}
+        </div>
+      )}
+
+      {(!safetySummary.error || !cancellationStats.error) && (
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
+          {!safetySummary.error && <SafetyOverview summary={safetySummary.data} loading={safetySummary.loading} />}
+          {!cancellationStats.error && (
+            <Card
+              title={t('cxKpisTitle')}
+              description={t('cxKpisLast7Days')}
+              action={
+                <Link to={`/cancellation/events?from=${kpiFrom}&to=${today}`} className="inline-flex items-center gap-1 text-sm font-bold text-brand">
+                  {t('viewAll')}
+                  <Icon name="chevron" className="size-4 rtl:rotate-180" />
+                </Link>
+              }
+            >
+              <CancellationKpis stats={cancellationStats.data} loading={cancellationStats.loading} compact />
+            </Card>
+          )}
         </div>
       )}
 
@@ -193,6 +219,62 @@ export function DashboardPage() {
         </DarkCard>
       </div>
     </>
+  )
+}
+
+function SafetyOverview({ summary, loading }: { summary: SafetySummary | null; loading: boolean }) {
+  const { t } = useLang()
+  const openTotal = summary ? summary.open.critical + summary.open.high + summary.open.medium + summary.open.low : null
+  const critical = summary?.open.critical ?? 0
+  const value = (count: number | null | undefined) => (loading && !summary ? '…' : formatNumber(count))
+
+  return (
+    <Card
+      title={t('sfDashboardTitle')}
+      action={
+        <Link to="/safety" className="inline-flex items-center gap-1 text-sm font-bold text-brand">
+          {t('sfOpenCenter')}
+          <Icon name="chevron" className="size-4 rtl:rotate-180" />
+        </Link>
+      }
+    >
+      <Link
+        to="/safety?status=open"
+        className={`mb-3 flex items-center justify-between gap-3 rounded-2xl px-4 py-3 transition ${critical > 0 ? 'bg-danger text-white' : 'bg-cloud hover:bg-line'}`}
+      >
+        <span className="flex items-center gap-3">
+          {critical > 0 && (
+            <span className="relative flex size-3" aria-hidden="true">
+              <span className="absolute inline-flex size-full rounded-full bg-white opacity-75 motion-safe:animate-ping" />
+              <span className="relative inline-flex size-3 rounded-full bg-white" />
+            </span>
+          )}
+          <span className="text-sm font-bold">{t('sfOpenCases')}</span>
+        </span>
+        <span className="ltr-nums text-2xl font-bold">{value(openTotal)}</span>
+      </Link>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { key: 'sfOpenCritical' as const, count: summary?.open.critical, tone: 'danger' as const },
+          { key: 'sfOpenHigh' as const, count: summary?.open.high, tone: 'warning' as const },
+          { key: 'sfUnassigned' as const, count: summary?.unassigned, tone: 'warning' as const },
+          { key: 'sfPendingAlerts' as const, count: summary?.pendingAlerts, tone: 'ink' as const },
+        ].map((stat) => (
+          <div key={stat.key} className="rounded-2xl bg-cloud px-3 py-2.5">
+            <p className="truncate text-xs font-bold text-muted">{t(stat.key)}</p>
+            <p className={`ltr-nums mt-1 text-lg font-bold ${stat.tone === 'danger' && (stat.count ?? 0) > 0 ? 'text-danger' : ''}`}>{value(stat.count)}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-muted">
+        {t('sfAvgFirstResponse')}: <span className="ltr-nums font-bold text-ink">{summary ? formatDuration(summary.avgFirstResponseSeconds) : '…'}</span> · {t('sfOnDutyAgents')}:{' '}
+        <span className="ltr-nums font-bold text-ink">{value(summary?.onDutyAgents)}</span>
+      </p>
+      <Link to="/safety/alerts?status=pending_rider" className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand">
+        <Icon name="bell" className="size-3.5" />
+        {t('sfAlertsTitle')}
+      </Link>
+    </Card>
   )
 }
 

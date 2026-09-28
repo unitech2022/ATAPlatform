@@ -12,6 +12,14 @@ const CODE_KEY: Record<string, TranslationKey> = {
   template_placeholder_invalid: 'errPlaceholderInvalid',
   unknown_event_code: 'errUnknownEventCode',
   insufficient_balance: 'errInsufficientBalance',
+  // F12 / F14 (docs/09)
+  chat_closed: 'errChatClosed',
+  lost_item_window_closed: 'errLostItemWindowClosed',
+  share_not_found: 'errShareNotFound',
+  share_expired: 'errShareExpired',
+  cancellation_reason_invalid: 'errCancellationReasonInvalid',
+  cancellation_fee_changed: 'errCancellationFeeChanged',
+  account_restricted: 'errAccountRestricted',
 }
 
 /** Turns any thrown value into a human-readable message in the current language. */

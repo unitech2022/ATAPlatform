@@ -47,6 +47,10 @@ export type IconName =
   | 'receipt'
   | 'send'
   | 'book'
+  | 'chat'
+  | 'box'
+  | 'gauge'
+  | 'siren'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -276,6 +280,31 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z" />
       <path d="M4 19V5M8 7h8M8 11h6" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12Z" />
+      <path d="M8.5 12h.01M12 12h.01M15.5 12h.01" />
+    </>
+  ),
+  box: (
+    <>
+      <path d="M21 8 12 3 3 8v8l9 5 9-5z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </>
+  ),
+  gauge: (
+    <>
+      <path d="M4 18a9 9 0 1 1 16 0" />
+      <path d="m12 14 4-5" />
+      <circle cx="12" cy="14" r="1.2" />
+    </>
+  ),
+  siren: (
+    <>
+      <path d="M7 17v-5a5 5 0 0 1 10 0v5" />
+      <path d="M5 21h14v-4H5zM12 3v2M4.2 6.2l1.4 1.4M19.8 6.2l-1.4 1.4" />
     </>
   ),
   target: (
