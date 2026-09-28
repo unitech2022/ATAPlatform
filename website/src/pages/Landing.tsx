@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import logo from '../assets/logo.png'
-import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { CatalogIcon, Icon, type IconName } from '../components/Icon'
 import { MapArt } from '../components/MapArt'
 import { Notice } from '../components/Notice'
+import { StoreLinks } from '../components/StoreLinks'
 import { useI18n, type TranslationKey } from '../i18n'
 import { catalogApi } from '../lib/api'
 import { fallbackRideCategories, SUPPORT_EMAIL } from '../lib/catalog'
@@ -57,10 +57,14 @@ export function Landing() {
     { label: t('nav.categories'), to: '#categories' },
     { label: t('nav.safety'), to: '#safety' },
     { label: t('nav.join'), to: '#join' },
+    { label: t('nav.help'), to: '/help' },
+    { label: t('nav.business'), to: '/business' },
   ]
 
   return (
     <div className="min-h-screen bg-canvas text-ink">
+      <title>{t('landing.pageTitle')}</title>
+      <meta name="description" content={t('landing.metaDescription')} />
       <Header
         nav={nav}
         actions={
@@ -254,14 +258,7 @@ export function Landing() {
               <p className="text-2xl font-bold">{t('stores.title')}</p>
               <p className="mt-2 text-sm leading-7 text-white/70">{t('stores.copy')}</p>
             </div>
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              {['App Store', 'Google Play'].map((store) => (
-                <Button key={store} variant="secondary" disabled className="justify-between gap-4 sm:min-w-44">
-                  <span dir="ltr">{store}</span>
-                  <span className="rounded-full bg-cloud px-2 py-0.5 text-xs text-muted">{t('stores.soon')}</span>
-                </Button>
-              ))}
-            </div>
+            <StoreLinks />
           </Card>
         </section>
       </main>

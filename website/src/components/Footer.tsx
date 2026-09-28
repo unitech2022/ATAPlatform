@@ -1,9 +1,18 @@
 import { Link } from 'react-router'
 import logo from '../assets/logo.png'
-import { useI18n } from '../i18n'
+import { useI18n, type TranslationKey } from '../i18n'
 import { SUPPORT_EMAIL, SUPPORT_PHONE, SUPPORT_PHONE_HREF } from '../lib/catalog'
 import { currentYear } from '../lib/format'
 import { Icon } from './Icon'
+
+const links: { to: string; label: TranslationKey }[] = [
+  { to: '/', label: 'nav.home' },
+  { to: '/driver', label: 'nav.driverPortal' },
+  { to: '/help', label: 'nav.help' },
+  { to: '/business', label: 'nav.business' },
+  { to: '/privacy', label: 'footer.privacy' },
+  { to: '/terms', label: 'footer.terms' },
+]
 
 export function Footer() {
   const { t } = useI18n()
@@ -47,22 +56,14 @@ export function Footer() {
 
         <div>
           <p className="mb-4 text-sm font-bold text-brand">{t('footer.links')}</p>
-          <ul className="space-y-3 text-sm font-bold text-ink">
-            <li>
-              <Link to="/" className="hover:text-brand">
-                {t('nav.home')}
-              </Link>
-            </li>
-            <li>
-              <Link to="/driver" className="hover:text-brand">
-                {t('nav.driverPortal')}
-              </Link>
-            </li>
-            <li>
-              <a href="#safety" className="hover:text-brand">
-                {t('nav.safety')}
-              </a>
-            </li>
+          <ul className="grid grid-cols-2 gap-3 text-sm font-bold text-ink">
+            {links.map((link) => (
+              <li key={link.to}>
+                <Link to={link.to} className="hover:text-brand">
+                  {t(link.label)}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

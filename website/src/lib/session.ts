@@ -1,10 +1,25 @@
 import type { AuthResponse, DriverSummary, User } from './types'
 
-const SESSION_KEY = 'ata-session'
+/**
+ * Two independent sessions live side by side: the driver portal (`/driver/*`)
+ * and the corporate portal (`/business/app/*`). Each has its own storage key so
+ * signing in or out of one never touches the other.
+ */
+export type SessionScope = 'driver' | 'business'
+
+const SESSION_KEYS: Record<SessionScope, string> = {
+  driver: 'ata-session',
+  business: 'ata-business-session',
+}
 const DEVICE_KEY = 'ata-device-id'
 
-/** Fired on `window` whenever the stored session changes (login, logout, refresh, expiry). */
+/** Fired on `window` whenever a stored session changes (login, logout, refresh, expiry). */
 export const SESSION_EVENT = 'ata:session'
+
+export interface SessionEventDetail {
+  scope: SessionScope
+  session: Session | null
+}
 
 export interface Session {
   accessToken: string
@@ -18,13 +33,13 @@ export function sessionFromAuth(response: AuthResponse): Session {
     accessToken: response.accessToken,
     refreshToken: response.refreshToken,
     user: response.user,
-    driver: response.driver,
+    driver: response.driver ?? null,
   }
 }
 
-export function readSession(): Session | null {
+export function readSession(scope: SessionScope = 'driver'): Session | null {
   try {
-    const raw = localStorage.getItem(SESSION_KEY)
+    const raw = localStorage.getItem(SESSION_KEYS[scope])
     if (!raw) return null
     const parsed: unknown = JSON.parse(raw)
     if (
@@ -42,14 +57,19 @@ export function readSession(): Session | null {
   }
 }
 
-export function writeSession(session: Session | null): void {
+export function writeSession(session: Session | null, scope: SessionScope = 'driver'): void {
   try {
-    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-    else localStorage.removeItem(SESSION_KEY)
+    if (session) localStorage.setItem(SESSION_KEYS[scope], JSON.stringify(session))
+    else localStorage.removeItem(SESSION_KEYS[scope])
   } catch {
     // Storage may be unavailable (private mode); the in-memory state still updates.
   }
-  window.dispatchEvent(new CustomEvent<Session | null>(SESSION_EVENT, { detail: session }))
+  window.dispatchEvent(new CustomEvent<SessionEventDetail>(SESSION_EVENT, { detail: { scope, session } }))
+}
+
+/** True when the session belongs to a corporate admin (guard for `/business/app/*`). */
+export function isCorporateAdmin(session: Session | null): boolean {
+  return Boolean(session?.user.roles.includes('corporate_admin'))
 }
 
 /** Stable per-browser device id sent with OTP verification. */

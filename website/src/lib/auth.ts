@@ -10,13 +10,23 @@ export interface AuthContextValue {
   logout: () => Promise<void>
 }
 
-export const AuthContext = createContext<AuthContextValue>({
+const defaults: AuthContextValue = {
   session: null,
   expired: false,
   login: () => {},
   logout: async () => {},
-})
+}
+
+/** Driver portal session (`ata-session`). */
+export const AuthContext = createContext<AuthContextValue>(defaults)
+
+/** Corporate portal session (`ata-business-session`). */
+export const BusinessAuthContext = createContext<AuthContextValue>(defaults)
 
 export function useAuth(): AuthContextValue {
   return useContext(AuthContext)
+}
+
+export function useBusinessAuth(): AuthContextValue {
+  return useContext(BusinessAuthContext)
 }

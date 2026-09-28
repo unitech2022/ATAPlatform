@@ -41,3 +41,8 @@ export function fallbackRideCategories(lang: Lang): RideCategory[] {
 export const SUPPORT_PHONE = '9200 123 45'
 export const SUPPORT_PHONE_HREF = 'tel:920012345'
 export const SUPPORT_EMAIL = 'help@ata.sa'
+
+/** Corporate sales contact for the `/business` "talk to sales" form (mailto / WhatsApp, no API). */
+export const BUSINESS_EMAIL: string = import.meta.env.VITE_BUSINESS_EMAIL || 'business@ata.sa'
+/** WhatsApp number in international format without "+" (hidden when empty). */
+export const BUSINESS_WHATSAPP: string = (import.meta.env.VITE_BUSINESS_WHATSAPP ?? '').replace(/\D/g, '')

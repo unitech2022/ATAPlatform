@@ -3,6 +3,21 @@ import type { ReactNode } from 'react'
 export type IconName =
   | 'arrow'
   | 'bell'
+  | 'building'
+  | 'calendar'
+  | 'chart'
+  | 'close'
+  | 'download'
+  | 'edit'
+  | 'grid'
+  | 'help'
+  | 'lock'
+  | 'mail'
+  | 'receipt'
+  | 'settings'
+  | 'star'
+  | 'trash'
+  | 'users'
   | 'car'
   | 'check'
   | 'chevron'
@@ -22,6 +37,76 @@ export type IconName =
 
 // Line icons from the design prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
+  building: (
+    <>
+      <path d="M4 21V5l8-3v19M12 8h8v13M2 21h20" />
+      <path d="M8 8h.01M8 12h.01M8 16h.01M16 12h.01M16 16h.01" />
+    </>
+  ),
+  calendar: (
+    <>
+      <path d="M4 6h16v15H4zM4 10h16" />
+      <path d="M8 3v4M16 3v4" />
+    </>
+  ),
+  chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  download: (
+    <>
+      <path d="M12 4v12M7 11l5 5 5-5" />
+      <path d="M5 20h14" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M4 20h4L19 9l-4-4L4 16z" />
+      <path d="m13 7 4 4" />
+    </>
+  ),
+  grid: <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <path d="M5 11h14v10H5z" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  mail: (
+    <>
+      <path d="M3 5h18v14H3z" />
+      <path d="m3 7 9 6 9-6" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M6 2h12v20l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 7h6M9 11h6M9 15h4" />
+    </>
+  ),
+  settings: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+    </>
+  ),
+  star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z" />,
+  trash: (
+    <>
+      <path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2 21c.8-4 3.4-6 7-6s6.2 2 7 6" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 15c2 .6 3.4 2.6 4 6" />
+    </>
+  ),
   arrow: <path d="m15 18-6-6 6-6" />,
   bell: (
     <>

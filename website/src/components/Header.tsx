@@ -52,7 +52,7 @@ export function Header({ title, nav = [], actions }: HeaderProps) {
         </div>
 
         {nav.length > 0 && (
-          <nav className="hidden items-center gap-8 text-sm font-bold lg:flex">
+          <nav className="hidden items-center gap-6 text-sm font-bold lg:flex xl:gap-8">
             {nav.map((item) => (
               <NavLink key={item.to} item={item} className="text-muted transition hover:text-ink" />
             ))}

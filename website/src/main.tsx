@@ -8,8 +8,10 @@ import { I18nProvider } from './providers/I18nProvider.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
-      <AuthProvider>
-        <App />
+      <AuthProvider scope="driver">
+        <AuthProvider scope="business">
+          <App />
+        </AuthProvider>
       </AuthProvider>
     </I18nProvider>
   </StrictMode>,
