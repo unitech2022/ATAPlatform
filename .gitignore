@@ -1,10 +1,25 @@
+# OS / editors
 .DS_Store
-.idea/
+Thumbs.db
 .vscode/
-*.log
-node_modules/
-dist/
+.idea/
+*.swp
+
+# .NET
 bin/
 obj/
 *.user
+backend/storage/
+backend/**/appsettings.Local.json
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Flutter (project-level ignores live in mobile_app/.gitignore)
+
+# Env
+.env
+*.log
 .vs/
