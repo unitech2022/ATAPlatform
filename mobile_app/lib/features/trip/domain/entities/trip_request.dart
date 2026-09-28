@@ -24,6 +24,7 @@ class TripRequest extends Equatable {
     this.preferFemaleDriver = false,
     this.pricingMode = PricingMode.fixed,
     this.offeredPrice,
+    this.quoteId,
     this.riderNote,
   });
 
@@ -37,10 +38,17 @@ class TripRequest extends Equatable {
   final bool preferFemaleDriver;
   final PricingMode pricingMode;
   final double? offeredPrice;
+
+  /// Locks the price of a `POST /pricing/quote` result (F10).
+  final String? quoteId;
   final String? riderNote;
 
-  TripRequest copyWith({PricingMode? pricingMode, double? offeredPrice}) =>
-      TripRequest(
+  TripRequest copyWith({
+    PricingMode? pricingMode,
+    double? offeredPrice,
+    String? quoteId,
+    bool clearQuoteId = false,
+  }) => TripRequest(
         pickup: pickup,
         dropoff: dropoff,
         rideCategoryId: rideCategoryId,
@@ -51,6 +59,7 @@ class TripRequest extends Equatable {
         preferFemaleDriver: preferFemaleDriver,
         pricingMode: pricingMode ?? this.pricingMode,
         offeredPrice: offeredPrice ?? this.offeredPrice,
+        quoteId: clearQuoteId ? null : quoteId ?? this.quoteId,
         riderNote: riderNote,
       );
 
@@ -66,6 +75,7 @@ class TripRequest extends Equatable {
     preferFemaleDriver,
     pricingMode,
     offeredPrice,
+    quoteId,
     riderNote,
   ];
 }

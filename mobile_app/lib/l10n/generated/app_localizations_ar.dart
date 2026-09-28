@@ -1159,6 +1159,115 @@ class AppLocalizationsAr extends AppLocalizations {
   String get offeredPriceClear => 'إزالة';
 
   @override
+  String offeredPriceMin(String price) {
+    return 'الحد الأدنى $price';
+  }
+
+  @override
+  String offeredPriceMax(String price) {
+    return 'الحد الأقصى $price';
+  }
+
+  @override
+  String get offeredPriceDecrease => 'خفض السعر بريال';
+
+  @override
+  String get offeredPriceIncrease => 'رفع السعر بريال';
+
+  @override
+  String offerOutOfRange(String min, String max) {
+    return 'السعر المقترح خارج النطاق المسموح ($min – $max ر.س)، تم تعديله';
+  }
+
+  @override
+  String get quoteExpiredError =>
+      'انتهت صلاحية السعر وتم تحديثه، اضغط للتأكيد مرة أخرى';
+
+  @override
+  String get quoteLoading => 'جارٍ حساب السعر…';
+
+  @override
+  String get quoteFailed => 'تعذر حساب السعر، الأسعار المعروضة تقديرية';
+
+  @override
+  String get quoteExpiredHint => 'انتهت صلاحية السعر';
+
+  @override
+  String get refreshQuote => 'تحديث السعر';
+
+  @override
+  String get fareDetails => 'تفاصيل السعر';
+
+  @override
+  String fareDetailsCopy(String category) {
+    return 'كيف حُسب سعر $category';
+  }
+
+  @override
+  String get fareBaseFare => 'التعرفة الأساسية';
+
+  @override
+  String fareDistance(String distance) {
+    return 'المسافة ($distance)';
+  }
+
+  @override
+  String fareTime(String duration) {
+    return 'الوقت ($duration)';
+  }
+
+  @override
+  String get fareMinApplied => 'تم تطبيق الحد الأدنى للتعرفة';
+
+  @override
+  String get fareTimeMultiplier => 'مضاعِف الوقت';
+
+  @override
+  String get fareDemandMultiplier => 'مضاعِف الطلب';
+
+  @override
+  String get fareBookingFee => 'رسوم الحجز';
+
+  @override
+  String get fareServiceFee => 'رسوم الخدمة';
+
+  @override
+  String get fareDiscount => 'الخصم';
+
+  @override
+  String get fareTotal => 'الإجمالي';
+
+  @override
+  String multiplierValue(String value) {
+    return '×$value';
+  }
+
+  @override
+  String demandBadge(String name, String multiplier) {
+    return '$name ×$multiplier';
+  }
+
+  @override
+  String get demandNormal => 'الطلب طبيعي';
+
+  @override
+  String get demandModerate => 'الطلب متوسط الآن';
+
+  @override
+  String get demandHigh => 'الطلب مرتفع الآن';
+
+  @override
+  String get demandVeryHigh => 'الطلب مرتفع جداً الآن';
+
+  @override
+  String get offerPassengerOffered => 'اقتراح من الراكب';
+
+  @override
+  String offerRound(int round) {
+    return 'الجولة $round';
+  }
+
+  @override
   String get tripActiveExists => 'لديك رحلة نشطة بالفعل';
 
   @override

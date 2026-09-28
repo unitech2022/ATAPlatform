@@ -21,6 +21,7 @@ abstract final class TripRequestMapper {
         'preferFemaleDriver': request.preferFemaleDriver,
         'pricingMode': request.pricingMode.apiValue,
         'offeredPrice': ?request.offeredPrice,
+        'quoteId': ?request.quoteId,
         'riderNote': ?request.riderNote,
       };
 }

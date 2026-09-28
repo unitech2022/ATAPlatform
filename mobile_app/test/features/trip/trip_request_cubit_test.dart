@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:ata_app/features/trip/domain/entities/cancel_reason.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
@@ -90,6 +91,71 @@ void main() {
               as TripRequest;
       expect(sent.pricingMode, PricingMode.offer);
       expect(sent.offeredPrice, 30);
+    },
+  );
+
+  blocTest<TripRequestCubit, TripRequestState>(
+    'a quoteId skips the legacy estimate and is sent with the offered price',
+    build: build,
+    act: (TripRequestCubit cubit) => cubit.request(
+      testTripRequest.copyWith(quoteId: 'q1', offeredPrice: 35),
+    ),
+    expect: () => <TripRequestState>[
+      const TripRequestState(status: TripRequestStatus.requesting),
+      const TripRequestState(
+        status: TripRequestStatus.searching,
+        trip: testTrip,
+      ),
+    ],
+    verify: (_) {
+      final TripRequest sent =
+          verify(() => requestTrip(captureAny())).captured.single
+              as TripRequest;
+      expect(sent.quoteId, 'q1');
+      expect(sent.offeredPrice, 35);
+      expect(sent.pricingMode, PricingMode.offer);
+      verifyNever(() => estimateTrip(any()));
+    },
+  );
+
+  blocTest<TripRequestCubit, TripRequestState>(
+    'offer_out_of_range exposes the accepted bounds',
+    build: build,
+    setUp: () => when(() => requestTrip(any())).thenAnswer(
+      (_) async => const Left<Failure, Trip>(
+        ServerFailure(
+          code: 'offer_out_of_range',
+          message: '',
+          details: <String, dynamic>{'offerMin': 29.5, 'offerMax': 54.5},
+          statusCode: 422,
+        ),
+      ),
+    ),
+    act: (TripRequestCubit cubit) => cubit.request(
+      testTripRequest.copyWith(quoteId: 'q1', offeredPrice: 10),
+    ),
+    verify: (TripRequestCubit cubit) {
+      expect(cubit.state.status, TripRequestStatus.failure);
+      expect(cubit.state.offerBounds, const OfferBounds(min: 29.5, max: 54.5));
+      expect(cubit.state.isQuoteExpired, isFalse);
+    },
+  );
+
+  blocTest<TripRequestCubit, TripRequestState>(
+    'quote_expired is flagged so the quote can be refreshed',
+    build: build,
+    setUp: () => when(() => requestTrip(any())).thenAnswer(
+      (_) async => const Left<Failure, Trip>(
+        ServerFailure(code: 'quote_expired', message: '', statusCode: 422),
+      ),
+    ),
+    act: (TripRequestCubit cubit) =>
+        cubit.request(testTripRequest.copyWith(quoteId: 'stale')),
+    verify: (TripRequestCubit cubit) {
+      expect(cubit.state.status, TripRequestStatus.failure);
+      expect(cubit.state.isQuoteExpired, isTrue);
+      expect(cubit.state.offerBounds, isNull);
+      expect(cubit.state.trip, isNull);
     },
   );
 

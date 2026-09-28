@@ -2197,6 +2197,186 @@ abstract class AppLocalizations {
   /// **'إزالة'**
   String get offeredPriceClear;
 
+  /// No description provided for @offeredPriceMin.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى {price}'**
+  String offeredPriceMin(String price);
+
+  /// No description provided for @offeredPriceMax.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى {price}'**
+  String offeredPriceMax(String price);
+
+  /// No description provided for @offeredPriceDecrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'خفض السعر بريال'**
+  String get offeredPriceDecrease;
+
+  /// No description provided for @offeredPriceIncrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفع السعر بريال'**
+  String get offeredPriceIncrease;
+
+  /// No description provided for @offerOutOfRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر المقترح خارج النطاق المسموح ({min} – {max} ر.س)، تم تعديله'**
+  String offerOutOfRange(String min, String max);
+
+  /// No description provided for @quoteExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية السعر وتم تحديثه، اضغط للتأكيد مرة أخرى'**
+  String get quoteExpiredError;
+
+  /// No description provided for @quoteLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ حساب السعر…'**
+  String get quoteLoading;
+
+  /// No description provided for @quoteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حساب السعر، الأسعار المعروضة تقديرية'**
+  String get quoteFailed;
+
+  /// No description provided for @quoteExpiredHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية السعر'**
+  String get quoteExpiredHint;
+
+  /// No description provided for @refreshQuote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث السعر'**
+  String get refreshQuote;
+
+  /// No description provided for @fareDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل السعر'**
+  String get fareDetails;
+
+  /// No description provided for @fareDetailsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف حُسب سعر {category}'**
+  String fareDetailsCopy(String category);
+
+  /// No description provided for @fareBaseFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعرفة الأساسية'**
+  String get fareBaseFare;
+
+  /// No description provided for @fareDistance.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسافة ({distance})'**
+  String fareDistance(String distance);
+
+  /// No description provided for @fareTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت ({duration})'**
+  String fareTime(String duration);
+
+  /// No description provided for @fareMinApplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تطبيق الحد الأدنى للتعرفة'**
+  String get fareMinApplied;
+
+  /// No description provided for @fareTimeMultiplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'مضاعِف الوقت'**
+  String get fareTimeMultiplier;
+
+  /// No description provided for @fareDemandMultiplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'مضاعِف الطلب'**
+  String get fareDemandMultiplier;
+
+  /// No description provided for @fareBookingFee.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم الحجز'**
+  String get fareBookingFee;
+
+  /// No description provided for @fareServiceFee.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم الخدمة'**
+  String get fareServiceFee;
+
+  /// No description provided for @fareDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم'**
+  String get fareDiscount;
+
+  /// No description provided for @fareTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get fareTotal;
+
+  /// No description provided for @multiplierValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'×{value}'**
+  String multiplierValue(String value);
+
+  /// No description provided for @demandBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} ×{multiplier}'**
+  String demandBadge(String name, String multiplier);
+
+  /// No description provided for @demandNormal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلب طبيعي'**
+  String get demandNormal;
+
+  /// No description provided for @demandModerate.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلب متوسط الآن'**
+  String get demandModerate;
+
+  /// No description provided for @demandHigh.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلب مرتفع الآن'**
+  String get demandHigh;
+
+  /// No description provided for @demandVeryHigh.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلب مرتفع جداً الآن'**
+  String get demandVeryHigh;
+
+  /// No description provided for @offerPassengerOffered.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراح من الراكب'**
+  String get offerPassengerOffered;
+
+  /// No description provided for @offerRound.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجولة {round}'**
+  String offerRound(int round);
+
   /// No description provided for @tripActiveExists.
   ///
   /// In ar, this message translates to:

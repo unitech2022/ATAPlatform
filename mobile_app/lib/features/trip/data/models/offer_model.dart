@@ -18,7 +18,11 @@ class OfferModel extends Offer {
     super.driverNetEarnings,
     super.passengerFirstName,
     super.passengerRating,
+    super.passengerOffered,
+    super.round,
   });
+
+  static const String offerPricingMode = 'offer';
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
     final Map<String, dynamic> passenger =
@@ -46,6 +50,10 @@ class OfferModel extends Offer {
           DateTime.now().add(const Duration(seconds: 20)),
       passengerFirstName: JsonReaders.string(passenger, 'firstName'),
       passengerRating: JsonReaders.optionalNumber(passenger, 'ratingAvg'),
+      passengerOffered:
+          json['passengerOffered'] == true ||
+          JsonReaders.optionalString(json, 'pricingMode') == offerPricingMode,
+      round: JsonReaders.optionalInteger(json, 'round') ?? 1,
     );
   }
 
@@ -61,6 +69,8 @@ class OfferModel extends Offer {
     'passengerPrice': passengerPrice,
     'driverNetEarnings': driverNetEarnings,
     'expiresAt': expiresAt.toIso8601String(),
+    'passengerOffered': passengerOffered,
+    'round': round,
     'passenger': <String, dynamic>{
       'firstName': passengerFirstName,
       'ratingAvg': passengerRating,

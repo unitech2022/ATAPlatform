@@ -2,6 +2,8 @@ import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/fare_estimate.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
+import 'package:ata_app/features/pricing/domain/entities/fare_quote.dart';
+import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:equatable/equatable.dart';
 
 /// State of the rider home sheet.
@@ -17,7 +19,14 @@ class HomeState extends Equatable {
     this.payment = PaymentOption.cash,
     this.offeredPrice,
     this.estimate = const FareEstimate(price: 0, etaMinutes: 0),
+    this.quote,
   });
+
+  /// Lowest price a rider may ever offer, and the fallback offer range used
+  /// until a quote arrives (mirrors `Pricing:OfferMin/MaxPercent`).
+  static const double minOfferedPrice = 5;
+  static const double fallbackOfferMinFactor = 0.7;
+  static const double fallbackOfferMaxFactor = 1.3;
 
   final List<RideCategory> categories;
   final bool loadingCategories;
@@ -30,7 +39,12 @@ class HomeState extends Equatable {
 
   /// Optional price proposed by the rider (`pricingMode: offer`).
   final double? offeredPrice;
+
+  /// Catalog estimate, shown until the quote arrives.
   final FareEstimate estimate;
+
+  /// The usable (non-expired) fare quote applied from `QuoteCubit`.
+  final FareQuote? quote;
 
   RideCategory? get selectedCategory {
     for (final RideCategory category in categories) {
@@ -39,10 +53,31 @@ class HomeState extends Equatable {
     return categories.isEmpty ? null : categories.first;
   }
 
+  /// Quoted line of the selected category, if the quote covers it.
+  QuoteCategory? get quoteCategory => quote?.forCategory(selectedCategory?.id);
+
+  /// Price and ETA shown for the selected category.
+  double get displayPrice => quoteCategory?.total ?? estimate.price;
+  int get displayEta => quoteCategory?.etaMinutes ?? estimate.etaMinutes;
+
+  /// Accepted "offer your price" range.
+  OfferBounds get offerBounds {
+    final QuoteCategory? quoted = quoteCategory;
+    if (quoted != null && quoted.offerBounds.isValid) return quoted.offerBounds;
+    final double min = (estimate.price * fallbackOfferMinFactor)
+        .floorToDouble()
+        .clamp(minOfferedPrice, double.infinity);
+    final double max = (estimate.price * fallbackOfferMaxFactor)
+        .ceilToDouble()
+        .clamp(min + 1, double.infinity);
+    return OfferBounds(min: min, max: max);
+  }
+
   int get maxStops => selectedCategory?.maxStops ?? 0;
   bool get canAddStop => stops.length < maxStops;
   bool get canRequest => selectedCategory != null;
   bool get hasOfferedPrice => offeredPrice != null;
+  bool get hasQuote => quote != null;
 
   HomeState copyWith({
     List<RideCategory>? categories,
@@ -55,8 +90,10 @@ class HomeState extends Equatable {
     PaymentOption? payment,
     double? offeredPrice,
     FareEstimate? estimate,
+    FareQuote? quote,
     bool clearFailure = false,
     bool clearOfferedPrice = false,
+    bool clearQuote = false,
   }) => HomeState(
     categories: categories ?? this.categories,
     loadingCategories: loadingCategories ?? this.loadingCategories,
@@ -70,6 +107,7 @@ class HomeState extends Equatable {
     payment: payment ?? this.payment,
     offeredPrice: clearOfferedPrice ? null : offeredPrice ?? this.offeredPrice,
     estimate: estimate ?? this.estimate,
+    quote: clearQuote ? null : quote ?? this.quote,
   );
 
   @override
@@ -84,5 +122,6 @@ class HomeState extends Equatable {
     payment,
     offeredPrice,
     estimate,
+    quote,
   ];
 }

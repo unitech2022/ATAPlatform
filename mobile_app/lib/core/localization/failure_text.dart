@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 
 /// Known API error codes that have dedicated translations.
@@ -13,6 +14,10 @@ abstract final class ErrorCodes {
   static const String offerExpired = 'offer_expired';
   static const String pinInvalid = 'pin_invalid';
   static const String pinLocked = 'pin_locked';
+  static const String offerOutOfRange = 'offer_out_of_range';
+  static const String quoteExpired = 'quote_expired';
+  static const String offerMin = 'offerMin';
+  static const String offerMax = 'offerMax';
   static const String attemptsLeft = 'attemptsLeft';
   static const String retryAfterSeconds = 'retryAfterSeconds';
 }
@@ -55,6 +60,13 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       return l10n.pinInvalid(failure.intDetail(ErrorCodes.attemptsLeft) ?? 0);
     case ErrorCodes.pinLocked:
       return l10n.pinLocked;
+    case ErrorCodes.offerOutOfRange:
+      return l10n.offerOutOfRange(
+        Money.compact(failure.numDetail(ErrorCodes.offerMin) ?? 0),
+        Money.compact(failure.numDetail(ErrorCodes.offerMax) ?? 0),
+      );
+    case ErrorCodes.quoteExpired:
+      return l10n.quoteExpiredError;
   }
   return failure.message.isEmpty ? l10n.errorUnexpected : failure.message;
 }

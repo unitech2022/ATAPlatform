@@ -64,6 +64,35 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
   `NSLocationWhenInUseUsageDescription` and `LSApplicationQueriesSchemes`
   (`tel`) in `Info.plist`.
 
+### Pricing, offers and demand (F10 / F9)
+
+- `pricing` feature: `QuoteCubit` prices the route through
+  `POST /pricing/quote` whenever the stops or booking time change (600 ms
+  debounce, injectable for tests), keeps the last quote while re-pricing and
+  flags it `expired` at `expiresAt` (injectable clock) so a stale `quoteId`
+  is never sent; `refresh()` re-prices at once. `DemandCubit` polls
+  `GET /pricing/demand?lat&lng` for the pickup every 60 s (injectable ticker)
+  and drives the coloured badge under the sheet title ("الطلب مرتفع الآن
+  ×1.5": normal → brand, moderate → ink, high → `AtaColors.warning`,
+  very high → danger).
+- Home sheet: category tiles show the quoted total and ETA (catalog estimate
+  while the first quote loads, with a plain "جارٍ حساب السعر…" label);
+  "تفاصيل السعر" opens `FareBreakdownSheet` (base, distance, time, min-fare,
+  time / demand multipliers, booking and service fees, discount, total —
+  driver net earnings are never shown to passengers). `HomeSync` holds the
+  cubit-to-cubit listeners: route changes → re-quote, usable quote →
+  `HomeCubit.applyQuote` (prices, offer bounds, `quoteId`), `422
+  offer_out_of_range` → offer clamped to the returned bounds, `422
+  quote_expired` → quote refreshed and the rider asked to confirm again.
+- Offer your price: a `Slider` bounded by the quote's `offerMin..offerMax`
+  (70 %..130 % of the catalog estimate until a quote exists) with ±1 SAR
+  buttons and the min / max captions; the request sends `quoteId` and
+  `offeredPrice` (`pricingMode: offer`). With a `quoteId` the legacy
+  `/passenger/trips/estimate` call is skipped.
+- Driver offer page: "اقتراح من الراكب" chip when the offer carries
+  `passengerOffered` (or `pricingMode: offer`) and a "الجولة n" chip for
+  matching rounds above 1; net earnings stay the prominent figure.
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -94,7 +123,8 @@ lib/
 ```
 
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
-`safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`.
+`safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
+`pricing`.
 
 ### Rules
 
@@ -137,8 +167,10 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `NotificationPrefsCubit` | account            | notification toggles (optimistic)                 |
 | `DeleteAccountCubit`     | account            | `DELETE /me` confirmation                         |
 | `NotificationsCubit`     | notifications      | inbox + unread badge                              |
-| `HomeCubit`              | passenger_home     | categories, stops, time, payment, female driver, price offer |
-| `TripRequestCubit`       | trip               | estimate + `POST /passenger/trips`, cancel while searching |
+| `HomeCubit`              | passenger_home     | categories, stops, time, payment, female driver, applied quote, bounded price offer |
+| `QuoteCubit`             | pricing            | debounced `POST /pricing/quote`, expiry tracking, refresh |
+| `DemandCubit`            | pricing            | `GET /pricing/demand` for the pickup, 60 s refresh, badge level |
+| `TripRequestCubit`       | trip               | `POST /passenger/trips` with `quoteId` / `offeredPrice` (legacy estimate without a quote), `offer_out_of_range` / `quote_expired`, cancel while searching |
 | `ActiveTripCubit`        | trip (app-wide)    | passenger trip feed, driver ETA, waiting timer, cancel, dismiss |
 | `DriverOfferCubit`       | trip (app-wide)    | offer feed while online, 20 s countdown, accept / reject |
 | `DriverTripCubit`        | trip (app-wide)    | driver trip feed, next step, PIN entry, cancel            |
@@ -154,9 +186,10 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 
 ## API
 
-Typed clients for sections 1–7 of `docs/05-api-contract.md` and the F8
-endpoints of `docs/06-feature-f8-trip-lifecycle.md` live in each feature's
-`data/datasources`. `core/network/api_client.dart` adds
+Typed clients for sections 1–7 of `docs/05-api-contract.md`, the F8
+endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
+endpoints of `docs/07-feature-f9-f10-matching-pricing.md` live in each
+feature's `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope
 `{ error: { code, message, details } }` to `AppException` → `Failure`.

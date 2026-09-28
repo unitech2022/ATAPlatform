@@ -21,6 +21,8 @@ import 'package:ata_app/features/driver_onboarding/domain/usecases/get_driver_ap
 import 'package:ata_app/features/notifications/domain/usecases/get_notifications.dart';
 import 'package:ata_app/features/notifications/domain/usecases/mark_notifications_read.dart';
 import 'package:ata_app/features/passenger_home/domain/usecases/update_passenger_preferences.dart';
+import 'package:ata_app/features/pricing/domain/usecases/get_demand_at_location.dart';
+import 'package:ata_app/features/pricing/domain/usecases/get_fare_quote.dart';
 import 'package:ata_app/features/rides/domain/usecases/get_passenger_trips.dart';
 import 'package:ata_app/features/trip/domain/usecases/accept_offer.dart';
 import 'package:ata_app/features/trip/domain/usecases/advance_trip.dart';
@@ -74,6 +76,11 @@ void registerUseCases() {
       () => UpdatePassengerPreferences(getIt()),
     )
     ..registerLazySingleton<GetPassengerTrips>(() => GetPassengerTrips(getIt()))
+    // pricing
+    ..registerLazySingleton<GetFareQuote>(() => GetFareQuote(getIt()))
+    ..registerLazySingleton<GetDemandAtLocation>(
+      () => GetDemandAtLocation(getIt()),
+    )
     // wallet
     ..registerLazySingleton<GetWallet>(() => GetWallet(getIt()))
     ..registerLazySingleton<GetWalletTransactions>(

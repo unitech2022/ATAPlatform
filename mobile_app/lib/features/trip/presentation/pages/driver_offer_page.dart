@@ -107,6 +107,27 @@ class _OfferBody extends StatelessWidget {
           ),
           const SizedBox(height: AtaSpacing.md),
           OfferEarnings(offer: offer),
+          if (offer.passengerOffered || offer.round > 1) ...<Widget>[
+            const SizedBox(height: AtaSpacing.sm),
+            Row(
+              children: <Widget>[
+                if (offer.passengerOffered) ...<Widget>[
+                  AtaBadge(
+                    label: l10n.offerPassengerOffered,
+                    background: AtaColors.warningSoft,
+                    foreground: AtaColors.warning,
+                  ),
+                  const SizedBox(width: AtaSpacing.xs),
+                ],
+                if (offer.round > 1)
+                  AtaBadge(
+                    label: l10n.offerRound(offer.round),
+                    background: AtaColors.cloud,
+                    foreground: AtaColors.muted,
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: AtaSpacing.md),
           Row(
             children: <Widget>[

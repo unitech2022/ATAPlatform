@@ -10,11 +10,15 @@ import 'package:ata_app/design/widgets/selectable_tile.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
+import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
+import 'package:ata_app/features/pricing/presentation/cubit/quote_state.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Selectable ride categories with ETA and estimated price.
+/// Selectable ride categories with ETA and price. Prices come from the fare
+/// quote (F10) and fall back to the catalog estimate while it loads.
 class RideCategoryList extends StatelessWidget {
   const RideCategoryList({super.key});
 
@@ -31,24 +35,31 @@ class RideCategoryList extends StatelessWidget {
       buildWhen: (HomeState p, HomeState c) =>
           p.categories != c.categories ||
           p.selectedCategoryId != c.selectedCategoryId ||
-          p.loadingCategories != c.loadingCategories,
+          p.loadingCategories != c.loadingCategories ||
+          p.quote != c.quote,
       builder: (BuildContext context, HomeState state) {
         if (state.loadingCategories) return const CenteredLoader();
         if (state.categories.isEmpty) {
           return Text(l10n.categoriesError, style: AtaText.caption);
         }
         final HomeCubit cubit = context.read<HomeCubit>();
-        return Column(
-          children: <Widget>[
-            for (final RideCategory category in state.categories) ...<Widget>[
-              _CategoryTile(
-                category: category,
-                selected: category.id == state.selectedCategory?.id,
-                onTap: () => cubit.selectCategory(category.id),
-              ),
-              const SizedBox(height: AtaSpacing.xs),
+        return BlocSelector<QuoteCubit, QuoteState, bool>(
+          selector: (QuoteState quote) => quote.isLoading && !quote.hasQuote,
+          builder: (BuildContext context, bool pricing) => Column(
+            children: <Widget>[
+              for (final RideCategory category
+                  in state.categories) ...<Widget>[
+                _CategoryTile(
+                  category: category,
+                  quoted: state.quote?.forCategory(category.id),
+                  pricing: pricing,
+                  selected: category.id == state.selectedCategory?.id,
+                  onTap: () => cubit.selectCategory(category.id),
+                ),
+                const SizedBox(height: AtaSpacing.xs),
+              ],
             ],
-          ],
+          ),
         );
       },
     );
@@ -58,18 +69,23 @@ class RideCategoryList extends StatelessWidget {
 class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
     required this.category,
+    required this.quoted,
+    required this.pricing,
     required this.selected,
     required this.onTap,
   });
 
   final RideCategory category;
+  final QuoteCategory? quoted;
+  final bool pricing;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final RideEstimate? estimate = category.estimate;
+    final int? eta = quoted?.etaMinutes ?? category.estimate?.etaMinutes;
+    final double? price = quoted?.total ?? category.estimate?.price;
     final AtaIcons icon = RideCategoryList.iconFor(category.icon);
     return SelectableTile(
       selected: selected,
@@ -100,10 +116,10 @@ class _CategoryTile extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Text(category.name, style: AtaText.bodyStrong),
-                    if (estimate != null) ...<Widget>[
+                    if (eta != null) ...<Widget>[
                       const SizedBox(width: AtaSpacing.xs),
                       Text(
-                        l10n.minutesLabel(estimate.etaMinutes),
+                        l10n.minutesLabel(eta),
                         style: AtaText.captionStrong.copyWith(
                           color: AtaColors.brand,
                         ),
@@ -115,9 +131,11 @@ class _CategoryTile extends StatelessWidget {
               ],
             ),
           ),
-          if (estimate != null)
+          if (pricing && quoted == null)
+            Text(l10n.quoteLoading, style: AtaText.caption)
+          else if (price != null)
             Text(
-              l10n.priceWithCurrency(Money.compact(estimate.price)),
+              l10n.priceWithCurrency(Money.compact(price)),
               style: AtaText.bodyStrong,
             ),
         ],

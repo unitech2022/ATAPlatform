@@ -1,4 +1,6 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/failure_text.dart';
+import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
 import 'package:equatable/equatable.dart';
@@ -26,6 +28,20 @@ class TripRequestState extends Equatable {
       status == TripRequestStatus.requesting ||
       status == TripRequestStatus.cancelling;
   bool get isSearching => status == TripRequestStatus.searching;
+
+  /// `422 quote_expired`: the quote must be refreshed and confirmed again.
+  bool get isQuoteExpired => failure?.code == ErrorCodes.quoteExpired;
+
+  /// Range returned with `422 offer_out_of_range`, to clamp the offer.
+  OfferBounds? get offerBounds {
+    final Failure? failure = this.failure;
+    if (failure == null || failure.code != ErrorCodes.offerOutOfRange) {
+      return null;
+    }
+    final double? min = failure.numDetail(ErrorCodes.offerMin);
+    final double? max = failure.numDetail(ErrorCodes.offerMax);
+    return min == null || max == null ? null : OfferBounds(min: min, max: max);
+  }
 
   TripRequestState copyWith({
     TripRequestStatus? status,

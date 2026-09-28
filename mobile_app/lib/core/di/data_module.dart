@@ -23,6 +23,9 @@ import 'package:ata_app/features/notifications/domain/repositories/notifications
 import 'package:ata_app/features/passenger_home/data/datasources/passenger_remote_data_source.dart';
 import 'package:ata_app/features/passenger_home/data/repositories/passenger_repository_impl.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
+import 'package:ata_app/features/pricing/data/datasources/pricing_remote_data_source.dart';
+import 'package:ata_app/features/pricing/data/repositories/pricing_repository_impl.dart';
+import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.dart';
 import 'package:ata_app/features/rides/data/datasources/rides_remote_data_source.dart';
 import 'package:ata_app/features/rides/data/repositories/rides_repository_impl.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
@@ -68,6 +71,9 @@ void registerData({
     )
     ..registerLazySingleton<PassengerRepository>(
       () => PassengerRepositoryImpl(PassengerRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<PricingRepository>(
+      () => PricingRepositoryImpl(PricingRemoteDataSource(getIt())),
     )
     ..registerLazySingleton<RidesRepository>(
       () => RidesRepositoryImpl(RidesRemoteDataSource(getIt())),

@@ -13,6 +13,10 @@ abstract final class AtaColors {
   static const Color map = Color(0xFFE5EEEB);
   static const Color danger = Color(0xFFC23B4A);
   static const Color dangerSoft = Color(0xFFFFF0F1);
+
+  /// Amber used for the "high demand" tier (between ink and danger).
+  static const Color warning = Color(0xFFD98E04);
+  static const Color warningSoft = Color(0xFFFFF6E5);
   static const Color white = Color(0xFFFFFFFF);
 
   /// Map drawing colors (prototype `index.css`).

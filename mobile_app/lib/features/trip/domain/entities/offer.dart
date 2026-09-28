@@ -17,6 +17,8 @@ class Offer extends Equatable {
     this.driverNetEarnings = 0,
     this.passengerFirstName = '',
     this.passengerRating,
+    this.passengerOffered = false,
+    this.round = 1,
   });
 
   final String id;
@@ -32,6 +34,12 @@ class Offer extends Equatable {
   final DateTime expiresAt;
   final String passengerFirstName;
   final double? passengerRating;
+
+  /// `pricingMode == offer`: the passenger proposed [passengerPrice].
+  final bool passengerOffered;
+
+  /// Matching round (F9); grows as the search radius widens.
+  final int round;
 
   int get etaMinutes => (etaSeconds / 60).ceil();
 
@@ -50,5 +58,7 @@ class Offer extends Equatable {
     expiresAt,
     passengerFirstName,
     passengerRating,
+    passengerOffered,
+    round,
   ];
 }

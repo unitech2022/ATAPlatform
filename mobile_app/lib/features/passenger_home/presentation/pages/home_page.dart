@@ -4,11 +4,14 @@ import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/home_sync.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/map_section.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/request_sheet.dart';
-import 'package:ata_app/features/trip/presentation/cubit/active_trip_cubit.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
+import 'package:ata_app/features/pricing/presentation/cubit/demand_cubit.dart';
+import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
-import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -27,6 +30,14 @@ class HomePage extends StatelessWidget {
             preferFemaleDriver: _preferFemale(context),
           )..loadCategories(),
         ),
+        BlocProvider<QuoteCubit>(
+          create: (BuildContext context) => QuoteCubit(getFareQuote: getIt())
+            ..update(buildQuoteRequest(const HomeState(), context.l10n)),
+        ),
+        BlocProvider<DemandCubit>(
+          create: (_) =>
+              DemandCubit(getDemand: getIt())..watch(TripPlaces.currentLocation),
+        ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(
             estimateTrip: getIt(),
@@ -35,29 +46,16 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ],
-      child: BlocListener<TripRequestCubit, TripRequestState>(
-        listenWhen: (TripRequestState p, TripRequestState c) =>
-            !p.isSearching && c.isSearching && c.trip != null,
-        // Hand the new trip to the app-wide feed; the router then redirects
-        // to /trip.
-        listener: (BuildContext context, TripRequestState state) {
-          context.read<ActiveTripCubit>().adopt(state.trip!);
-          context.read<TripRequestCubit>().reset();
-        },
+      child: HomeSync(
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
             return Stack(
               children: <Widget>[
                 Positioned.fill(
-                  child: BlocBuilder<HomeCubit, HomeState>(
-                    buildWhen: (HomeState p, HomeState c) =>
-                        p.estimate != c.estimate,
-                    builder: (BuildContext context, HomeState state) =>
-                        MapSection(
-                          etaLabel: context.l10n.minutesLabel(
-                            state.estimate.etaMinutes,
-                          ),
-                        ),
+                  child: BlocSelector<HomeCubit, HomeState, int>(
+                    selector: (HomeState state) => state.displayEta,
+                    builder: (BuildContext context, int eta) =>
+                        MapSection(etaLabel: context.l10n.minutesLabel(eta)),
                   ),
                 ),
                 Align(

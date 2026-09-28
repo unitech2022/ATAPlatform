@@ -11,6 +11,7 @@ import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
+import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
@@ -21,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes.dart';
+import 'pricing_fakes.dart';
 import 'trip_fakes.dart';
 
 /// Registers in-memory storage and fake repositories, then the real use cases.
@@ -38,6 +40,7 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     ..registerSingleton<CatalogRepository>(FakeCatalogRepository())
     ..registerSingleton<NotificationsRepository>(FakeNotificationsRepository())
     ..registerSingleton<PassengerRepository>(FakePassengerRepository())
+    ..registerSingleton<PricingRepository>(FakePricingRepository())
     ..registerSingleton<RidesRepository>(FakeRidesRepository())
     ..registerSingleton<WalletRepository>(FakeWalletRepository())
     ..registerSingleton<TripRepository>(FakeTripRepository())

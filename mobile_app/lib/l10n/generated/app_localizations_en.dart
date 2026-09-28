@@ -1171,6 +1171,116 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offeredPriceClear => 'Clear';
 
   @override
+  String offeredPriceMin(String price) {
+    return 'Min $price';
+  }
+
+  @override
+  String offeredPriceMax(String price) {
+    return 'Max $price';
+  }
+
+  @override
+  String get offeredPriceDecrease => 'Lower the price by one riyal';
+
+  @override
+  String get offeredPriceIncrease => 'Raise the price by one riyal';
+
+  @override
+  String offerOutOfRange(String min, String max) {
+    return 'Your offer is outside the allowed range ($min – $max SAR) and was adjusted';
+  }
+
+  @override
+  String get quoteExpiredError =>
+      'The price expired and was refreshed. Tap again to confirm.';
+
+  @override
+  String get quoteLoading => 'Calculating the price…';
+
+  @override
+  String get quoteFailed =>
+      'Could not calculate the price. Shown prices are estimates.';
+
+  @override
+  String get quoteExpiredHint => 'The price has expired';
+
+  @override
+  String get refreshQuote => 'Refresh price';
+
+  @override
+  String get fareDetails => 'Price details';
+
+  @override
+  String fareDetailsCopy(String category) {
+    return 'How the $category price was calculated';
+  }
+
+  @override
+  String get fareBaseFare => 'Base fare';
+
+  @override
+  String fareDistance(String distance) {
+    return 'Distance ($distance)';
+  }
+
+  @override
+  String fareTime(String duration) {
+    return 'Time ($duration)';
+  }
+
+  @override
+  String get fareMinApplied => 'Minimum fare applied';
+
+  @override
+  String get fareTimeMultiplier => 'Time multiplier';
+
+  @override
+  String get fareDemandMultiplier => 'Demand multiplier';
+
+  @override
+  String get fareBookingFee => 'Booking fee';
+
+  @override
+  String get fareServiceFee => 'Service fee';
+
+  @override
+  String get fareDiscount => 'Discount';
+
+  @override
+  String get fareTotal => 'Total';
+
+  @override
+  String multiplierValue(String value) {
+    return '×$value';
+  }
+
+  @override
+  String demandBadge(String name, String multiplier) {
+    return '$name ×$multiplier';
+  }
+
+  @override
+  String get demandNormal => 'Normal demand';
+
+  @override
+  String get demandModerate => 'Moderate demand right now';
+
+  @override
+  String get demandHigh => 'High demand right now';
+
+  @override
+  String get demandVeryHigh => 'Very high demand right now';
+
+  @override
+  String get offerPassengerOffered => 'Passenger\'s offer';
+
+  @override
+  String offerRound(int round) {
+    return 'Round $round';
+  }
+
+  @override
   String get tripActiveExists => 'You already have an active trip';
 
   @override

@@ -3,10 +3,12 @@ import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/domain/usecases/update_passenger_preferences.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fakes.dart';
+import '../../helpers/pricing_fakes.dart';
 
 void main() {
   late FakePassengerRepository passengerRepository;
@@ -65,20 +67,49 @@ void main() {
   );
 
   blocTest<HomeCubit, HomeState>(
-    'the price offer starts from the estimate, steps and clears',
+    'the price offer starts from the estimate, steps within bounds and clears',
     build: build,
     act: (HomeCubit cubit) async {
       await cubit.loadCategories();
-      cubit
-        ..toggleOfferedPrice()
-        ..adjustOfferedPrice(-HomeCubit.offeredPriceStep)
-        ..adjustOfferedPrice(-100);
-      expect(cubit.state.offeredPrice, HomeCubit.minOfferedPrice);
+      cubit.toggleOfferedPrice();
+      expect(cubit.state.offeredPrice, 38);
+      cubit.adjustOfferedPrice(-HomeCubit.offeredPriceStep);
+      expect(cubit.state.offeredPrice, 37);
+      cubit.adjustOfferedPrice(-100);
+      // Fallback range without a quote: 70%..130% of the estimate.
+      expect(cubit.state.offeredPrice, cubit.state.offerBounds.min);
+      expect(cubit.state.offerBounds, const OfferBounds(min: 26, max: 50));
+      cubit.setOfferedPrice(1000);
+      expect(cubit.state.offeredPrice, 50);
       cubit.toggleOfferedPrice();
     },
     verify: (HomeCubit cubit) {
       expect(cubit.state.hasOfferedPrice, isFalse);
       expect(cubit.state.canRequest, isTrue);
+    },
+  );
+
+  blocTest<HomeCubit, HomeState>(
+    'a quote drives the displayed price, the offer bounds and quoteId',
+    build: build,
+    act: (HomeCubit cubit) async {
+      await cubit.loadCategories();
+      cubit
+        ..toggleOfferedPrice()
+        ..applyQuote(testQuote);
+      expect(cubit.state.displayPrice, 42);
+      expect(cubit.state.displayEta, 4);
+      expect(cubit.state.offerBounds, const OfferBounds(min: 29.5, max: 54.5));
+      cubit.setOfferedPrice(20);
+      expect(cubit.state.offeredPrice, 29.5);
+      cubit.clampOfferedPrice(const OfferBounds(min: 35, max: 40));
+      expect(cubit.state.offeredPrice, 35);
+      cubit.applyQuote(null);
+    },
+    verify: (HomeCubit cubit) {
+      expect(cubit.state.hasQuote, isFalse);
+      expect(cubit.state.displayPrice, 38);
+      expect(cubit.state.offeredPrice, 35);
     },
   );
 

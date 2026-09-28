@@ -22,8 +22,9 @@ class TripRequestCubit extends Cubit<TripRequestState> {
   final RequestTrip _requestTrip;
   final CancelTrip _cancelTrip;
 
-  /// Estimates then requests. An [TripRequest.offeredPrice] switches the
-  /// pricing mode to `offer`; otherwise the category price is `fixed`.
+  /// Requests the trip. An [TripRequest.offeredPrice] switches the pricing
+  /// mode to `offer`; otherwise the category price is `fixed`. Without a
+  /// [TripRequest.quoteId] (F10) the legacy estimate runs first.
   Future<void> request(TripRequest draft) async {
     if (state.isBusy || state.isSearching) return;
     emit(
@@ -38,12 +39,17 @@ class TripRequestCubit extends Cubit<TripRequestState> {
           ? PricingMode.fixed
           : PricingMode.offer,
     );
-    final estimateResult = await _estimateTrip(request);
-    final TripEstimate? estimate = estimateResult.fold((failure) {
-      emit(state.copyWith(status: TripRequestStatus.failure, failure: failure));
-      return null;
-    }, (TripEstimate estimate) => estimate);
-    if (estimate == null) return;
+    TripEstimate? estimate;
+    if (request.quoteId == null) {
+      final estimateResult = await _estimateTrip(request);
+      estimate = estimateResult.fold((failure) {
+        emit(
+          state.copyWith(status: TripRequestStatus.failure, failure: failure),
+        );
+        return null;
+      }, (TripEstimate estimate) => estimate);
+      if (estimate == null) return;
+    }
 
     final result = await _requestTrip(request);
     emit(

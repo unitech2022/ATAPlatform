@@ -13,6 +13,7 @@ import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/fare_details_link.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/female_driver_option.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/offered_price_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row.dart';
@@ -20,6 +21,7 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/ride_catego
 import 'package:ata_app/features/passenger_home/presentation/widgets/route_fields.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/time_pills.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
+import 'package:ata_app/features/pricing/presentation/widgets/demand_badge.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -70,7 +72,9 @@ class _RequestForm extends StatelessWidget {
         ),
         const SizedBox(height: AtaSpacing.xxs),
         Text(l10n.homeTitle, style: AtaText.title),
-        const SizedBox(height: AtaSpacing.xl),
+        const SizedBox(height: AtaSpacing.xs),
+        const DemandBadge(),
+        const SizedBox(height: AtaSpacing.md),
         const RouteFields(),
         const SizedBox(height: AtaSpacing.xl),
         const TimePills(),
@@ -86,7 +90,8 @@ class _RequestForm extends StatelessWidget {
         ),
         const SizedBox(height: AtaSpacing.md),
         const RideCategoryList(),
-        const SizedBox(height: AtaSpacing.lg),
+        const FareDetailsLink(),
+        const SizedBox(height: AtaSpacing.sm),
         const PaymentRow(),
         const SizedBox(height: AtaSpacing.sm),
         const OfferedPriceRow(),
@@ -125,7 +130,7 @@ class _RequestButton extends StatelessWidget {
         }
         final String name = state.selectedCategory?.name ?? '';
         final String price = l10n.priceWithCurrency(
-          Money.compact(state.offeredPrice ?? state.estimate.price),
+          Money.compact(state.offeredPrice ?? state.displayPrice),
         );
         return BlocBuilder<TripRequestCubit, TripRequestState>(
           builder: (BuildContext context, TripRequestState request) {

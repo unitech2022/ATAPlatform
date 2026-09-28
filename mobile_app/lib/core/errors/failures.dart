@@ -11,9 +11,12 @@ sealed class Failure extends Equatable {
   final Map<String, dynamic>? details;
 
   /// Reads an integer detail such as `attemptsLeft` or `retryAfterSeconds`.
-  int? intDetail(String key) {
+  int? intDetail(String key) => numDetail(key)?.toInt();
+
+  /// Reads a numeric detail such as `offerMin`.
+  double? numDetail(String key) {
     final Object? value = details?[key];
-    return value is num ? value.toInt() : null;
+    return value is num ? value.toDouble() : null;
   }
 
   @override
