@@ -1,40 +1,39 @@
+using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Domain.Common;
+using ATA.Domain.Notifications;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
-using ATA.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace ATA.Api.Modules.Trips;
 
 /// <summary>
-/// Settles a completed trip through the double-entry ledger (see README "Ledger accounts"):
-/// wallet → passenger wallet debit and driver wallet credit against <c>trip_revenue</c>; cash → driver wallet credit against
-/// <c>cash_collected</c>. A wallet with insufficient balance (or a card, which has no gateway yet) falls back to cash and the
-/// fallback is recorded in <c>trip_events</c>. Must be called inside the completion transaction; the caller saves.
+/// Settles a completed trip through the double-entry ledger (doc 08 §F11.3). Must be called inside the completion transaction; the caller saves.
+/// <list type="bullet">
+/// <item><c>wallet</c>: passenger <c>trip_payment</c> and driver <c>trip_earning</c> against <c>trip_revenue</c>; an insufficient balance falls back to cash.</item>
+/// <item><c>card</c>: captured → <c>trip_card_capture</c> journal (<c>gateway_clearing → trip_revenue</c>) + driver <c>trip_earning</c>; a final decline falls
+/// back to cash (<c>payment_fallback_cash</c>, <c>card_capture_failed</c>, <c>payment.failed</c>); an unknown result keeps the trip on card with the capture
+/// pending (the driver is paid anyway — the platform carries the collection risk).</item>
+/// <item><c>cash</c>: driver <c>trip_earning</c> against <c>cash_collected</c>, then <c>cash_collection</c> of the whole fare (overdraft allowed): the negative
+/// balance is the cash commission the driver owes.</item>
+/// </list>
 /// </summary>
-public sealed class TripPaymentService(AtaDbContext db, TripEventRecorder events)
+public sealed class TripPaymentService(LedgerService ledger, TripEventRecorder events, INotificationDispatcher notifications)
 {
     public const string ReferenceType = "trip";
 
-    public async Task SettleAsync(Trip trip, TripParticipants participants, decimal fare, decimal driverEarnings, CancellationToken ct)
+    public async Task SettleAsync(Trip trip, TripParticipants participants, decimal fare, decimal driverEarnings, CardCaptureOutcome? card, CancellationToken ct)
     {
         var requested = trip.PaymentMethod;
         if (requested == PaymentMethodKind.Wallet)
         {
-            var passengerWallet = await GetOrCreateWalletAsync(participants.PassengerUserId, WalletKind.Passenger, ct);
-            if (passengerWallet.Status == WalletStatus.Active && passengerWallet.Balance >= fare)
+            var passengerWallet = await ledger.GetOrCreateWalletAsync(participants.PassengerUserId, WalletKind.Passenger, ct);
+            if (passengerWallet.Status != WalletStatus.Closed && passengerWallet.Balance >= fare)
             {
-                Post(passengerWallet.Post(TransactionType.TripPayment, TransactionDirection.Debit, fare, LedgerAccounts.TripRevenue,
-                    $"Trip {trip.TripNumber}", $"trip:{trip.Id}:payment", ReferenceType, trip.Id));
-                if (participants.DriverUserId is { } driverUserId && driverEarnings > 0)
-                {
-                    var driverWallet = await GetOrCreateWalletAsync(driverUserId, WalletKind.Driver, ct);
-                    Post(driverWallet.Post(TransactionType.TripEarning, TransactionDirection.Credit, driverEarnings, LedgerAccounts.TripRevenue,
-                        $"Trip {trip.TripNumber}", $"trip:{trip.Id}:earning", ReferenceType, trip.Id));
-                }
-
-                events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System,
-                    data: new { method = PaymentMethodKind.Wallet, amount = fare, driverEarnings });
+                await ledger.PostAsync(passengerWallet, TransactionType.TripPayment, TransactionDirection.Debit, fare, LedgerAccounts.TripRevenue,
+                    $"Trip {trip.TripNumber}", $"trip:{trip.Id}:payment", ReferenceType, trip.Id, ct);
+                await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.TripRevenue, ct);
+                events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System, data: new { method = PaymentMethodKind.Wallet, amount = fare, driverEarnings });
                 return;
             }
 
@@ -44,37 +43,52 @@ public sealed class TripPaymentService(AtaDbContext db, TripEventRecorder events
         }
         else if (requested == PaymentMethodKind.Card)
         {
-            trip.PaymentMethod = PaymentMethodKind.Cash;
-            events.Add(trip.Id, TripEventTypes.PaymentFallbackCash, TripActor.System,
-                data: new { requested, reason = "card_not_supported", amount = fare });
+            switch (card?.Kind)
+            {
+                case CardCaptureKind.Captured:
+                    await ledger.JournalAsync(JournalType.TripCardCapture, LedgerAccounts.GatewayClearing, LedgerAccounts.TripRevenue, fare, ReferenceType, trip.Id,
+                        $"trip:{trip.Id}:capture", $"Trip {trip.TripNumber} card capture", ct);
+                    await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.TripRevenue, ct);
+                    events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System,
+                        data: new { method = PaymentMethodKind.Card, amount = fare, driverEarnings, paymentId = card.Payment?.Id });
+                    return;
+                case CardCaptureKind.Pending:
+                    await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.TripRevenue, ct);
+                    events.Add(trip.Id, TripEventTypes.PaymentCapturePending, TripActor.System,
+                        data: new { method = PaymentMethodKind.Card, amount = fare, driverEarnings, paymentId = card.Payment?.Id, card.FailureCode });
+                    return;
+                default:
+                    trip.PaymentMethod = PaymentMethodKind.Cash;
+                    var reason = card?.Kind == CardCaptureKind.Declined ? "card_capture_failed" : "card_unavailable";
+                    events.Add(trip.Id, TripEventTypes.PaymentFallbackCash, TripActor.System,
+                        data: new { requested, reason, amount = fare, paymentId = card?.Payment?.Id, failureCode = card?.FailureCode });
+                    await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.PaymentFailed, participants.PassengerUserId,
+                        NotificationPlaceholders.Of().Money("amount", fare).Localized("reason", "سيتم الدفع نقداً للكابتن", "please pay the driver in cash"),
+                        "trip", trip.Id, new Dictionary<string, object?> { ["tripNumber"] = trip.TripNumber, ["paymentId"] = card?.Payment?.Id }), ct);
+                    break;
+            }
         }
 
-        if (participants.DriverUserId is { } cashDriverUserId && driverEarnings > 0)
+        await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.CashCollected, ct, cash: true);
+        if (participants.DriverUserId is { } driverUserId && fare > 0)
         {
-            var driverWallet = await GetOrCreateWalletAsync(cashDriverUserId, WalletKind.Driver, ct);
-            Post(driverWallet.Post(TransactionType.TripEarning, TransactionDirection.Credit, driverEarnings, LedgerAccounts.CashCollected,
-                $"Trip {trip.TripNumber} (cash)", $"trip:{trip.Id}:earning", ReferenceType, trip.Id));
+            var driverWallet = await ledger.GetOrCreateWalletAsync(driverUserId, WalletKind.Driver, ct);
+            await ledger.PostAsync(driverWallet, TransactionType.CashCollection, TransactionDirection.Debit, fare, LedgerAccounts.CashCollected,
+                $"Trip {trip.TripNumber} cash collected", $"trip:{trip.Id}:cash", ReferenceType, trip.Id, ct, allowOverdraft: true);
         }
 
-        events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System,
-            data: new { method = PaymentMethodKind.Cash, amount = fare, driverEarnings });
+        events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System, data: new { method = PaymentMethodKind.Cash, amount = fare, driverEarnings });
     }
 
-    private void Post((WalletTransaction Transaction, LedgerEntry[] Entries) posting)
+    private async Task CreditDriverAsync(Trip trip, TripParticipants participants, decimal driverEarnings, string counterpart, CancellationToken ct, bool cash = false)
     {
-        db.WalletTransactions.Add(posting.Transaction);
-        db.LedgerEntries.AddRange(posting.Entries);
-    }
-
-    private async Task<Domain.Wallet.Wallet> GetOrCreateWalletAsync(Guid userId, WalletKind kind, CancellationToken ct)
-    {
-        var wallet = await db.Wallets.FirstOrDefaultAsync(w => w.UserId == userId && w.Kind == kind, ct);
-        if (wallet is null)
+        if (participants.DriverUserId is not { } driverUserId || driverEarnings <= 0)
         {
-            wallet = new Domain.Wallet.Wallet { UserId = userId, Kind = kind };
-            db.Wallets.Add(wallet);
+            return;
         }
 
-        return wallet;
+        var driverWallet = await ledger.GetOrCreateWalletAsync(driverUserId, WalletKind.Driver, ct);
+        await ledger.PostAsync(driverWallet, TransactionType.TripEarning, TransactionDirection.Credit, driverEarnings, counterpart,
+            cash ? $"Trip {trip.TripNumber} (cash)" : $"Trip {trip.TripNumber}", $"trip:{trip.Id}:earning", ReferenceType, trip.Id, ct);
     }
 }

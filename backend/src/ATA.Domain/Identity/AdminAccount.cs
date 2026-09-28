@@ -13,6 +13,8 @@ public class AdminAccount : AuditableEntity
     public string Permissions { get; set; } = "[]";
     public bool IsActive { get; set; } = true;
     public DateTime? LastLoginAt { get; set; }
+    /// <summary>On-duty operators receive <c>safety.alert</c> pushes.</summary>
+    public bool OnDuty { get; set; }
 
     public User? User { get; set; }
 }

@@ -4,6 +4,7 @@ using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -54,7 +55,8 @@ public sealed class MatchingService(
     TripReadService reads,
     TripEventRecorder events,
     ITripNotifier notifier,
-    NotificationService notifications,
+    INotificationDispatcher notifications,
+    CardTripPaymentService cardPayments,
     IOptions<TripOptions> tripOptions,
     IClock clock,
     ILogger<MatchingService> logger)
@@ -200,6 +202,13 @@ public sealed class MatchingService(
         db.TripOffers.Add(offer);
         events.Add(trip.Id, TripEventTypes.OfferSent, TripActor.System,
             data: new { offerId = offer.Id, driverId, round = attempt.Round, distanceMeters, etaSeconds, expiresAt = offer.ExpiresAt });
+        // offer.received: push only (no inbox row), TTL = offer timeout, collapsed per offer.
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.OfferReceived, driverUserId,
+            NotificationPlaceholders.Of(("pickupName", trip.PickupName), ("etaMinutes", Math.Max(1, (int)Math.Ceiling(etaSeconds / 60d)))).Money("driverNet", driverNet),
+            "trip", trip.Id, new Dictionary<string, object?>
+            {
+                ["offerId"] = offer.Id, ["tripId"] = trip.Id, ["ttlSeconds"] = settings.OfferTimeoutSeconds, ["collapseId"] = offer.Id.ToString(),
+            }), ct);
         await db.SaveChangesAsync(ct);
         await notifier.OfferReceivedAsync(driverUserId, await reads.BuildOfferAsync(offer, trip, ct), ct);
     }
@@ -231,11 +240,10 @@ public sealed class MatchingService(
         await recorder.CloseOpenAttemptAsync(trip.Id, MatchingOutcome.Timeout, now, ct);
         events.Add(trip.Id, TripEventTypes.NoDrivers, TripActor.System);
         var participants = await reads.ParticipantsAsync(trip, ct);
-        notifications.Add(participants.PassengerUserId, NotificationTypes.TripNoDrivers,
-            ("لم نجد سائقاً", "No drivers available"),
-            ($"عذراً، لم نجد سائقاً متاحاً للرحلة {trip.TripNumber}. حاول مرة أخرى.", $"Sorry, no driver was available for trip {trip.TripNumber}. Please try again."),
-            new { tripId = trip.Id, trip.TripNumber, status = trip.Status });
+        var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == trip.RideCategoryId, ct);
+        await notifications.DispatchAsync(TripNotifications.NoDrivers(trip, participants.PassengerUserId, category), ct);
         await db.SaveChangesAsync(ct);
+        await cardPayments.ReleaseAsync(trip.Id, ct);
         await reads.PublishAsync(trip, TripViewer.Admin, Language.Ar, ct);
     }
 

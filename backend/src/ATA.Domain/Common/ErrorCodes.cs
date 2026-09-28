@@ -24,5 +24,21 @@ public static class ErrorCodes
     public const string PinLocked = "pin_locked";
     public const string OfferOutOfRange = "offer_out_of_range";
     public const string QuoteExpired = "quote_expired";
+    public const string PaymentFailed = "payment_failed";
+    public const string PaymentMethodExpired = "payment_method_expired";
+    public const string PaymentMethodInUse = "payment_method_in_use";
+    public const string PaymentProviderUnavailable = "payment_provider_unavailable";
+    public const string WebhookSignatureInvalid = "webhook_signature_invalid";
+    public const string RefundExceedsAmount = "refund_exceeds_amount";
+    public const string FourEyesRequired = "four_eyes_required";
+    public const string PayoutBelowMinimum = "payout_below_minimum";
+    public const string PayoutPendingExists = "payout_pending_exists";
+    public const string IbanMissing = "iban_missing";
+    public const string CashDebtLimitExceeded = "cash_debt_limit_exceeded";
+    public const string OutstandingBalance = "outstanding_balance";
+    public const string SettlementPeriodOverlap = "settlement_period_overlap";
+    public const string UnknownEventCode = "unknown_event_code";
+    public const string CampaignNotEditable = "campaign_not_editable";
+    public const string TemplatePlaceholderInvalid = "template_placeholder_invalid";
     public const string InternalError = "internal_error";
 }

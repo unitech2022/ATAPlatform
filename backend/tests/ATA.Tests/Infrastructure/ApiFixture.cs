@@ -2,15 +2,26 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ATA.Tests.Infrastructure;
 
 /// <summary>One API host per test class with helpers for the OTP login flow.</summary>
-public sealed class ApiFixture : IAsyncLifetime
+public class ApiFixture : IAsyncLifetime
 {
     private int _phoneCounter = 100;
 
-    public AtaWebApplicationFactory Factory { get; } = new();
+    public ApiFixture() : this(null)
+    {
+    }
+
+    /// <summary>Derived fixtures override configuration keys and services for one test class.</summary>
+    protected ApiFixture(Dictionary<string, string?>? settings, Action<IServiceCollection>? services = null)
+    {
+        Factory = new AtaWebApplicationFactory(settings, services);
+    }
+
+    public AtaWebApplicationFactory Factory { get; }
 
     public static JsonSerializerOptions Json { get; } = new(JsonSerializerDefaults.Web)
     {
@@ -60,10 +71,10 @@ public sealed class ApiFixture : IAsyncLifetime
         return (CreateClient(auth.GetProperty("accessToken").GetString()), auth);
     }
 
-    public async Task<HttpClient> LoginAdminAsync()
+    public async Task<HttpClient> LoginAdminAsync(string username = "admin", string password = "Admin@12345")
     {
         using var anonymous = CreateClient();
-        var response = await anonymous.PostAsJsonAsync("/api/v1/auth/admin/login", new { username = "admin", password = "Admin@12345" });
+        var response = await anonymous.PostAsJsonAsync("/api/v1/auth/admin/login", new { username, password });
         response.EnsureSuccessStatusCode();
         var auth = await response.Content.ReadFromJsonAsync<JsonElement>();
         return CreateClient(auth.GetProperty("accessToken").GetString());

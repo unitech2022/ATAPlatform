@@ -2,15 +2,18 @@ using System.Text.Json;
 using ATA.Api.Common;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Passengers;
+using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
-using ATA.Domain.Notifications;
+using ATA.Domain.Payments;
 using ATA.Domain.Passengers;
 using ATA.Domain.Pricing;
 using ATA.Domain.Trips;
+using ATA.Domain.Wallet;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ATA.Api.Modules.Trips;
 
@@ -25,7 +28,10 @@ public sealed class PassengerTripService(
     TripEventRecorder events,
     TripPinService pins,
     TripNumberGenerator numbers,
-    NotificationService notifications)
+    INotificationDispatcher notifications,
+    CardTripPaymentService cardPayments,
+    PaymentService paymentService,
+    IOptions<PaymentsOptions> paymentOptions)
 {
     private const int TripNumberRetries = 3;
 
@@ -46,7 +52,8 @@ public sealed class PassengerTripService(
             .Rule(nameof(request.PricingMode), request.PricingMode is null or PricingMode.Fixed or PricingMode.Offer or PricingMode.Saver, "must be fixed|saver|offer")
             .Rule(nameof(request.OfferedPrice), request.PricingMode != PricingMode.Offer || request.OfferedPrice is > 0, "required and positive for pricingMode=offer")
             .Rule(nameof(request.OfferedPrice), request.OfferedPrice is null || decimal.Round(request.OfferedPrice.Value, 2) == request.OfferedPrice.Value, "at most 2 decimal places")
-            .Rule(nameof(request.RiderNote), request.RiderNote is null || request.RiderNote.Length <= 500, "max_length:500");
+            .Rule(nameof(request.RiderNote), request.RiderNote is null || request.RiderNote.Length <= 500, "max_length:500")
+            .Rule(nameof(request.PaymentMethodId), request.PaymentMethodId is null || (request.PaymentMethod ?? PaymentMethodKind.Card) == PaymentMethodKind.Card, "only for paymentMethod=card");
         v.ThrowIfInvalid();
 
         var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == request.RideCategoryId && c.IsActive, ct);
@@ -64,6 +71,16 @@ public sealed class PassengerTripService(
         if (active is not null)
         {
             throw new DomainException(ErrorCodes.TripActiveExists, new { activeTripId = active.Id, active.TripNumber, status = active.Status });
+        }
+
+        // A negative passenger balance is a debt (failed card collection, cancellation fees): top up before requesting again.
+        if (paymentOptions.Value.BlockOnOutstandingBalance)
+        {
+            var balance = await db.Wallets.AsNoTracking().Where(w => w.UserId == passenger.UserId && w.Kind == WalletKind.Passenger).Select(w => (decimal?)w.Balance).FirstOrDefaultAsync(ct) ?? 0m;
+            if (balance < 0)
+            {
+                throw new DomainException(ErrorCodes.OutstandingBalance, new { amount = -balance, balance });
+            }
         }
 
         var pickup = request.Pickup!.Point();
@@ -113,12 +130,33 @@ public sealed class PassengerTripService(
             trip.Stops.Add(new TripStop { TripId = trip.Id, Sequence = (byte)(i + 1), Name = stops[i].Name!.Trim(), Address = stops[i].Address!.Trim(), Lat = stops[i].Lat!.Value, Lng = stops[i].Lng!.Value });
         }
 
+        // Card trips are authorized before the trip row exists; an immediate decline rejects the request (422 payment_failed).
+        Payment? payment = null;
+        if (trip.PaymentMethod == PaymentMethodKind.Card)
+        {
+            payment = await cardPayments.AuthorizeForTripAsync(trip, passenger.UserId, request.PaymentMethodId, passenger.DefaultPaymentMethodId, ct);
+        }
+
         db.Trips.Add(trip);
         quote.UsedTripId = trip.Id;
         events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
-            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId });
-        trip.StartSearching();
-        events.Add(trip.Id, TripEventTypes.SearchStarted, TripActor.System);
+            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id });
+        if (payment is { Status: PaymentStatus.Initiated })
+        {
+            // 3-D Secure: the trip stays `requested` (out of matching) until the payment is authorized or the action expires.
+            events.Add(trip.Id, TripEventTypes.PaymentActionRequired, TripActor.System, data: new { paymentId = payment.Id, payment.Amount, payment.ActionExpiresAt });
+            await notifications.DispatchAsync(TripNotifications.PaymentActionRequired(trip, passenger.UserId, payment.Amount, payment.Id), ct);
+        }
+        else
+        {
+            if (payment is { Status: PaymentStatus.Authorized })
+            {
+                events.Add(trip.Id, TripEventTypes.PaymentAuthorized, TripActor.System, data: new { paymentId = payment.Id, amount = payment.AuthorizedAmount });
+            }
+
+            trip.StartSearching();
+            events.Add(trip.Id, TripEventTypes.SearchStarted, TripActor.System);
+        }
 
         for (var attempt = 0; ; attempt++)
         {
@@ -134,6 +172,7 @@ public sealed class PassengerTripService(
             }
         }
 
+        await paymentService.PublishPendingAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
     }
 
@@ -169,13 +208,11 @@ public sealed class PassengerTripService(
             data: new { reasonCode = trip.CancellationReason, note = request.Note?.Trim(), hadDriver });
         if (hadDriver && participants.DriverUserId is { } driverUserId)
         {
-            notifications.Add(driverUserId, NotificationTypes.TripCancelled,
-                ("تم إلغاء الرحلة", "Trip cancelled"),
-                ($"ألغى الراكب الرحلة {trip.TripNumber}.", $"The passenger cancelled trip {trip.TripNumber}."),
-                new { tripId = trip.Id, trip.TripNumber, cancelledBy = trip.CancelledBy });
+            await notifications.DispatchAsync(TripNotifications.Cancelled(trip, driverUserId), ct);
         }
 
         await db.SaveChangesAsync(ct);
+        await cardPayments.ReleaseAsync(trip.Id, ct);
         return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
     }
 

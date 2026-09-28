@@ -7,6 +7,7 @@ using ATA.Domain.Identity;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
+using ATA.Domain.Payments;
 using ATA.Domain.Pricing;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
@@ -61,9 +62,23 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
+    public DbSet<LedgerJournal> LedgerJournals => Set<LedgerJournal>();
+
+    public DbSet<PaymentMethod> PaymentMethods => Set<PaymentMethod>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PaymentWebhookEvent> PaymentWebhookEvents => Set<PaymentWebhookEvent>();
+    public DbSet<Refund> Refunds => Set<Refund>();
+    public DbSet<Payout> Payouts => Set<Payout>();
+    public DbSet<PayoutBatch> PayoutBatches => Set<PayoutBatch>();
+    public DbSet<SettlementBatch> SettlementBatches => Set<SettlementBatch>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
 
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+    public DbSet<NotificationDelivery> NotificationDeliveries => Set<NotificationDelivery>();
+    public DbSet<NotificationCampaign> NotificationCampaigns => Set<NotificationCampaign>();
+    public DbSet<DocumentExpiryNotice> DocumentExpiryNotices => Set<DocumentExpiryNotice>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
@@ -130,6 +145,12 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
                     break;
                 case DemandSnapshot snapshot when entry.State == EntityState.Added && snapshot.ComputedAt == default:
                     snapshot.ComputedAt = now;
+                    break;
+                case PaymentWebhookEvent webhook when entry.State == EntityState.Added && webhook.ReceivedAt == default:
+                    webhook.ReceivedAt = now;
+                    break;
+                case DocumentExpiryNotice notice when entry.State == EntityState.Added && notice.SentAt == default:
+                    notice.SentAt = now;
                     break;
             }
         }

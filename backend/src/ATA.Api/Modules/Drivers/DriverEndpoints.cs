@@ -1,7 +1,10 @@
 using ATA.Api.Common;
+using ATA.Api.Modules.Payments;
+using Microsoft.Extensions.Options;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Trips;
+using ATA.Domain.Wallet;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -76,7 +79,7 @@ public static class DriverEndpoints
 }
 
 /// <summary>Online/offline state with status logs, and the earnings summary (completed trips + online hours from status logs).</summary>
-public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUser, IClock clock)
+public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUser, IClock clock, IOptions<PayoutsOptions> payouts)
 {
     public const decimal WeeklyTarget = 2500m;
 
@@ -101,6 +104,17 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
         }
 
         var isOnline = request.IsOnline!.Value;
+        if (isOnline && !driver.IsOnline)
+        {
+            // Cash debt rule (F11): a driver whose cash commission debt exceeds Payouts:MaxCashDebt must top up before going online.
+            var balance = await db.Wallets.AsNoTracking().Where(w => w.UserId == driver.UserId && w.Kind == WalletKind.Driver).Select(w => (decimal?)w.Balance).FirstOrDefaultAsync(ct) ?? 0m;
+            var limit = payouts.Value.MaxCashDebt;
+            if (-balance > limit)
+            {
+                throw new DomainException(ErrorCodes.CashDebtLimitExceeded, new { cashDebt = -balance, limit });
+            }
+        }
+
         if (driver.IsOnline != isOnline)
         {
             var now = clock.UtcNow;

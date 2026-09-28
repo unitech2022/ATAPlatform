@@ -1,7 +1,9 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
+using ATA.Api.Modules.Payments;
 using ATA.Domain.Matching;
+using ATA.Domain.Payments;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -82,7 +84,27 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             trip.CancelledBy,
             trip.CancellationReason,
             new TripTimelineDto(trip.RequestedAt, trip.AssignedAt, trip.ArrivedAt, trip.StartedAt, trip.CompletedAt, trip.CancelledAt),
-            events);
+            events,
+            await PaymentForAsync(trip.Id, ct),
+            // Only the driver sees the cash to collect once the trip is completed (including a card that fell back to cash).
+            viewer == TripViewer.Driver && trip.Status == TripStatus.Completed && trip.PaymentMethod == PaymentMethodKind.Cash ? trip.FinalFare : null,
+            trip.DiscountTotal);
+    }
+
+    /// <summary><c>trip.payment</c>: the latest gateway payment of the trip with its card (card trips only).</summary>
+    public async Task<TripPaymentDto?> PaymentForAsync(Guid tripId, CancellationToken ct)
+    {
+        var payment = await db.Payments.AsNoTracking().Where(p => p.TripId == tripId && p.Purpose == PaymentPurpose.Trip)
+            .OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id).FirstOrDefaultAsync(ct);
+        if (payment is null)
+        {
+            return null;
+        }
+
+        var card = payment.PaymentMethodId is { } id
+            ? await db.PaymentMethods.AsNoTracking().Where(m => m.Id == id).Select(m => new { m.Brand, m.Last4 }).FirstOrDefaultAsync(ct)
+            : null;
+        return new TripPaymentDto(payment.Id, payment.Status, payment.Method, card?.Brand, card?.Last4, payment.AuthorizedAmount, payment.CapturedAmount, PaymentService.ActionOf(payment));
     }
 
     /// <summary>Builds the trip once, pushes <c>TripUpdated</c> to the passenger (with PIN), the driver and admins, and returns the caller's view.</summary>
@@ -90,15 +112,20 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
     {
         var participants = await ParticipantsAsync(trip, ct);
         var dto = await BuildAsync(trip, TripViewer.Driver, lang, ct);
-        var passengerDto = dto with { Pin = PinFor(trip, TripViewer.Passenger) };
+        var passengerDto = dto with { Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null };
         await notifier.TripUpdatedAsync(participants.PassengerUserId, passengerDto, ct);
         if (participants.DriverUserId is { } driverUserId)
         {
             await notifier.TripUpdatedAsync(driverUserId, dto, ct);
         }
 
-        await notifier.TripUpdatedForAdminsAsync(dto, ct);
-        return responder == TripViewer.Passenger ? passengerDto : dto;
+        await notifier.TripUpdatedForAdminsAsync(passengerDto with { Pin = null }, ct);
+        return responder switch
+        {
+            TripViewer.Passenger => passengerDto,
+            TripViewer.Admin => passengerDto with { Pin = null },
+            _ => dto,
+        };
     }
 
     public async Task<OfferDto> BuildOfferAsync(TripOffer offer, Trip trip, CancellationToken ct)
@@ -124,7 +151,8 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             offer.ExpiresAt,
             new OfferPassengerDto(firstName, passenger.RatingAvg),
             round,
-            trip.PricingMode == PricingMode.Offer);
+            trip.PricingMode == PricingMode.Offer,
+            trip.PaymentMethod);
     }
 
     /// <summary>

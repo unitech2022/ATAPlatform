@@ -20,6 +20,16 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly string _storageRoot = Path.Combine(Path.GetTempPath(), "ata-tests", Guid.NewGuid().ToString("N"));
 
+    private readonly Dictionary<string, string?> _settings;
+
+    private readonly Action<IServiceCollection>? _services;
+
+    public AtaWebApplicationFactory(Dictionary<string, string?>? settings = null, Action<IServiceCollection>? services = null)
+    {
+        _settings = settings ?? [];
+        _services = services;
+    }
+
     public FakeClock Clock { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -38,6 +48,15 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Matching:Enabled", "false");
         builder.UseSetting("Demand:Enabled", "false");
         builder.UseSetting("Realtime:LiveSnapshotEnabled", "false");
+        builder.UseSetting("Payments:Provider", "sandbox");
+        builder.UseSetting("Payments:JobsEnabled", "false");
+        builder.UseSetting("Payments:PublicBaseUrl", "http://localhost");
+        builder.UseSetting("Notifications:WorkerEnabled", "false");
+        builder.UseSetting("Notifications:JobsEnabled", "false");
+        foreach (var (key, value) in _settings)
+        {
+            builder.UseSetting(key, value);
+        }
 
         builder.ConfigureServices(services =>
         {
@@ -47,6 +66,7 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
             services.AddDbContext<AtaDbContext>(o => o.UseSqlite(_connection));
             services.RemoveAll<IClock>();
             services.AddSingleton<IClock>(Clock);
+            _services?.Invoke(services);
         });
     }
 
@@ -71,6 +91,17 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         var demand = Services.GetServices<IHostedService>().OfType<DemandBackgroundService>().Single();
         return await demand.RunOnceAsync(CancellationToken.None);
     }
+
+    /// <summary>Runs <paramref name="action"/> with a service from a fresh scope (payment/notification jobs, scanners…).</summary>
+    public async Task<T> WithServiceAsync<TService, T>(Func<TService, Task<T>> action) where TService : notnull
+    {
+        using var scope = Services.CreateScope();
+        return await action(scope.ServiceProvider.GetRequiredService<TService>());
+    }
+
+    /// <summary>Runs one pass of the notification delivery worker (queued deliveries and due retries).</summary>
+    public Task<int> RunNotificationWorkerAsync() =>
+        WithServiceAsync<ATA.Api.Modules.Notifications.NotificationDeliveryProcessor, int>(p => p.ProcessDueAsync(CancellationToken.None));
 
     public async Task<T> WithDbAsync<T>(Func<AtaDbContext, Task<T>> action)
     {

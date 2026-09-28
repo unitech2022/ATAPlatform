@@ -126,7 +126,8 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 
         var transactions = await fixture.Factory.WithDbAsync(db => db.WalletTransactions.Where(t => t.ReferenceId == Guid.Parse(tripId)).ToListAsync());
         Assert.Equal(2, transactions.Count);
-        var entries = await fixture.Factory.WithDbAsync(db => db.LedgerEntries.Where(e => transactions.Select(t => t.Id).Contains(e.TransactionId)).ToListAsync());
+        var transactionIds = transactions.Select(t => (Guid?)t.Id).ToList();
+        var entries = await fixture.Factory.WithDbAsync(db => db.LedgerEntries.Where(e => transactionIds.Contains(e.TransactionId)).ToListAsync());
         Assert.Equal(4, entries.Count);
         Assert.Equal(entries.Sum(e => e.Debit), entries.Sum(e => e.Credit));
         Assert.Equal(fare - dbTrip.DriverEarnings, entries.Where(e => e.Account == LedgerAccounts.TripRevenue).Sum(e => e.Credit - e.Debit));
@@ -180,18 +181,22 @@ public class TripLifecycleTests(ApiFixture fixture) : IClassFixture<ApiFixture>
         Assert.Contains("payment_fallback_cash", events);
         var driverUserId = Guid.Parse(driverAuth.GetProperty("user").GetProperty("id").GetString()!);
         var transactions = await fixture.Factory.WithDbAsync(db => db.WalletTransactions.Where(t => t.ReferenceId == Guid.Parse(tripId)).ToListAsync());
-        var earning = Assert.Single(transactions);
-        Assert.Equal(TransactionType.TripEarning, earning.Type);
+        // F11: a cash trip credits the driver share (trip_earning) and then debits the whole cash fare (cash_collection, overdraft allowed).
+        Assert.Equal(2, transactions.Count);
+        var earning = Assert.Single(transactions, t => t.Type == TransactionType.TripEarning);
+        var collection = Assert.Single(transactions, t => t.Type == TransactionType.CashCollection);
         var dbTrip = await fixture.Factory.WithDbAsync(db => db.Trips.FirstAsync(t => t.Id == Guid.Parse(tripId)));
         Assert.Equal(dbTrip.DriverEarnings, earning.Amount);
+        Assert.Equal(fare, collection.Amount);
         var core = TripFlow.EconomyCore(dbTrip.FinalDistanceM!.Value, dbTrip.FinalDurationS!.Value, dbTrip.WaitingSeconds);
         Assert.Equal(TripFlow.RoundToHalf(core + 2m), fare);
         Assert.Equal(decimal.Round(core * 0.8m, 2), earning.Amount);
-        var entries = await fixture.Factory.WithDbAsync(db => db.LedgerEntries.Where(e => e.TransactionId == earning.Id).ToListAsync());
+        var entries = await fixture.Factory.WithDbAsync(db => db.LedgerEntries.Where(e => e.TransactionId == earning.Id || e.TransactionId == collection.Id).ToListAsync());
         Assert.Contains(entries, e => e.Account == LedgerAccounts.CashCollected && e.Debit == earning.Amount);
+        Assert.Contains(entries, e => e.Account == LedgerAccounts.CashCollected && e.Credit == fare);
         Assert.Equal(entries.Sum(e => e.Debit), entries.Sum(e => e.Credit));
         var balance = await fixture.Factory.WithDbAsync(db => db.Wallets.Where(w => w.UserId == driverUserId && w.Kind == WalletKind.Driver).Select(w => w.Balance).FirstAsync());
-        Assert.Equal(earning.Amount, balance);
+        Assert.Equal(earning.Amount - fare, balance);
         Assert.Null(await fixture.Factory.WithDbAsync(db => db.Drivers.Where(d => d.Id == driverId).Select(d => d.CurrentTripId).FirstAsync()));
     }
 

@@ -1,8 +1,10 @@
+using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Matching;
 using ATA.Domain.Trips;
+using ATA.Domain.Wallet;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -155,6 +157,7 @@ public sealed class ScoringMatcher(
     IFavoriteDriverProvider favorites,
     IDriverReliabilityProvider reliability,
     IOptions<MatchingOptions> options,
+    IOptions<PayoutsOptions> payouts,
     IClock clock) : IMatcher
 {
     private const double MaxEtaSeconds = 900d;
@@ -224,6 +227,12 @@ public sealed class ScoringMatcher(
             .Where(doc => ids.Contains(doc.DriverId) && doc.ExpiresAt != null && doc.ExpiresAt < today && doc.Status != DocumentStatus.Rejected)
             .Select(doc => doc.DriverId).ToListAsync(ct)).ToHashSet();
         var reliabilities = await reliability.GetAsync(ids, now, ct);
+        // F11: drivers whose cash debt exceeds Payouts:MaxCashDebt are not offered trips.
+        var userIds = inRange.Select(x => x.Row.UserId).ToList();
+        var debtFloor = -payouts.Value.MaxCashDebt;
+        var indebted = (await db.Wallets.AsNoTracking()
+            .Where(w => w.Kind == WalletKind.Driver && userIds.Contains(w.UserId) && w.Balance < debtFloor)
+            .Select(w => w.UserId).ToListAsync(ct)).ToHashSet();
         var favoriteIds = criteria.PassengerId is { } passengerId && resolved.PreferFavoriteDriver
             ? await favorites.FavoriteDriverIdsAsync(passengerId, ct)
             : new HashSet<Guid>();
@@ -234,7 +243,7 @@ public sealed class ScoringMatcher(
         foreach (var (row, distance) in inRange)
         {
             var stats = reliabilities.GetValueOrDefault(row.Id, DriverReliability.Neutral);
-            if (expiredDocuments.Contains(row.Id) || stats.IsBlocked)
+            if (expiredDocuments.Contains(row.Id) || stats.IsBlocked || indebted.Contains(row.UserId))
             {
                 continue;
             }

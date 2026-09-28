@@ -6,7 +6,20 @@ public enum WalletKind { Passenger, Driver }
 
 public enum WalletStatus { Active, Frozen, Closed }
 
-public enum TransactionType { Topup, TripPayment, TripEarning, Refund, Payout, Adjustment, Incentive, CancellationFee }
+public enum TransactionType
+{
+    Topup,
+    TripPayment,
+    TripEarning,
+    Refund,
+    Payout,
+    Adjustment,
+    Incentive,
+    CancellationFee,
+    CashCollection,
+    CancellationCompensation,
+    PayoutReversal,
+}
 
 public enum TransactionDirection { Credit, Debit }
 
@@ -23,6 +36,13 @@ public class Wallet : AuditableEntity
 
     public string LedgerAccount => $"{Kind.ToString().ToLowerInvariant()}_wallet:{Id}";
 
+    /// <summary>Movement types that may take the balance below zero (a negative balance is a debt of the owner).</summary>
+    public static readonly TransactionType[] OverdraftTypes =
+        [TransactionType.CashCollection, TransactionType.CancellationFee, TransactionType.TripPayment, TransactionType.Adjustment];
+
+    /// <summary>The owner's debt: <c>max(0, −balance)</c> (cash commission owed by a driver, failed card collection owed by a passenger).</summary>
+    public decimal Debt => Balance < 0 ? -Balance : 0m;
+
     /// <summary>Applies a movement and returns the transaction plus two balanced ledger entries.</summary>
     public (WalletTransaction Transaction, LedgerEntry[] Entries) Post(
         TransactionType type,
@@ -32,19 +52,26 @@ public class Wallet : AuditableEntity
         string? description,
         string? idempotencyKey,
         string? referenceType = null,
-        Guid? referenceId = null)
+        Guid? referenceId = null,
+        bool allowOverdraft = false)
     {
         if (amount <= 0)
         {
             throw new DomainException(ErrorCodes.ValidationFailed, new { amount = "must be positive" });
         }
 
-        if (Status != WalletStatus.Active)
+        // A frozen wallet keeps receiving system postings (trip settlement, refunds) but the owner cannot top up or withdraw.
+        if (Status == WalletStatus.Closed || (Status == WalletStatus.Frozen && type is TransactionType.Topup or TransactionType.Payout))
         {
             throw new DomainException(ErrorCodes.Conflict, new { status = Status });
         }
 
-        if (direction == TransactionDirection.Debit && Balance < amount)
+        if (allowOverdraft && !OverdraftTypes.Contains(type))
+        {
+            throw new DomainException(ErrorCodes.ValidationFailed, new { type = "overdraft is not allowed for this movement" });
+        }
+
+        if (direction == TransactionDirection.Debit && Balance < amount && !allowOverdraft)
         {
             throw new DomainException(ErrorCodes.InsufficientBalance, new { balance = Balance, amount });
         }

@@ -2,6 +2,7 @@ using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Identity;
 using ATA.Domain.Matching;
+using ATA.Domain.Notifications;
 using ATA.Domain.Pricing;
 using ATA.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,38 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedPricingRulesAsync(cancellationToken);
         await SeedDemandRulesAsync(cancellationToken);
         await SeedMatchingSettingsAsync(cancellationToken);
+        await SeedNotificationTemplatesAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>One template per catalogue event and default channel (F13), from the code defaults; existing rows are never touched.</summary>
+    private async Task SeedNotificationTemplatesAsync(CancellationToken ct)
+    {
+        var existing = (await db.NotificationTemplates.Select(t => new { t.Code, t.Channel }).ToListAsync(ct))
+            .Select(t => (t.Code, t.Channel)).ToHashSet();
+        foreach (var definition in NotificationEvents.All)
+        {
+            foreach (var channel in definition.DefaultChannels)
+            {
+                if (existing.Contains((definition.Code, channel)))
+                {
+                    continue;
+                }
+
+                var text = definition.Text;
+                var hasTitle = channel != NotificationChannel.Sms;
+                db.NotificationTemplates.Add(new NotificationTemplate
+                {
+                    Code = definition.Code,
+                    Channel = channel,
+                    TitleAr = hasTitle ? text.TitleAr : null,
+                    TitleEn = hasTitle ? text.TitleEn : null,
+                    BodyAr = text.BodyAr,
+                    BodyEn = text.BodyEn,
+                    IsActive = true,
+                });
+            }
+        }
     }
 
     private async Task SeedCitiesAsync(CancellationToken ct)

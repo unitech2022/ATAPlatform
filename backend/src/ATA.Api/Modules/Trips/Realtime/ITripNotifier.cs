@@ -1,3 +1,5 @@
+using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
 
 namespace ATA.Api.Modules.Trips.Realtime;
@@ -19,4 +21,13 @@ public interface ITripNotifier
 
     /// <summary>A zone's demand level moved (admins group).</summary>
     Task DemandChangedAsync(DemandChangedEvent change, CancellationToken ct);
+
+    /// <summary>A payment of the user changed state (F11).</summary>
+    Task PaymentUpdatedAsync(Guid userId, PaymentUpdatedEvent payment, CancellationToken ct);
+
+    /// <summary>A driver requested a payout (admins group, F11).</summary>
+    Task PayoutRequestedAsync(PayoutRequestedEvent payout, CancellationToken ct);
+
+    /// <summary>A new inbox notification for the user (F13).</summary>
+    Task NotificationCreatedAsync(Guid userId, NotificationDto notification, CancellationToken ct);
 }

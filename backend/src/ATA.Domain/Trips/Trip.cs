@@ -26,6 +26,8 @@ public class Trip : AuditableEntity
     public decimal DropoffLng { get; set; }
     public bool PreferFemaleDriver { get; set; }
     public PaymentMethodKind PaymentMethod { get; set; } = PaymentMethodKind.Cash;
+    /// <summary>Saved card used for a <c>card</c> trip (plain column).</summary>
+    public Guid? PaymentMethodId { get; set; }
     public PricingMode PricingMode { get; set; } = PricingMode.Fixed;
     public decimal? OfferedPrice { get; set; }
     public int EstimatedDistanceM { get; set; }
@@ -37,6 +39,10 @@ public class Trip : AuditableEntity
     /// <summary>Driver's net share of <see cref="FinalFare"/>, fixed when the trip completes.</summary>
     public decimal? DriverEarnings { get; set; }
     public int WaitingSeconds { get; set; }
+    /// <summary>Final fare breakdown (F10 breakdown + <c>discounts</c>) stored at completion, JSON.</summary>
+    public string? FareBreakdown { get; set; }
+    /// <summary>Sum of discounts borne by the platform (F15/F16); the passenger pays <c>final_fare</c>, the driver share is computed before discounts.</summary>
+    public decimal DiscountTotal { get; set; }
     public required string PinCodeHash { get; set; }
     /// <summary>The PIN protected at rest so it can be shown to the passenger; verification uses <see cref="PinCodeHash"/>.</summary>
     public required string PinCodeProtected { get; set; }

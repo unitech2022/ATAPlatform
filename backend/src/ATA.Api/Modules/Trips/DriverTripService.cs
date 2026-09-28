@@ -1,13 +1,13 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Drivers;
 using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
 using ATA.Api.Modules.Trips.Matching;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Matching;
-using ATA.Domain.Notifications;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +25,10 @@ public sealed class DriverTripService(
     TripEventRecorder events,
     TripPinService pins,
     TripPaymentService payments,
+    CardTripPaymentService cardPayments,
+    PaymentService paymentService,
     MatchingRecorder matching,
-    NotificationService notifications,
+    INotificationDispatcher notifications,
     ITripNotifier notifier,
     IOptions<TripOptions> options)
 {
@@ -131,11 +133,8 @@ public sealed class DriverTripService(
         events.Add(trip.Id, TripEventTypes.DriverAssigned, TripActor.System, data: new { driverId = driver.Id, vehicleId = vehicle?.Id, etaSeconds = offer.EtaSeconds });
 
         var participants = await reads.ParticipantsAsync(trip, ct);
-        var driverName = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct) ?? "";
-        notifications.Add(participants.PassengerUserId, NotificationTypes.TripDriverAssigned,
-            ("تم تعيين سائق", "Driver assigned"),
-            ($"السائق {driverName} في طريقه إليك (الرحلة {trip.TripNumber}).", $"{driverName} is on the way (trip {trip.TripNumber})."),
-            new { tripId = trip.Id, trip.TripNumber, status = trip.Status, driverId = driver.Id });
+        var driverName = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
+        await notifications.DispatchAsync(TripNotifications.DriverAssigned(trip, participants.PassengerUserId, driverName, vehicle, offer.EtaSeconds), ct);
         await db.SaveChangesAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
@@ -191,10 +190,9 @@ public sealed class DriverTripService(
         events.Add(trip.Id, TripEventTypes.DriverArrived, TripActor.Driver, driver.UserId, location?.Lat, location?.Lng);
         events.Add(trip.Id, TripEventTypes.WaitingStarted, TripActor.System, data: new { freeWaitingMinutes = _options.FreeWaitingMinutes });
         var participants = await reads.ParticipantsAsync(trip, ct);
-        notifications.Add(participants.PassengerUserId, NotificationTypes.TripDriverArrived,
-            ("وصل السائق", "Your driver has arrived"),
-            ($"السائق بانتظارك عند نقطة الالتقاط. شارك رمز الرحلة معه لبدء الرحلة {trip.TripNumber}.", $"Your driver is waiting at the pickup. Share your trip PIN to start trip {trip.TripNumber}."),
-            new { tripId = trip.Id, trip.TripNumber, status = trip.Status });
+        var arrivedDriver = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
+        var plate = trip.VehicleId is { } vehicleId ? await db.Vehicles.AsNoTracking().Where(v => v.Id == vehicleId).Select(v => v.PlateNumber).FirstOrDefaultAsync(ct) : null;
+        await notifications.DispatchAsync(TripNotifications.DriverArrived(trip, participants.PassengerUserId, arrivedDriver, plate, _options.FreeWaitingMinutes), ct);
         await db.SaveChangesAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
@@ -233,6 +231,7 @@ public sealed class DriverTripService(
         trip.Start(clock.UtcNow);
         var location = await CurrentLocationAsync(driver.Id, ct);
         events.Add(trip.Id, TripEventTypes.Started, TripActor.Driver, driver.UserId, location?.Lat, location?.Lng);
+        await notifications.DispatchAsync(TripNotifications.Started(trip, (await reads.ParticipantsAsync(trip, ct)).PassengerUserId), ct);
         await db.SaveChangesAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
@@ -274,25 +273,25 @@ public sealed class DriverTripService(
         }
 
         var participants = await reads.ParticipantsAsync(trip, ct);
+        var breakdown = await ReceiptService.StoredBreakdownAsync(db, calculation, category, trip.DiscountTotal, ct);
 
-        var strategy = db.Database.CreateExecutionStrategy();
-        await strategy.ExecuteAsync(async () =>
+        // Card trips are charged before the transaction (gateway calls never run inside one).
+        var card = trip.PaymentMethod == PaymentMethodKind.Card ? await cardPayments.CaptureForCompletionAsync(trip, fare, ct) : null;
+
+        await db.InTransactionAsync(async () =>
         {
-            await using var tx = await db.Database.BeginTransactionAsync(ct);
             trip.Complete(distance, duration, fare, driverEarnings, now);
-            await payments.SettleAsync(trip, participants, fare, driverEarnings, ct);
+            trip.FareBreakdown = System.Text.Json.JsonSerializer.Serialize(breakdown, JsonDefaults.Options);
+            await payments.SettleAsync(trip, participants, fare, driverEarnings, card, ct);
             driver.CurrentTripId = null;
             await reads.ReleaseDriverAsync(trip, now, ct);
             events.Add(trip.Id, TripEventTypes.Completed, TripActor.Driver, driver.UserId, request?.FinalLat, request?.FinalLng,
                 new { finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod, breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source });
-            notifications.Add(participants.PassengerUserId, NotificationTypes.TripCompleted,
-                ("انتهت الرحلة", "Trip completed"),
-                ($"وصلت بسلامة. أجرة الرحلة {trip.TripNumber}: {fare:0.00} ر.س ({PaymentLabel(trip.PaymentMethod, Language.Ar)}).", $"You have arrived. Trip {trip.TripNumber} fare: SAR {fare:0.00} ({PaymentLabel(trip.PaymentMethod, Language.En)})."),
-                new { tripId = trip.Id, trip.TripNumber, status = trip.Status, finalFare = fare, paymentMethod = trip.PaymentMethod });
+            await notifications.DispatchAsync(TripNotifications.Completed(trip, participants.PassengerUserId, fare), ct);
             await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
-        });
+        }, ct);
 
+        await paymentService.PublishPendingAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 
@@ -311,11 +310,9 @@ public sealed class DriverTripService(
         await reads.ReleaseDriverAsync(trip, now, ct);
         events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.Driver, driver.UserId,
             data: new { reasonCode = trip.CancellationReason, note = request.Note?.Trim() });
-        notifications.Add(participants.PassengerUserId, NotificationTypes.TripCancelled,
-            ("تم إلغاء الرحلة", "Trip cancelled"),
-            ($"ألغى السائق الرحلة {trip.TripNumber}. يمكنك طلب رحلة جديدة.", $"The driver cancelled trip {trip.TripNumber}. You can request a new trip."),
-            new { tripId = trip.Id, trip.TripNumber, cancelledBy = trip.CancelledBy });
+        await notifications.DispatchAsync(TripNotifications.Cancelled(trip, participants.PassengerUserId), ct);
         await db.SaveChangesAsync(ct);
+        await cardPayments.ReleaseAsync(trip.Id, ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 
@@ -331,13 +328,6 @@ public sealed class DriverTripService(
             t.FinalFare ?? t.EstimatedFare, t.DriverEarnings ?? 0m)).ToList();
         return paging.Result(items, total);
     }
-
-    private static string PaymentLabel(PaymentMethodKind method, Language lang) => method switch
-    {
-        PaymentMethodKind.Wallet => lang.Pick("المحفظة", "wallet"),
-        PaymentMethodKind.Card => lang.Pick("البطاقة", "card"),
-        _ => lang.Pick("نقداً", "cash"),
-    };
 
     private async Task<DriverLocation?> CurrentLocationAsync(Guid driverId, CancellationToken ct) =>
         await db.DriverLocations.AsNoTracking().FirstOrDefaultAsync(l => l.DriverId == driverId, ct);

@@ -1,6 +1,7 @@
 using ATA.Domain.Catalog;
 using ATA.Domain.Drivers;
 using ATA.Domain.Passengers;
+using ATA.Domain.Payments;
 using ATA.Domain.Trips;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,6 +28,7 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.Property(x => x.PinCodeProtected).HasMaxLength(255).IsRequired();
         b.Property(x => x.CancellationReason).HasMaxLength(500);
         b.Property(x => x.RiderNote).HasMaxLength(500);
+        b.Property(x => x.FareBreakdown).HasColumnType("json");
         b.HasIndex(x => new { x.PassengerId, x.CreatedAt });
         b.HasIndex(x => new { x.DriverId, x.CreatedAt });
         b.HasIndex(x => x.Status);
@@ -37,6 +39,7 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.DriverId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Vehicle>().WithMany().HasForeignKey(x => x.VehicleId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<RideCategory>().WithMany().HasForeignKey(x => x.RideCategoryId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<PaymentMethod>().WithMany().HasForeignKey(x => x.PaymentMethodId).OnDelete(DeleteBehavior.Restrict);
         b.HasMany(x => x.Stops).WithOne().HasForeignKey(s => s.TripId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(x => x.Events).WithOne().HasForeignKey(e => e.TripId).OnDelete(DeleteBehavior.Cascade);
     }

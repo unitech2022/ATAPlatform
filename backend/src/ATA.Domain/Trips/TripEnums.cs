@@ -45,6 +45,10 @@ public static class TripEventTypes
     public const string Completed = "completed";
     public const string PaymentRecorded = "payment_recorded";
     public const string PaymentFallbackCash = "payment_fallback_cash";
+    public const string PaymentAuthorized = "payment_authorized";
+    public const string PaymentActionRequired = "payment_action_required";
+    public const string PaymentFailed = "payment_failed";
+    public const string PaymentCapturePending = "payment_capture_pending";
     public const string Cancelled = "cancelled";
     public const string NoDrivers = "no_drivers";
 }

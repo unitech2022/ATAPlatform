@@ -2,8 +2,8 @@ using System.Text.Json;
 using ATA.Api.Common;
 using ATA.Api.Modules.Admin;
 using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Domain.Common;
-using ATA.Domain.Notifications;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Trips;
 
 /// <summary>Trip browsing, forced cancellation (audited) and the live map snapshot for the admin console.</summary>
-public sealed class AdminTripService(AtaDbContext db, TripReadService reads, TripEventRecorder events, AuditService audit, NotificationService notifications, ICurrentUser currentUser, IClock clock)
+public sealed class AdminTripService(AtaDbContext db, TripReadService reads, TripEventRecorder events, AuditService audit, INotificationDispatcher notifications, CardTripPaymentService cardPayments, ICurrentUser currentUser, IClock clock)
 {
     public const string EntityType = "trip";
     private static readonly TimeSpan RecentlyOffline = TimeSpan.FromMinutes(15);
@@ -74,19 +74,14 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Tri
         await reads.ReleaseDriverAsync(trip, now, ct);
         events.Add(trip.Id, TripEventTypes.Cancelled, TripActor.Admin, currentUser.UserId, data: new { reason, hadDriver });
         audit.Log("trip.cancel", EntityType, trip.Id, before, new { status = trip.Status, reason });
-        notifications.Add(participants.PassengerUserId, NotificationTypes.TripCancelled,
-            ("تم إلغاء الرحلة", "Trip cancelled"),
-            ($"ألغت الإدارة الرحلة {trip.TripNumber}: {reason}", $"Trip {trip.TripNumber} was cancelled by support: {reason}"),
-            new { tripId = trip.Id, trip.TripNumber, cancelledBy = trip.CancelledBy });
+        await notifications.DispatchAsync(TripNotifications.Cancelled(trip, participants.PassengerUserId), ct);
         if (hadDriver && participants.DriverUserId is { } driverUserId)
         {
-            notifications.Add(driverUserId, NotificationTypes.TripCancelled,
-                ("تم إلغاء الرحلة", "Trip cancelled"),
-                ($"ألغت الإدارة الرحلة {trip.TripNumber}: {reason}", $"Trip {trip.TripNumber} was cancelled by support: {reason}"),
-                new { tripId = trip.Id, trip.TripNumber, cancelledBy = trip.CancelledBy });
+            await notifications.DispatchAsync(TripNotifications.Cancelled(trip, driverUserId), ct);
         }
 
         await db.SaveChangesAsync(ct);
+        await cardPayments.ReleaseAsync(trip.Id, ct);
         await reads.PublishAsync(trip, TripViewer.Admin, lang, ct);
         return await BuildDetailAsync(trip, lang, ct);
     }

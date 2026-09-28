@@ -692,6 +692,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(128)")
                         .HasColumnName("mfa_secret");
 
+                    b.Property<bool>("OnDuty")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("on_duty");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -1170,6 +1174,34 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("matching_settings", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Notifications.DocumentExpiryNotice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("DriverDocumentId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_document_id");
+
+                    b.Property<int>("OffsetDays")
+                        .HasColumnType("int")
+                        .HasColumnName("offset_days");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_document_expiry_notices");
+
+                    b.HasIndex("DriverDocumentId", "OffsetDays")
+                        .IsUnique()
+                        .HasDatabaseName("ux_document_expiry_notices_driver_document_id_offset_days");
+
+                    b.ToTable("document_expiry_notices", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Notifications.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1187,6 +1219,18 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)")
                         .HasColumnName("body_en");
+
+                    b.Property<Guid?>("CampaignId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("campaign_id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasDefaultValue("system")
+                        .HasColumnName("category");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
@@ -1225,10 +1269,259 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_notifications");
 
+                    b.HasIndex("CampaignId")
+                        .HasDatabaseName("ix_notifications_campaign_id");
+
                     b.HasIndex("UserId", "CreatedAt")
                         .HasDatabaseName("ix_notifications_user_id_created_at");
 
                     b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Notifications.NotificationCampaign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("audience");
+
+                    b.Property<string>("BodyAr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("body_ar");
+
+                    b.Property<string>("BodyEn")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("body_en");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Channels")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("channels");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DeepLink")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("deep_link");
+
+                    b.Property<int>("InappCreated")
+                        .HasColumnType("int")
+                        .HasColumnName("inapp_created");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("OpenedCount")
+                        .HasColumnType("int")
+                        .HasColumnName("opened_count");
+
+                    b.Property<int>("PushFailed")
+                        .HasColumnType("int")
+                        .HasColumnName("push_failed");
+
+                    b.Property<int>("PushSent")
+                        .HasColumnType("int")
+                        .HasColumnName("push_sent");
+
+                    b.Property<int>("PushSkipped")
+                        .HasColumnType("int")
+                        .HasColumnName("push_skipped");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("scheduled_at");
+
+                    b.Property<int>("SmsFailed")
+                        .HasColumnType("int")
+                        .HasColumnName("sms_failed");
+
+                    b.Property<int>("SmsSent")
+                        .HasColumnType("int")
+                        .HasColumnName("sms_sent");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("int")
+                        .HasColumnName("target_count");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("title_ar");
+
+                    b.Property<string>("TitleEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("title_en");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_campaigns");
+
+                    b.HasIndex("Status", "ScheduledAt")
+                        .HasDatabaseName("ix_notification_campaigns_status_scheduled_at");
+
+                    b.ToTable("notification_campaigns", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<byte>("Attempts")
+                        .HasColumnType("tinyint unsigned")
+                        .HasColumnName("attempts");
+
+                    b.Property<Guid?>("CampaignId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("campaign_id");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("channel");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("EventCode")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("event_code");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<Guid?>("NotificationId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("notification_id");
+
+                    b.Property<DateTime?>("OpenedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("opened_at");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("payload");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("SkippedReason")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("skipped_reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_deliveries");
+
+                    b.HasIndex("CampaignId")
+                        .HasDatabaseName("ix_notification_deliveries_campaign_id");
+
+                    b.HasIndex("NotificationId")
+                        .HasDatabaseName("ix_notification_deliveries_notification_id");
+
+                    b.HasIndex("Status", "NextAttemptAt")
+                        .HasDatabaseName("ix_notification_deliveries_status_next_attempt_at");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("ix_notification_deliveries_user_id_created_at");
+
+                    b.ToTable("notification_deliveries", (string)null);
                 });
 
             modelBuilder.Entity("ATA.Domain.Notifications.NotificationPreference", b =>
@@ -1271,6 +1564,72 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("notification_preferences", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Notifications.NotificationTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BodyAr")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("body_ar");
+
+                    b.Property<string>("BodyEn")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("body_en");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("channel");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("TitleAr")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("title_ar");
+
+                    b.Property<string>("TitleEn")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("title_en");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_notification_templates");
+
+                    b.HasIndex("Code", "Channel")
+                        .IsUnique()
+                        .HasDatabaseName("ux_notification_templates_code_channel");
+
+                    b.ToTable("notification_templates", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Passengers.PassengerProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1286,6 +1645,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)")
                         .HasColumnName("default_payment_method");
+
+                    b.Property<Guid?>("DefaultPaymentMethodId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("default_payment_method_id");
 
                     b.Property<bool>("PreferFemaleDriver")
                         .HasColumnType("tinyint(1)")
@@ -1310,6 +1673,9 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_passengers");
+
+                    b.HasIndex("DefaultPaymentMethodId")
+                        .HasDatabaseName("ix_passengers_default_payment_method_id");
 
                     b.HasIndex("UserId")
                         .IsUnique()
@@ -1368,6 +1734,931 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_saved_places_passenger_id_label");
 
                     b.ToTable("saved_places", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ActionExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("action_expires_at");
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("action_url");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<decimal?>("AuthorizedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("authorized_amount");
+
+                    b.Property<DateTime?>("AuthorizedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("authorized_at");
+
+                    b.Property<string>("CaptureMode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("capture_mode");
+
+                    b.Property<decimal?>("CapturedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("captured_amount");
+
+                    b.Property<DateTime?>("CapturedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("captured_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("varchar(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTime?>("FailedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("failed_at");
+
+                    b.Property<string>("FailureCode")
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("failure_code");
+
+                    b.Property<string>("FailureMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("failure_message");
+
+                    b.Property<string>("GatewayPaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("gateway_payment_id");
+
+                    b.Property<string>("GatewayStatus")
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("gateway_status");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("json")
+                        .HasColumnName("metadata");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("method");
+
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("payment_method_id");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("purpose");
+
+                    b.Property<decimal>("RefundedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("refunded_amount");
+
+                    b.Property<string>("ReturnUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("return_url");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime?>("VoidedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("WalletId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("wallet_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payments");
+
+                    b.HasIndex("GatewayPaymentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payments_gateway_payment_id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payments_idempotency_key");
+
+                    b.HasIndex("PaymentMethodId")
+                        .HasDatabaseName("ix_payments_payment_method_id");
+
+                    b.HasIndex("TripId")
+                        .HasDatabaseName("ix_payments_trip_id");
+
+                    b.HasIndex("WalletId")
+                        .HasDatabaseName("ix_payments_wallet_id");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_payments_status_created_at");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("ix_payments_user_id_created_at");
+
+                    b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.PaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("brand");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<byte>("ExpiryMonth")
+                        .HasColumnType("tinyint unsigned")
+                        .HasColumnName("expiry_month");
+
+                    b.Property<short>("ExpiryYear")
+                        .HasColumnType("smallint")
+                        .HasColumnName("expiry_year");
+
+                    b.Property<string>("Fingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<string>("GatewayToken")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("gateway_token");
+
+                    b.Property<string>("HolderName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("holder_name");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Last4")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("char(4)")
+                        .HasColumnName("last4")
+                        .IsFixedLength();
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("provider");
+
+                    b.Property<DateTime?>("RemovedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("removed_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("verified_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payment_methods");
+
+                    b.HasIndex("UserId", "Fingerprint")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payment_methods_user_id_fingerprint");
+
+                    b.HasIndex("UserId", "Status")
+                        .HasDatabaseName("ix_payment_methods_user_id_status");
+
+                    b.ToTable("payment_methods", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.PaymentWebhookEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("error");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("event_type");
+
+                    b.Property<string>("GatewayPaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("gateway_payment_id");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("payload");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("ProcessingStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("processing_status");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("provider");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("received_at");
+
+                    b.Property<bool>("SignatureValid")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("signature_valid");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payment_webhook_events");
+
+                    b.HasIndex("GatewayPaymentId")
+                        .HasDatabaseName("ix_payment_webhook_events_gateway_payment_id");
+
+                    b.HasIndex("ProcessingStatus", "ReceivedAt")
+                        .HasDatabaseName("ix_payment_webhook_events_processing_status_received_at");
+
+                    b.HasIndex("Provider", "EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payment_webhook_events_provider_event_id");
+
+                    b.ToTable("payment_webhook_events", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Payout", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountHolderName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("account_holder_name");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("approved_at");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("approved_by");
+
+                    b.Property<string>("BankReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("bank_reference");
+
+                    b.Property<Guid?>("BatchId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("batch_id");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<string>("IbanEncrypted")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("iban_encrypted");
+
+                    b.Property<string>("IbanMasked")
+                        .IsRequired()
+                        .HasMaxLength(34)
+                        .HasColumnType("varchar(34)")
+                        .HasColumnName("iban_masked");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<Guid?>("PaidBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("paid_by");
+
+                    b.Property<string>("PayoutNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("payout_number");
+
+                    b.Property<Guid?>("RejectedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("rejected_by");
+
+                    b.Property<string>("RejectedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("rejected_reason");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("requested_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("wallet_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payouts");
+
+                    b.HasIndex("BatchId")
+                        .HasDatabaseName("ix_payouts_batch_id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payouts_idempotency_key");
+
+                    b.HasIndex("PayoutNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payouts_payout_number");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_payouts_status");
+
+                    b.HasIndex("WalletId")
+                        .HasDatabaseName("ix_payouts_wallet_id");
+
+                    b.HasIndex("DriverId", "RequestedAt")
+                        .HasDatabaseName("ix_payouts_driver_id_requested_at");
+
+                    b.ToTable("payouts", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.PayoutBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BankReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("bank_reference");
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("batch_number");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid?>("ExportFileId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("export_file_id");
+
+                    b.Property<DateTime?>("ExportedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("exported_at");
+
+                    b.Property<Guid?>("ExportedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("exported_by");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<Guid?>("PaidBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("paid_by");
+
+                    b.Property<int>("PayoutsCount")
+                        .HasColumnType("int")
+                        .HasColumnName("payouts_count");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payout_batches");
+
+                    b.HasIndex("BatchNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_payout_batches_batch_number");
+
+                    b.HasIndex("ExportFileId")
+                        .HasDatabaseName("ix_payout_batches_export_file_id");
+
+                    b.ToTable("payout_batches", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Refund", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("approved_at");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("approved_by");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("destination");
+
+                    b.Property<Guid?>("DisputeId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("dispute_id");
+
+                    b.Property<string>("FailureMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("failure_message");
+
+                    b.Property<string>("GatewayRefundId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("gateway_refund_id");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("payment_id");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("processed_at");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<string>("RefundNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("refund_number");
+
+                    b.Property<Guid?>("RejectedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("rejected_by");
+
+                    b.Property<string>("RejectedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("rejected_reason");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_refunds");
+
+                    b.HasIndex("PaymentId")
+                        .HasDatabaseName("ix_refunds_payment_id");
+
+                    b.HasIndex("RefundNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_refunds_refund_number");
+
+                    b.HasIndex("TripId")
+                        .HasDatabaseName("ix_refunds_trip_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_refunds_user_id");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_refunds_status_created_at");
+
+                    b.ToTable("refunds", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Settlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Adjustments")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("adjustments");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("batch_id");
+
+                    b.Property<decimal>("CancellationCompensation")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("cancellation_compensation");
+
+                    b.Property<decimal>("CashCollected")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("cash_collected");
+
+                    b.Property<decimal>("ClosingBalance")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("closing_balance");
+
+                    b.Property<decimal>("Commission")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("commission");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("direction");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<decimal>("Earnings")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("earnings");
+
+                    b.Property<decimal>("Fees")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("fees");
+
+                    b.Property<decimal>("GrossFares")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("gross_fares");
+
+                    b.Property<decimal>("Incentives")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("incentives");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("net_amount");
+
+                    b.Property<decimal>("OpeningBalance")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("opening_balance");
+
+                    b.Property<Guid?>("PayoutId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("payout_id");
+
+                    b.Property<decimal>("PayoutsInPeriod")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("payouts_in_period");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("Topups")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("topups");
+
+                    b.Property<int>("TripsCount")
+                        .HasColumnType("int")
+                        .HasColumnName("trips_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_settlements");
+
+                    b.HasIndex("DriverId")
+                        .HasDatabaseName("ix_settlements_driver_id");
+
+                    b.HasIndex("PayoutId")
+                        .HasDatabaseName("ix_settlements_payout_id");
+
+                    b.HasIndex("BatchId", "DriverId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_settlements_batch_id_driver_id");
+
+                    b.ToTable("settlements", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.SettlementBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("batch_number");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DriversCount")
+                        .HasColumnType("int")
+                        .HasColumnName("drivers_count");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTime?>("FinalizedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("finalized_at");
+
+                    b.Property<Guid?>("FinalizedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("finalized_by");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("generated_at");
+
+                    b.Property<Guid?>("GeneratedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("generated_by");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_start");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAdjustments")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_adjustments");
+
+                    b.Property<decimal>("TotalCashCollected")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_cash_collected");
+
+                    b.Property<decimal>("TotalCommission")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_commission");
+
+                    b.Property<decimal>("TotalCompensation")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_compensation");
+
+                    b.Property<decimal>("TotalEarnings")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_earnings");
+
+                    b.Property<decimal>("TotalGrossFares")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_gross_fares");
+
+                    b.Property<decimal>("TotalIncentives")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_incentives");
+
+                    b.Property<decimal>("TotalNet")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_net");
+
+                    b.Property<int>("TotalTrips")
+                        .HasColumnType("int")
+                        .HasColumnName("total_trips");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_settlement_batches");
+
+                    b.HasIndex("BatchNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_settlement_batches_batch_number");
+
+                    b.HasIndex("CityId", "PeriodStart")
+                        .HasDatabaseName("ix_settlement_batches_city_id_period_start");
+
+                    b.ToTable("settlement_batches", (string)null);
                 });
 
             modelBuilder.Entity("ATA.Domain.Pricing.DemandLevel", b =>
@@ -2102,6 +3393,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
 
+                    b.Property<decimal>("DiscountTotal")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("discount_total");
+
                     b.Property<decimal?>("DriverEarnings")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
@@ -2146,6 +3442,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("estimated_fare");
 
+                    b.Property<string>("FareBreakdown")
+                        .HasColumnType("json")
+                        .HasColumnName("fare_breakdown");
+
                     b.Property<int?>("FinalDistanceM")
                         .HasColumnType("int")
                         .HasColumnName("final_distance_m");
@@ -2173,6 +3473,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)")
                         .HasColumnName("payment_method");
+
+                    b.Property<Guid?>("PaymentMethodId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("payment_method_id");
 
                     b.Property<string>("PickupAddress")
                         .IsRequired()
@@ -2269,6 +3573,9 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_trips");
+
+                    b.HasIndex("PaymentMethodId")
+                        .HasDatabaseName("ix_trips_payment_method_id");
 
                     b.HasIndex("RideCategoryId")
                         .HasDatabaseName("ix_trips_ride_category_id");
@@ -2478,7 +3785,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("debit");
 
-                    b.Property<Guid>("TransactionId")
+                    b.Property<Guid?>("JournalId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("journal_id");
+
+                    b.Property<Guid?>("TransactionId")
                         .HasColumnType("char(36)")
                         .HasColumnName("transaction_id");
 
@@ -2488,10 +3799,70 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.HasIndex("Account")
                         .HasDatabaseName("ix_ledger_entries_account");
 
+                    b.HasIndex("JournalId")
+                        .HasDatabaseName("ix_ledger_entries_journal_id");
+
                     b.HasIndex("TransactionId")
                         .HasDatabaseName("ix_ledger_entries_transaction_id");
 
                     b.ToTable("ledger_entries", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Wallet.LedgerJournal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<Guid?>("ReferenceId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("reference_id");
+
+                    b.Property<string>("ReferenceType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("reference_type");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ledger_journals");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_ledger_journals_created_at");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_ledger_journals_idempotency_key");
+
+                    b.HasIndex("ReferenceType", "ReferenceId")
+                        .HasDatabaseName("ix_ledger_journals_reference_type_reference_id");
+
+                    b.ToTable("ledger_journals", (string)null);
                 });
 
             modelBuilder.Entity("ATA.Domain.Wallet.Wallet", b =>
@@ -2786,14 +4157,51 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_matching_settings_zone_id");
                 });
 
+            modelBuilder.Entity("ATA.Domain.Notifications.DocumentExpiryNotice", b =>
+                {
+                    b.HasOne("ATA.Domain.Drivers.DriverDocument", null)
+                        .WithMany()
+                        .HasForeignKey("DriverDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_document_expiry_notices_driver_document_id");
+                });
+
             modelBuilder.Entity("ATA.Domain.Notifications.Notification", b =>
                 {
+                    b.HasOne("ATA.Domain.Notifications.NotificationCampaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_notifications_campaign_id");
+
                     b.HasOne("ATA.Domain.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_notifications_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Notifications.NotificationDelivery", b =>
+                {
+                    b.HasOne("ATA.Domain.Notifications.NotificationCampaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_notification_deliveries_campaign_id");
+
+                    b.HasOne("ATA.Domain.Notifications.Notification", null)
+                        .WithMany()
+                        .HasForeignKey("NotificationId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_notification_deliveries_notification_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_notification_deliveries_user_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Notifications.NotificationPreference", b =>
@@ -2808,6 +4216,12 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ATA.Domain.Passengers.PassengerProfile", b =>
                 {
+                    b.HasOne("ATA.Domain.Payments.PaymentMethod", null)
+                        .WithMany()
+                        .HasForeignKey("DefaultPaymentMethodId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_passengers_default_payment_method_id");
+
                     b.HasOne("ATA.Domain.Identity.User", null)
                         .WithOne()
                         .HasForeignKey("ATA.Domain.Passengers.PassengerProfile", "UserId")
@@ -2824,6 +4238,118 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_saved_places_passenger_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Payment", b =>
+                {
+                    b.HasOne("ATA.Domain.Payments.PaymentMethod", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_payments_payment_method_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payments_user_id");
+
+                    b.HasOne("ATA.Domain.Wallet.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_payments_wallet_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.PaymentMethod", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_payment_methods_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Payout", b =>
+                {
+                    b.HasOne("ATA.Domain.Payments.PayoutBatch", null)
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_payouts_batch_id");
+
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payouts_driver_id");
+
+                    b.HasOne("ATA.Domain.Wallet.Wallet", null)
+                        .WithMany()
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payouts_wallet_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.PayoutBatch", b =>
+                {
+                    b.HasOne("ATA.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("ExportFileId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_payout_batches_export_file_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Refund", b =>
+                {
+                    b.HasOne("ATA.Domain.Payments.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_refunds_payment_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_refunds_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.Settlement", b =>
+                {
+                    b.HasOne("ATA.Domain.Payments.SettlementBatch", null)
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_settlements_batch_id");
+
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_settlements_driver_id");
+
+                    b.HasOne("ATA.Domain.Payments.Payout", null)
+                        .WithMany()
+                        .HasForeignKey("PayoutId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_settlements_payout_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Payments.SettlementBatch", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_settlement_batches_city_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Pricing.DemandOverride", b =>
@@ -3003,6 +4529,12 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_trips_passenger_id");
 
+                    b.HasOne("ATA.Domain.Payments.PaymentMethod", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentMethodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trips_payment_method_id");
+
                     b.HasOne("ATA.Domain.Catalog.RideCategory", null)
                         .WithMany()
                         .HasForeignKey("RideCategoryId")
@@ -3056,11 +4588,16 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ATA.Domain.Wallet.LedgerEntry", b =>
                 {
+                    b.HasOne("ATA.Domain.Wallet.LedgerJournal", null)
+                        .WithMany()
+                        .HasForeignKey("JournalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ledger_entries_journal_id");
+
                     b.HasOne("ATA.Domain.Wallet.WalletTransaction", null)
                         .WithMany()
                         .HasForeignKey("TransactionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("fk_ledger_entries_transaction_id");
                 });
 

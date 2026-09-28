@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
 using ATA.Api.Common;
+using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
 using ATA.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -43,6 +45,9 @@ public static class TripHubEvents
     public const string OfferExpired = "OfferExpired";
     public const string LiveSnapshot = "LiveSnapshot";
     public const string DemandChanged = "DemandChanged";
+    public const string PaymentUpdated = "PaymentUpdated";
+    public const string PayoutRequested = "PayoutRequested";
+    public const string NotificationCreated = "NotificationCreated";
 }
 
 public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifier
@@ -67,6 +72,15 @@ public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifi
 
     public Task DemandChangedAsync(DemandChangedEvent change, CancellationToken ct) =>
         hub.Clients.Group(TripsHub.AdminsGroup).SendAsync(TripHubEvents.DemandChanged, change, ct);
+
+    public Task PaymentUpdatedAsync(Guid userId, PaymentUpdatedEvent payment, CancellationToken ct) =>
+        hub.Clients.Group(TripsHub.UserGroup(userId)).SendAsync(TripHubEvents.PaymentUpdated, payment, ct);
+
+    public Task PayoutRequestedAsync(PayoutRequestedEvent payout, CancellationToken ct) =>
+        hub.Clients.Group(TripsHub.AdminsGroup).SendAsync(TripHubEvents.PayoutRequested, payout, ct);
+
+    public Task NotificationCreatedAsync(Guid userId, NotificationDto notification, CancellationToken ct) =>
+        hub.Clients.Group(TripsHub.UserGroup(userId)).SendAsync(TripHubEvents.NotificationCreated, notification, ct);
 }
 
 /// <summary>Pushes <c>LiveSnapshot</c> to the admins group every <see cref="RealtimeOptions.LiveSnapshotSeconds"/> seconds.</summary>

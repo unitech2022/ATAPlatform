@@ -58,7 +58,8 @@ public sealed record CreateTripRequest(
     PricingMode? PricingMode,
     decimal? OfferedPrice,
     string? RiderNote,
-    Guid? QuoteId);
+    Guid? QuoteId,
+    Guid? PaymentMethodId = null);
 
 public sealed record CancelTripRequest(string? ReasonCode, string? Note);
 
@@ -107,7 +108,10 @@ public sealed record TripDto(
     CancelledBy? CancelledBy,
     string? CancellationReason,
     TripTimelineDto Timeline,
-    IReadOnlyList<TripEventDto> Events);
+    IReadOnlyList<TripEventDto> Events,
+    ATA.Api.Modules.Payments.TripPaymentDto? Payment = null,
+    decimal? CollectCashAmount = null,
+    decimal DiscountTotal = 0m);
 
 public sealed record OfferPassengerDto(string? FirstName, decimal RatingAvg);
 
@@ -125,7 +129,8 @@ public sealed record OfferDto(
     DateTime ExpiresAt,
     OfferPassengerDto Passenger,
     int Round,
-    bool PassengerOffered);
+    bool PassengerOffered,
+    PaymentMethodKind PaymentMethod = PaymentMethodKind.Cash);
 
 public sealed record DriverLocationEvent(Guid TripId, decimal Lat, decimal Lng, decimal? Heading, int EtaSeconds);
 

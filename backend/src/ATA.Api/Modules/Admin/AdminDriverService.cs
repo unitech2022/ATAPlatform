@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Admin;
 
 /// <summary>Driver application review by admins/operations: every transition is audited and notifies the driver.</summary>
-public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService applications, AuditService audit, NotificationService notifications, ICurrentUser currentUser, IClock clock)
+public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService applications, AuditService audit, INotificationDispatcher notifications, ICurrentUser currentUser, IClock clock)
 {
     public const string EntityType = "driver";
 
@@ -92,10 +92,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         var before = Snapshot(driver);
         driver.StartReview();
         audit.Log("driver.start_review", EntityType, driver.Id, before, Snapshot(driver));
-        notifications.Add(driver.UserId, NotificationTypes.DriverUnderReview,
-            ("طلبك قيد المراجعة", "Your application is under review"),
-            ($"بدأت الإدارة مراجعة طلبك رقم {driver.ApplicationNumber}.", $"Our team started reviewing application {driver.ApplicationNumber}."),
-            new { driver.ApplicationNumber, status = driver.ApplicationStatus });
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.DriverUnderReview, driver.UserId, NotificationPlaceholders.Of(("applicationNumber", driver.ApplicationNumber)), "driver", driver.Id,
+            new Dictionary<string, object?> { ["applicationNumber"] = driver.ApplicationNumber, ["status"] = System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(driver.ApplicationStatus.ToString()) }), ct);
         await db.SaveChangesAsync(ct);
         return new DriverStatusChangeDto(driver.Id, driver.ApplicationStatus);
     }
@@ -112,10 +110,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         var before = Snapshot(driver);
         driver.Approve(currentUser.UserId, clock.UtcNow);
         audit.Log("driver.approve", EntityType, driver.Id, before, Snapshot(driver));
-        notifications.Add(driver.UserId, NotificationTypes.DriverApplicationApproved,
-            ("تم تفعيل حسابك", "Your account is activated"),
-            ($"تم اعتماد طلبك رقم {driver.ApplicationNumber}. يمكنك الآن استقبال الرحلات.", $"Application {driver.ApplicationNumber} was approved. You can now go online."),
-            new { driver.ApplicationNumber, status = driver.ApplicationStatus });
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.DriverApplicationApproved, driver.UserId, NotificationPlaceholders.Of(("applicationNumber", driver.ApplicationNumber)), "driver", driver.Id,
+            new Dictionary<string, object?> { ["applicationNumber"] = driver.ApplicationNumber, ["status"] = System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(driver.ApplicationStatus.ToString()) }), ct);
         await db.SaveChangesAsync(ct);
         return new DriverStatusChangeDto(driver.Id, driver.ApplicationStatus);
     }
@@ -127,10 +123,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         var before = Snapshot(driver);
         driver.Reject(reason);
         audit.Log("driver.reject", EntityType, driver.Id, before, Snapshot(driver));
-        notifications.Add(driver.UserId, NotificationTypes.DriverApplicationRejected,
-            ("تم رفض طلبك", "Your application was rejected"),
-            ($"تم رفض طلبك رقم {driver.ApplicationNumber}: {reason}", $"Application {driver.ApplicationNumber} was rejected: {reason}"),
-            new { driver.ApplicationNumber, status = driver.ApplicationStatus, reason });
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.DriverApplicationRejected, driver.UserId, NotificationPlaceholders.Of(("reason", reason), ("applicationNumber", driver.ApplicationNumber)), "driver", driver.Id,
+            new Dictionary<string, object?> { ["applicationNumber"] = driver.ApplicationNumber, ["status"] = System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(driver.ApplicationStatus.ToString()) }), ct);
         await db.SaveChangesAsync(ct);
         return new DriverStatusChangeDto(driver.Id, driver.ApplicationStatus);
     }
@@ -142,10 +136,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         var before = Snapshot(driver);
         driver.Suspend(reason);
         audit.Log("driver.suspend", EntityType, driver.Id, before, Snapshot(driver));
-        notifications.Add(driver.UserId, NotificationTypes.DriverSuspended,
-            ("تم تعليق حسابك", "Your account was suspended"),
-            ($"تم تعليق حساب السائق: {reason}", $"Your driver account was suspended: {reason}"),
-            new { driver.ApplicationNumber, status = driver.ApplicationStatus, reason });
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.DriverSuspended, driver.UserId, NotificationPlaceholders.Of(("reason", reason)), "driver", driver.Id,
+            new Dictionary<string, object?> { ["applicationNumber"] = driver.ApplicationNumber, ["status"] = System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(driver.ApplicationStatus.ToString()) }), ct);
         await db.SaveChangesAsync(ct);
         return new DriverStatusChangeDto(driver.Id, driver.ApplicationStatus);
     }
@@ -156,10 +148,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         var before = Snapshot(driver);
         driver.Reinstate();
         audit.Log("driver.reinstate", EntityType, driver.Id, before, Snapshot(driver));
-        notifications.Add(driver.UserId, NotificationTypes.DriverReinstated,
-            ("تمت إعادة تفعيل حسابك", "Your account was reinstated"),
-            ("يمكنك الآن استقبال الرحلات مجدداً.", "You can go online and receive trips again."),
-            new { driver.ApplicationNumber, status = driver.ApplicationStatus });
+        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.DriverReinstated, driver.UserId, NotificationPlaceholders.Of(("reason", string.Empty)), "driver", driver.Id,
+            new Dictionary<string, object?> { ["applicationNumber"] = driver.ApplicationNumber, ["status"] = System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(driver.ApplicationStatus.ToString()) }), ct);
         await db.SaveChangesAsync(ct);
         return new DriverStatusChangeDto(driver.Id, driver.ApplicationStatus);
     }
