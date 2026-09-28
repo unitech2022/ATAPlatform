@@ -10,6 +10,8 @@
 { "error": { "code": "otp_invalid", "message": "رمز التحقق غير صحيح", "details": { "attemptsLeft": 3 } } }
 ```
 
+عند `validation_failed` (422) يكون `details` خريطة مسطحة `{ "fieldName": "required" | "max_length:255" | "invalid" }` بأسماء الحقول بصيغة camelCase.
+
 أكواد شائعة: `validation_failed`, `unauthorized`, `forbidden`, `not_found`, `conflict`, `rate_limited`, `otp_invalid`, `otp_expired`, `otp_locked`, `phone_invalid`, `account_suspended`, `driver_not_approved`, `file_too_large`, `unsupported_file_type`, `insufficient_balance`.
 
 أرقام الجوال: تُقبل `05XXXXXXXX` أو `5XXXXXXXX` أو `+9665XXXXXXXX` وتُطبَّع إلى E.164 `+9665XXXXXXXX`.
@@ -133,7 +135,7 @@ JWT claims: `sub` (userId), `phone`, `roles` (مصفوفة), `name`, `lang`, `pe
 
 - GET `/admin/dashboard/summary` → `{ "pendingDriverApplications", "approvedDrivers", "onlineDrivers", "passengers", "tripsToday": 0, "usersToday" }`
 - GET `/admin/drivers?status=&search=&page=` → صفحة من `{ "id", "applicationNumber", "fullName", "phoneNumber", "status", "cityName", "vehicle": "تويوتا كامري 2023 · أ ب ج 2841" | null, "submittedAt", "documentsPending": 2 }`
-- GET `/admin/drivers/{id}` → نفس بنية `/driver/application` + `user` + `statusHistory` (من audit).
+- GET `/admin/drivers/{id}` → نفس بنية `/driver/application` + `user` + `statusHistory: [ { "id", "action", "fromStatus", "toStatus", "actorName", "reason", "createdAt" } ]` (مشتق من `audit_logs`).
 - POST `/admin/drivers/{id}/review` `{ "action": "start_review" }` → `under_review`.
 - POST `/admin/drivers/{id}/approve` → `approved` (يتطلب كل المستندات المطلوبة `verified`؛ وإلا `422`). يرسل إشعاراً للسائق.
 - POST `/admin/drivers/{id}/reject` `{ "reason" }` → `rejected`.

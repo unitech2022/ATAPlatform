@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ata-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ata
+      MYSQL_USER: ata
+      MYSQL_PASSWORD: ata
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - ata-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uata", "-pata"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ata-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ata-redis-data:/data
+
+volumes:
+  ata-mysql-data:
+  ata-redis-data:

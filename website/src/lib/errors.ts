@@ -15,13 +15,14 @@ export function describeError(error: unknown, t: I18nContextValue['t']): string 
 }
 
 /**
- * Per-field messages from a `validation_failed` envelope. The contract only
- * fixes the envelope shape, so both `details.errors` and `details.fields`
- * (`{ field: "msg" | ["msg"] }`) are accepted and keys are camelCased.
+ * Per-field messages from a `validation_failed` envelope. The API returns a
+ * flat `{ field: "code" }` map in `details`; nested `details.errors` /
+ * `details.fields` (`{ field: "msg" | ["msg"] }`) are accepted too and keys
+ * are camelCased.
  */
 export function fieldErrorsFrom(error: unknown): Record<string, string> {
   if (!isApiError(error)) return {}
-  const source = error.details.errors ?? error.details.fields
+  const source = error.details.errors ?? error.details.fields ?? error.details
   if (typeof source !== 'object' || source === null) return {}
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(source as Record<string, unknown>)) {

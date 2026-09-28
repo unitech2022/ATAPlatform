@@ -1,0 +1,27 @@
+using System.Text.Json;
+using ATA.Api.Common;
+using ATA.Domain.Admin;
+using ATA.Infrastructure.Persistence;
+
+namespace ATA.Api.Modules.Admin;
+
+/// <summary>Records sensitive administrative actions in <c>audit_logs</c>; the caller saves within its own unit of work.</summary>
+public sealed class AuditService(AtaDbContext db, ICurrentUser currentUser)
+{
+    public AuditLog Log(string action, string entityType, Guid? entityId, object? before = null, object? after = null)
+    {
+        var log = new AuditLog
+        {
+            ActorUserId = currentUser.IsAuthenticated ? currentUser.UserId : null,
+            ActorRole = currentUser.Roles.FirstOrDefault(),
+            Action = action,
+            EntityType = entityType,
+            EntityId = entityId,
+            BeforeJson = before is null ? null : JsonSerializer.Serialize(before, JsonDefaults.Options),
+            AfterJson = after is null ? null : JsonSerializer.Serialize(after, JsonDefaults.Options),
+            IpAddress = currentUser.IpAddress,
+        };
+        db.AuditLogs.Add(log);
+        return log;
+    }
+}
