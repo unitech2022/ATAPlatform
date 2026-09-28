@@ -37,6 +37,11 @@ export type IconName =
   | 'map'
   | 'route'
   | 'star'
+  | 'polygon'
+  | 'tag'
+  | 'activity'
+  | 'sliders'
+  | 'target'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -213,6 +218,38 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z" />,
+  polygon: (
+    <>
+      <path d="M7 5 18 4l3 8-6 8-10-3z" />
+      <circle cx="7" cy="5" r="1.5" />
+      <circle cx="18" cy="4" r="1.5" />
+      <circle cx="21" cy="12" r="1.5" />
+      <circle cx="15" cy="20" r="1.5" />
+      <circle cx="5" cy="17" r="1.5" />
+    </>
+  ),
+  tag: (
+    <>
+      <path d="M3 12V4h8l10 10-8 8z" />
+      <circle cx="7.5" cy="8.5" r="1.5" />
+    </>
+  ),
+  activity: <path d="M3 12h4l3-7 4 14 3-7h4" />,
+  sliders: (
+    <>
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8M4 12h14" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="10" cy="17" r="2" />
+      <circle cx="20" cy="12" r="2" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="12" cy="12" r="1" />
+    </>
+  ),
 }
 
 export function Icon({ name, className = 'size-5' }: { name: IconName; className?: string }) {

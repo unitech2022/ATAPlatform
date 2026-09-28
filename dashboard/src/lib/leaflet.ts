@@ -80,6 +80,16 @@ export function driverIcon(tone: MarkerTone, highlighted = false) {
 export const routeLineStyle: L.PolylineOptions = { color: '#123650', weight: 4, opacity: 0.85, dashArray: '2 8', lineCap: 'round' }
 export const routeLineActiveStyle: L.PolylineOptions = { color: '#19b7a5', weight: 4, opacity: 0.95, lineCap: 'round' }
 
+/** Zone polygon styles — brand fill for the collection, ink for the highlighted/edited one, muted for context. */
+export const zonePolygonStyle: L.PolylineOptions = { color: '#19b7a5', weight: 2, fillColor: '#19b7a5', fillOpacity: 0.15 }
+export const zonePolygonSelectedStyle: L.PolylineOptions = { color: '#123650', weight: 3, fillColor: '#123650', fillOpacity: 0.25 }
+export const zonePolygonMutedStyle: L.PolylineOptions = { color: '#6b7f8e', weight: 1.5, fillColor: '#6b7f8e', fillOpacity: 0.08, dashArray: '4 6' }
+
+/** Polygon style tinted with an API-supplied colour (demand levels). */
+export function tintedPolygonStyle(color: string): L.PolylineOptions {
+  return { color, weight: 2, fillColor: color, fillOpacity: 0.35 }
+}
+
 /** Escapes text before it is placed inside marker popups / tooltips (they are raw HTML). */
 export function escapeHtml(value: string | null | undefined) {
   return (value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)

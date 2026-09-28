@@ -344,3 +344,263 @@ export interface LiveSnapshot {
   searchingTrips: LiveTrip[]
   generatedAt?: string
 }
+
+// ---------------------------------------------------------------------------
+// F10 — zones, pricing, demand (docs/07-feature-f9-f10-matching-pricing.md)
+// ---------------------------------------------------------------------------
+
+/** `[lat, lng]` pair as stored in `zones.polygon`. */
+export type LatLngTuple = [number, number]
+
+export interface OperatingHour {
+  /** 0 = Sunday … 6 = Saturday. */
+  day: number
+  /** "HH:mm" */
+  from: string
+  /** "HH:mm" */
+  to: string
+}
+
+export interface ZoneCategorySetting {
+  rideCategoryId: string
+  isEnabled: boolean
+  surgeCap: number
+}
+
+export interface Zone {
+  id: string
+  cityId: string | null
+  code: string
+  nameAr: string
+  nameEn: string
+  polygon: LatLngTuple[]
+  centerLat: number
+  centerLng: number
+  priority: number
+  isActive: boolean
+  /** null = always open. */
+  operatingHours: OperatingHour[] | null
+  zoneCategorySettings: ZoneCategorySetting[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ZoneInput = Omit<Zone, 'id' | 'createdAt' | 'updatedAt'>
+
+export interface TimeMultiplier {
+  id?: string
+  /** null = every day. */
+  dayOfWeek: number | null
+  /** "HH:mm" */
+  fromTime: string
+  /** "HH:mm" */
+  toTime: string
+  multiplier: number
+  label: string
+}
+
+export interface PricingRule {
+  id: string
+  rideCategoryId: string
+  /** null = whole city. */
+  zoneId: string | null
+  name: string
+  baseFare: number
+  perKm: number
+  perMinute: number
+  bookingFee: number
+  serviceFeePercent: number
+  minFare: number
+  waitingPerMinute: number
+  freeWaitingMinutes: number
+  cancellationFee: number
+  driverSharePercent: number
+  effectiveFrom: string
+  effectiveTo: string | null
+  priority: number
+  isActive: boolean
+  timeMultipliers: TimeMultiplier[]
+}
+
+export type PricingRuleInput = Omit<PricingRule, 'id'>
+
+export interface GeoPoint {
+  lat: number
+  lng: number
+}
+
+export interface SimulateRequest {
+  pickup: GeoPoint
+  dropoff: GeoPoint
+  stops: GeoPoint[]
+  rideCategoryId?: string
+  /** ISO datetime used instead of "now" when evaluating time multipliers and demand. */
+  at?: string
+}
+
+export interface DemandLevelSummary {
+  code: string
+  name: string
+  multiplier: number
+  /** CSS colour supplied by the API (e.g. `#c23b4a`). */
+  color: string
+}
+
+export interface FareBreakdown {
+  baseFare: number
+  distanceFare: number
+  timeFare: number
+  minFareApplied: boolean
+  timeMultiplier: number
+  demandMultiplier: number
+  bookingFee: number
+  serviceFee: number
+  discount: number
+}
+
+export interface SimulatedCategory {
+  rideCategoryId: string
+  code: string
+  name: string
+  etaMinutes: number | null
+  total: number
+  driverNetEarnings: number
+  offerMin: number
+  offerMax: number
+  breakdown: FareBreakdown
+}
+
+export interface SimulateResult {
+  distanceMeters: number
+  durationSeconds: number
+  pickupZone: { id: string | null; name: string | null } | null
+  demand: DemandLevelSummary | null
+  categories: SimulatedCategory[]
+}
+
+export interface DemandLevel {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string
+  multiplier: number
+  color: string
+  sortOrder: number
+}
+
+export type DemandMetric = 'requests_per_driver'
+
+export interface DemandRule {
+  id: string
+  zoneId: string | null
+  rideCategoryId: string | null
+  metric: DemandMetric
+  windowMinutes: number
+  thresholdModerate: number
+  thresholdHigh: number
+  thresholdVeryHigh: number
+  isActive: boolean
+}
+
+export type DemandRuleInput = Omit<DemandRule, 'id'>
+
+export interface DemandOverride {
+  id: string
+  zoneId: string
+  zoneName?: string | null
+  rideCategoryId: string | null
+  demandLevelId: string
+  reason: string
+  startsAt: string
+  endsAt: string
+  createdBy: string | null
+  createdByName?: string | null
+}
+
+export type DemandOverrideInput = Omit<DemandOverride, 'id' | 'createdBy' | 'createdByName' | 'zoneName'>
+
+export type DemandSource = 'override' | 'snapshot' | 'default'
+
+export interface CurrentDemand {
+  zoneId: string
+  zoneName: string
+  rideCategoryId: string | null
+  level: DemandLevelSummary
+  requestsCount: number
+  onlineDrivers: number
+  ratio: number | null
+  computedAt: string | null
+  source: DemandSource
+}
+
+// ---------------------------------------------------------------------------
+// F9 — matching
+// ---------------------------------------------------------------------------
+
+export interface MatchingWeights {
+  distance: number
+  eta: number
+  rating: number
+  acceptance: number
+  cancellation: number
+  tier: number
+  favorite: number
+}
+
+export interface MatchingSettings {
+  id: string
+  zoneId: string | null
+  rideCategoryId: string | null
+  radiusMeters: number
+  maxRadiusMeters: number
+  radiusStepMeters: number
+  offerTimeoutSeconds: number
+  searchTimeoutSeconds: number
+  maxCandidates: number
+  weights: MatchingWeights
+  allowCategoryUpgrade: boolean
+  preferFavoriteDriver: boolean
+  isActive: boolean
+}
+
+export type MatchingSettingsInput = Omit<MatchingSettings, 'id'>
+
+export type MatchingOutcome = 'assigned' | 'exhausted' | 'timeout' | 'cancelled' | 'in_progress'
+export type CandidateResponse = 'accepted' | 'rejected' | 'expired' | null
+
+export interface MatchingCandidate {
+  driverId: string
+  driverName: string | null
+  distanceMeters: number
+  etaSeconds: number
+  /** 0..1, higher is better. */
+  score: number
+  rank: number
+  offered: boolean
+  response: CandidateResponse
+}
+
+export interface MatchingAttempt {
+  id: string
+  round: number
+  radiusMeters: number
+  candidatesCount: number
+  startedAt: string
+  finishedAt: string | null
+  outcome: MatchingOutcome | null
+  candidates: MatchingCandidate[]
+}
+
+export interface TripMatching {
+  attempts: MatchingAttempt[]
+}
+
+export interface MatchingStats {
+  tripsRequested: number
+  assigned: number
+  noDrivers: number
+  averageAssignSeconds: number | null
+  /** 0..1 */
+  offerAcceptanceRate: number | null
+  averageRounds: number | null
+}

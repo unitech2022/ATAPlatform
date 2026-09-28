@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { PageSpinner } from './components/Spinner'
 import { AuthProvider } from './context/AuthProvider'
@@ -19,6 +19,14 @@ import { TripsPage } from './pages/TripsPage'
 // Map pages pull in Leaflet + SignalR, so they load on demand.
 const TripDetailPage = lazy(() => import('./pages/TripDetailPage').then((module) => ({ default: module.TripDetailPage })))
 const LiveMapPage = lazy(() => import('./pages/LiveMapPage').then((module) => ({ default: module.LiveMapPage })))
+const ZonesPage = lazy(() => import('./pages/ZonesPage').then((module) => ({ default: module.ZonesPage })))
+const PricingRulesPage = lazy(() => import('./pages/PricingRulesPage').then((module) => ({ default: module.PricingRulesPage })))
+const DemandPage = lazy(() => import('./pages/DemandPage').then((module) => ({ default: module.DemandPage })))
+const MatchingSettingsPage = lazy(() => import('./pages/MatchingSettingsPage').then((module) => ({ default: module.MatchingSettingsPage })))
+
+function Lazy({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<PageSpinner />}>{children}</Suspense>
+}
 
 export default function App() {
   return (
@@ -52,6 +60,38 @@ export default function App() {
                     }
                   />
                   <Route path="ride-categories" element={<RideCategoriesPage />} />
+                  <Route
+                    path="zones"
+                    element={
+                      <Lazy>
+                        <ZonesPage />
+                      </Lazy>
+                    }
+                  />
+                  <Route
+                    path="pricing-rules"
+                    element={
+                      <Lazy>
+                        <PricingRulesPage />
+                      </Lazy>
+                    }
+                  />
+                  <Route
+                    path="demand"
+                    element={
+                      <Lazy>
+                        <DemandPage />
+                      </Lazy>
+                    }
+                  />
+                  <Route
+                    path="matching-settings"
+                    element={
+                      <Lazy>
+                        <MatchingSettingsPage />
+                      </Lazy>
+                    }
+                  />
                   <Route path="audit-logs" element={<AuditLogsPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

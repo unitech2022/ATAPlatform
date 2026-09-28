@@ -61,6 +61,8 @@ body {
 
 .leaflet-container {
   font-family: var(--font-sans);
+  /* Leaflet panes/controls carry z-index 400–1000; isolate them so they never paint over modals or the sticky top bar. */
+  isolation: isolate;
 }
 
 .leaflet-popup-content-wrapper,

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router'
 import logo from '../assets/logo.png'
 import { useLang } from '../context/lang'
-import { NAV_ITEMS } from '../nav'
+import { NAV_GROUPS } from '../nav'
 import { Icon } from './Icon'
 
 export interface SidebarProps {
@@ -18,8 +18,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <>
       {open && <button type="button" aria-label={t('closeMenu')} onClick={onClose} className="fixed inset-0 z-30 bg-ink/50 lg:hidden" />}
       <aside
-        className={`fixed inset-y-0 start-0 z-40 flex w-72 max-w-[85vw] flex-col bg-ink text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:max-w-none lg:translate-x-0 ${
-          open ? 'translate-x-0 shadow-panel' : 'ltr:-translate-x-full rtl:translate-x-full'
+        className={`fixed inset-y-0 start-0 z-40 flex w-72 max-w-[85vw] flex-col bg-ink text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:max-w-none ${
+          open ? 'translate-x-0 shadow-panel' : 'max-lg:ltr:-translate-x-full max-lg:rtl:translate-x-full'
         }`}
       >
         <div className="flex h-20 items-center justify-between gap-3 border-b border-white/10 px-5">
@@ -39,24 +39,31 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV_ITEMS.map((item) => {
-            const active = item.isActive(pathname, search)
-            return (
-              <Link
-                key={item.key}
-                to={item.to}
-                onClick={onClose}
-                aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
-                  active ? 'bg-brand text-white shadow-brand' : 'text-white/70 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Icon name={item.icon} className="size-5 shrink-0" />
-                <span className="truncate">{t(item.key)}</span>
-              </Link>
-            )
-          })}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {NAV_GROUPS.map((group, index) => (
+            <div key={group.key ?? `group-${index}`} className={index > 0 ? 'mt-5 border-t border-white/10 pt-4' : ''}>
+              {group.key && <p className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wide text-white/40">{t(group.key)}</p>}
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const active = item.isActive(pathname, search)
+                  return (
+                    <Link
+                      key={item.key}
+                      to={item.to}
+                      onClick={onClose}
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
+                        active ? 'bg-brand text-white shadow-brand' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <Icon name={item.icon} className="size-5 shrink-0" />
+                      <span className="truncate">{t(item.key)}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-white/10 px-5 py-4 text-xs text-white/50">

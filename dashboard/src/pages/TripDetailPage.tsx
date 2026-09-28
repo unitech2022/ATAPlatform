@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { Badge, TripStatusBadge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
@@ -17,11 +17,12 @@ import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { trips } from '../lib/admin'
+import { matching, trips } from '../lib/admin'
 import { formatDateTime, formatKm, formatMinutes, formatMoney, formatNumber } from '../lib/format'
 import { escapeHtml, L, pinIcon, routeLineStyle, stopIcon } from '../lib/leaflet'
+import { MATCHING_OUTCOME_KEY } from '../lib/pricing'
 import { isTerminalTripStatus, PAYMENT_METHOD_KEY, PRICING_MODE_KEY, TRIP_ACTOR_KEY } from '../lib/trips'
-import type { TripDetail, TripEvent, TripTimeline } from '../lib/types'
+import type { CandidateResponse, MatchingAttempt, MatchingCandidate, TripDetail, TripEvent, TripTimeline } from '../lib/types'
 
 const TIMELINE_STEPS: { key: keyof TripTimeline; label: TranslationKey }[] = [
   { key: 'requestedAt', label: 'tlRequested' },
@@ -193,6 +194,10 @@ export function TripDetailPage() {
         </Card>
       </div>
 
+      <Card title={t('matchingSection')} description={t('matchingSectionCopy')} flush className="mb-6">
+        <MatchingSection tripId={id} />
+      </Card>
+
       <ReasonModal
         open={cancelOpen}
         title={t('cancelTripTitle')}
@@ -326,5 +331,104 @@ function EventsTable({ events }: { events: TripEvent[] }) {
       emptyDescription=""
       renderExpanded={(row) => (expanded === row.index ? <JsonView label={t('details')} value={row.data} /> : null)}
     />
+  )
+}
+
+const RESPONSE_META: Record<Exclude<CandidateResponse, null>, { key: TranslationKey; tone: 'brand' | 'danger' | 'muted' }> = {
+  accepted: { key: 'respAccepted', tone: 'brand' },
+  rejected: { key: 'respRejected', tone: 'danger' },
+  expired: { key: 'respExpired', tone: 'muted' },
+}
+
+function MatchingSection({ tripId }: { tripId: string }) {
+  const { t, lang } = useLang()
+  const query = useQuery(() => matching.forTrip(tripId), `trip-matching:${tripId}`)
+
+  if (query.loading && !query.data) return <PageSpinner />
+  // Older backends answer 404 for trips created before F9; that is simply "no matching data".
+  if (query.error && query.error.status !== 404) return <ErrorState error={query.error} onRetry={query.reload} />
+
+  const attempts = [...(query.data?.attempts ?? [])].sort((a, b) => a.round - b.round)
+  if (attempts.length === 0) return <EmptyState icon="target" title={t('noMatching')} />
+
+  return (
+    <div className="divide-y divide-line">
+      {attempts.map((attempt) => (
+        <MatchingRound key={attempt.id} attempt={attempt} lang={lang} />
+      ))}
+    </div>
+  )
+}
+
+function MatchingRound({ attempt, lang }: { attempt: MatchingAttempt; lang: 'ar' | 'en' }) {
+  const { t } = useLang()
+  const navigate = useNavigate()
+  const outcome = attempt.outcome ?? 'in_progress'
+  const outcomeTone = outcome === 'assigned' ? 'brand' : outcome === 'in_progress' ? 'warning' : outcome === 'cancelled' ? 'muted' : 'danger'
+  const candidates = [...attempt.candidates].sort((a, b) => a.rank - b.rank)
+
+  const columns: Column<MatchingCandidate>[] = [
+    { key: 'rank', header: t('rank'), className: 'text-center', render: (row) => <span className="ltr-nums font-bold">{formatNumber(row.rank)}</span> },
+    {
+      key: 'driver',
+      header: t('driver'),
+      render: (row) => (
+        <button type="button" onClick={() => navigate(`/drivers/${row.driverId}`)} className="text-start font-bold text-brand hover:underline">
+          {row.driverName || t('unnamed')}
+        </button>
+      ),
+    },
+    { key: 'distance', header: t('distance'), className: 'text-end', render: (row) => <span className="ltr-nums">{formatKm(row.distanceMeters)} {t('km')}</span> },
+    { key: 'eta', header: t('eta'), className: 'text-end', render: (row) => <span className="ltr-nums">{formatMinutes(row.etaSeconds)} {t('min')}</span> },
+    {
+      key: 'score',
+      header: t('score'),
+      render: (row) => (
+        <span className="flex min-w-36 items-center gap-2">
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-cloud" dir="ltr">
+            <span className="block h-full rounded-full bg-brand" style={{ width: `${Math.round(Math.min(1, Math.max(0, row.score)) * 100)}%` }} />
+          </span>
+          <span className="ltr-nums w-12 text-end text-xs font-bold">{(Math.round(row.score * 1000) / 1000).toFixed(3)}</span>
+        </span>
+      ),
+    },
+    { key: 'offered', header: t('offered'), className: 'text-center', render: (row) => <Badge tone={row.offered ? 'ink' : 'muted'}>{row.offered ? t('yes') : t('no')}</Badge> },
+    {
+      key: 'response',
+      header: t('response'),
+      render: (row) => {
+        const meta = row.response ? RESPONSE_META[row.response] : null
+        return meta ? <Badge tone={meta.tone}>{t(meta.key)}</Badge> : <span className="text-xs text-muted">{row.offered ? '—' : t('respNone')}</span>
+      },
+    },
+  ]
+
+  return (
+    <section>
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 text-sm sm:px-6">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+          <Icon name="target" className="size-4" />
+        </span>
+        <span className="font-bold">
+          {t('round')} <span className="ltr-nums">{formatNumber(attempt.round)}</span>
+        </span>
+        <Badge tone={outcomeTone}>{t(MATCHING_OUTCOME_KEY[outcome] ?? 'outcomeInProgress')}</Badge>
+        <span className="text-muted">
+          {t('searchRadius')}: <span className="ltr-nums font-bold text-ink">{formatKm(attempt.radiusMeters)} {t('km')}</span>
+        </span>
+        <span className="text-muted">
+          {t('candidates')}: <span className="ltr-nums font-bold text-ink">{formatNumber(attempt.candidatesCount)}</span>
+        </span>
+        <span className="text-xs text-muted">
+          {t('startedAt')}: {formatDateTime(attempt.startedAt, lang)}
+          {attempt.finishedAt ? ` · ${t('finishedAt')}: ${formatDateTime(attempt.finishedAt, lang)}` : ''}
+        </span>
+      </header>
+      {candidates.length === 0 ? (
+        <p className="px-5 pb-5 text-sm text-muted sm:px-6">{t('noCandidates')}</p>
+      ) : (
+        <Table columns={columns} rows={candidates} rowKey={(row) => `${attempt.id}:${row.driverId}:${row.rank}`} emptyTitle={t('noCandidates')} emptyDescription="" />
+      )}
+    </section>
   )
 }
