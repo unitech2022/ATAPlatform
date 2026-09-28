@@ -13,7 +13,7 @@
 | `user_roles` | id, user_id (FK), role (`passenger`/`driver`/`admin`/`operations`/`corporate_admin`), granted_at — UNIQUE(user_id, role) |
 | `otp_requests` | id, phone_number, purpose (`login`), code_hash, attempts, max_attempts, expires_at, consumed_at, ip_address, created_at — INDEX(phone_number, created_at) |
 | `refresh_tokens` | id, user_id (FK), token_hash (UNIQUE), device_id, expires_at, revoked_at, replaced_by_id, created_by_ip, created_at |
-| `user_devices` | id, user_id (FK), device_id, platform (`android`/`ios`/`web`), device_name, push_token, app_version, last_seen_at, created_at — UNIQUE(user_id, device_id) |
+| `user_devices` | id, user_id (FK), device_id, platform (`android`/`ios`/`web`), device_name, push_token (معرّف اشتراك OneSignal، اختياري للتشخيص فقط)، app_version, last_seen_at, created_at — UNIQUE(user_id, device_id) |
 | `admin_accounts` | id, user_id (FK, UNIQUE), username (UNIQUE), password_hash, mfa_secret, mfa_enabled, permissions (JSON), is_active, last_login_at, created_at, updated_at |
 
 ### passengers

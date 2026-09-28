@@ -63,7 +63,7 @@ JWT claims: `sub` (userId), `phone`, `roles` (مصفوفة), `name`, `lang`, `pe
 - PATCH `/me` `{ "fullName"?: "…", "language"?: "ar|en", "gender"?: "male|female", "acceptTerms"?: true }` → المستخدم المحدّث.
 - GET `/me/notification-preferences` → `{ "trips": true, "wallet": true, "safety": true, "offers": true }`
 - PUT `/me/notification-preferences` نفس الشكل → `200`.
-- PUT `/me/devices` `{ "deviceId", "platform", "deviceName", "pushToken"?, "appVersion"? }` → `204`.
+- PUT `/me/devices` `{ "deviceId", "platform", "deviceName", "pushToken"?, "appVersion"? }` → `204`. (`pushToken` = OneSignal Subscription ID اختياري؛ الإرسال يعتمد External ID = userId.)
 - DELETE `/me` → `202` (تعطيل الحساب وجدولة الحذف؛ إلغاء كل التوكنات).
 
 ---

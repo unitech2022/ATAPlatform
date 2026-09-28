@@ -14,6 +14,7 @@
 | الهوية | رقم الجوال + OTP فقط، لا بريد إلكتروني |
 | اللغات | العربية (RTL، افتراضية) والإنجليزية |
 | الذكاء الاصطناعي | لا يوجد في النسخة الأولى |
+| الإشعارات الفورية | **OneSignal** (External ID = user_id) |
 
 ## منهجية التسليم: ميزة كاملة على كل الطبقات (Vertical Feature Slices)
 
@@ -39,7 +40,7 @@
 | F10 | **التسعير والمناطق والطلب** (Base+Distance+Time+Fees+Waiting×Demand−Discount، Zones، Demand Levels، Offer Your Price) | pricing + zones | تقدير السعر واقتراح السعر | — | Pricing Rules / Zones / Demand | 🔨 قيد التنفيذ |
 | F11 | **المدفوعات** (بوابة الدفع + Tokenization، مدى/Visa/MC/Apple Pay، الاسترداد، التسويات والسحب) | payments + payouts | طرق الدفع، السحب للسائق | — | Payments & Settlements | ⏳ |
 | F12 | **السلامة** (مشاركة الرحلة، جهات موثوقة، طوارئ، كشف التوقف/الانحراف، البلاغات) | safety | `safety` | — | Safety Cases | ⏳ |
-| F13 | **الإشعارات الفورية** (FCM/APNs، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ⏳ |
+| F13 | **الإشعارات الفورية** (OneSignal عبر External ID، Tags للدور واللغة، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ⏳ |
 | F14 | **الإلغاء والموثوقية** (قواعد، أسباب، أحداث، عقوبات الطرفين، ReliabilityProfiles) | cancellation | إلغاء بسبب + رسوم | — | قواعد الإلغاء | ⏳ |
 | F15 | **التقييم والعروض** (Ratings، Promo Codes، مستويات السائق، الحوافز) | ratings + promotions + incentives | `rating`, `promotions` | — | Promotions / Incentives | ⏳ |
 | F16 | **السائق المفضل** (المفضلة، الاختيار بالاسم، الخصم، قواعد عدم الجمع) | favorites | `favorite_drivers` | — | قواعد خصم المفضل | ⏳ |

@@ -8,7 +8,7 @@
  Dashboard (React)    ─┘         │                 │
                                  │ SignalR (خطوة 2) │ Redis (cache/locks/rate-limit)
                                  ▼                 ▼
-                          Object Storage (المستندات)  SMS / FCM / Payment Gateway
+                          Object Storage (المستندات)  SMS / OneSignal (Push) / Payment Gateway
 ```
 
 Modular Monolith: مشروع واحد قابل للنشر، مقسم إلى وحدات (Modules) بحدود واضحة، تتواصل عبر خدمات داخلية وأحداث محلية، بدون Microservices في البداية.
@@ -89,6 +89,16 @@ lib/
 
 React 19 + Vite + TypeScript + Tailwind CSS v4 (`@theme` بنفس Tokens نظام التصميم) + react-router. طبقة API واحدة (`src/lib/api.ts`) مع تخزين التوكن وتجديده.
 
+## الإشعارات الفورية — OneSignal (قرار نهائي)
+
+- مزوّد واحد للإشعارات: **OneSignal** (تطبيق OneSignal واحد يخدم الراكب والسائق وأندرويد وiOS). لا ربط مباشر مع FCM/APNs من الخلفية؛ OneSignal يتولى ذلك.
+- الربط بالمستخدم عبر **External ID = `user_id`**: التطبيق يستدعي `OneSignal.login(userId)` بعد الدخول و`OneSignal.logout()` عند الخروج، فلا حاجة لتخزين Push Tokens كمصدر حقيقة.
+- Tags في OneSignal: `role` (passenger/driver)، `lang` (ar/en)، `city`. تُحدَّث من التطبيق بعد الدخول وتغيير اللغة.
+- الخلفية ترسل عبر OneSignal REST API (`POST /notifications` مع `include_aliases.external_id`) من خلال تجريد `IPushSender` → `OneSignalPushSender` (و`LoggingPushSender` في التطوير والاختبارات).
+- كل إشعار يُحفظ أولاً في جدول `notifications` (صندوق الوارد داخل التطبيق) ثم يُرسل Push وفق `notification_preferences` (الرحلات/المحفظة/السلامة/العروض). إشعارات السلامة والرحلة الحرجة تتجاوز تفضيل الإيقاف.
+- الإعدادات: `OneSignal__AppId`, `OneSignal__RestApiKey` (سر لا يُرفع للمستودع)، وفي Flutter `--dart-define=ONESIGNAL_APP_ID=...`.
+- SMS يبقى للـOTP والحالات الحرجة فقط عبر مزوّد SMS منفصل.
+
 ## البيئات والإعدادات
 
 | المتغير | الوصف |
@@ -98,3 +108,4 @@ React 19 + Vite + TypeScript + Tailwind CSS v4 (`@theme` بنفس Tokens نظا�
 | `Otp__DevMode` | `true` في التطوير: لا SMS، والرمز يُعاد في الاستجابة |
 | `Storage__Root` | مجلد تخزين الملفات محلياً (`./storage`) |
 | `Cors__Origins` | أصول الموقع ولوحة الإدارة |
+| `OneSignal__AppId`, `OneSignal__RestApiKey` | إرسال الإشعارات الفورية (F13) |
