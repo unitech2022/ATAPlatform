@@ -7,10 +7,14 @@ import type {
   DriverDocument,
   DriverListItem,
   DriverStatus,
+  LiveSnapshot,
   Paginated,
   PassengerListItem,
   RideCategory,
   RideCategoryInput,
+  TripDetail,
+  TripListItem,
+  TripStatus,
 } from './types'
 
 export const auth = {
@@ -80,4 +84,25 @@ export type AuditLogQuery = {
 
 export const auditLogs = {
   list: (query: AuditLogQuery) => api.get<Paginated<AuditLog>>('/admin/audit-logs', query),
+}
+
+export type TripListQuery = {
+  status?: TripStatus | ''
+  /** ISO date (YYYY-MM-DD) lower bound on requestedAt. */
+  from?: string
+  /** ISO date (YYYY-MM-DD) upper bound on requestedAt. */
+  to?: string
+  search?: string
+  page?: number
+  pageSize?: number
+}
+
+export const trips = {
+  list: (query: TripListQuery) => api.get<Paginated<TripListItem>>('/admin/trips', query),
+  get: (id: string) => api.get<TripDetail>(`/admin/trips/${id}`),
+  cancel: (id: string, reason: string) => api.post<TripDetail>(`/admin/trips/${id}/cancel`, { reason }),
+}
+
+export const live = {
+  snapshot: () => api.get<LiveSnapshot>('/admin/live'),
 }

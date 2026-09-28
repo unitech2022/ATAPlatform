@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { PageSpinner } from './components/Spinner'
 import { AuthProvider } from './context/AuthProvider'
 import { LangProvider } from './context/LangProvider'
 import { ToastProvider } from './context/ToastProvider'
@@ -12,6 +14,11 @@ import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PassengersPage } from './pages/PassengersPage'
 import { RideCategoriesPage } from './pages/RideCategoriesPage'
+import { TripsPage } from './pages/TripsPage'
+
+// Map pages pull in Leaflet + SignalR, so they load on demand.
+const TripDetailPage = lazy(() => import('./pages/TripDetailPage').then((module) => ({ default: module.TripDetailPage })))
+const LiveMapPage = lazy(() => import('./pages/LiveMapPage').then((module) => ({ default: module.LiveMapPage })))
 
 export default function App() {
   return (
@@ -27,6 +34,23 @@ export default function App() {
                   <Route path="drivers" element={<DriversPage />} />
                   <Route path="drivers/:id" element={<DriverDetailPage />} />
                   <Route path="passengers" element={<PassengersPage />} />
+                  <Route path="trips" element={<TripsPage />} />
+                  <Route
+                    path="trips/:id"
+                    element={
+                      <Suspense fallback={<PageSpinner />}>
+                        <TripDetailPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="live"
+                    element={
+                      <Suspense fallback={<PageSpinner />}>
+                        <LiveMapPage />
+                      </Suspense>
+                    }
+                  />
                   <Route path="ride-categories" element={<RideCategoriesPage />} />
                   <Route path="audit-logs" element={<AuditLogsPage />} />
                   <Route path="*" element={<NotFoundPage />} />

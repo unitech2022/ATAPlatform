@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useLang } from '../context/lang'
-import { documentStatusMeta, driverStatusMeta, userStatusMeta, type StatusTone } from '../lib/status'
-import type { DocumentStatus, DriverStatus, UserStatus } from '../lib/types'
+import { documentStatusMeta, driverStatusMeta, tripStatusMeta, userStatusMeta, type StatusTone } from '../lib/status'
+import type { DocumentStatus, DriverStatus, TripStatus, UserStatus } from '../lib/types'
 
 export type BadgeTone = StatusTone | 'white'
 
@@ -38,4 +38,14 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
   const { t } = useLang()
   const meta = userStatusMeta[status] ?? userStatusMeta.active
   return <Badge tone={meta.tone}>{t(meta.key)}</Badge>
+}
+
+export function TripStatusBadge({ status, className }: { status: TripStatus; className?: string }) {
+  const { t } = useLang()
+  const meta = tripStatusMeta[status] ?? tripStatusMeta.requested
+  return (
+    <Badge tone={meta.tone} className={className}>
+      {t(meta.key)}
+    </Badge>
+  )
 }

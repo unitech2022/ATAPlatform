@@ -52,3 +52,26 @@ body {
     box-shadow: 0 -12px 40px rgb(18 54 80 / 0.12);
   }
 }
+
+/* Leaflet markers built from inline SVG (see lib/leaflet.ts) */
+.ata-marker {
+  background: transparent;
+  border: 0;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-tooltip {
+  border-radius: 12px;
+  box-shadow: var(--shadow-float);
+  color: var(--color-ink);
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}

@@ -184,3 +184,163 @@ export interface AuditLog {
   ipAddress: string | null
   createdAt: string
 }
+
+// ---------------------------------------------------------------------------
+// F8 — trips (docs/06-feature-f8-trip-lifecycle.md, "كائن Trip" + "الإدارة")
+// ---------------------------------------------------------------------------
+
+export type TripStatus =
+  | 'requested'
+  | 'searching'
+  | 'driver_assigned'
+  | 'driver_en_route'
+  | 'driver_arrived'
+  | 'waiting'
+  | 'pin_verified'
+  | 'in_trip'
+  | 'completed'
+  | 'cancelled'
+  | 'no_drivers'
+
+export type BookingType = 'now' | 'scheduled'
+export type PaymentMethod = 'cash' | 'wallet' | 'card'
+export type PricingMode = 'fixed' | 'saver' | 'offer'
+export type TripActor = 'passenger' | 'driver' | 'system' | 'admin'
+
+export interface TripPoint {
+  name: string | null
+  address: string | null
+  lat: number
+  lng: number
+}
+
+export interface TripStop extends TripPoint {
+  sequence?: number
+  arrivedAt?: string | null
+}
+
+export interface TripListItem {
+  id: string
+  tripNumber: string
+  status: TripStatus
+  passengerName: string | null
+  passengerPhone?: string | null
+  driverName: string | null
+  categoryName: string | null
+  pickupName: string | null
+  dropoffName: string | null
+  estimatedFare: number | null
+  finalFare: number | null
+  paymentMethod?: PaymentMethod
+  requestedAt: string
+}
+
+export interface TripPassenger {
+  id: string
+  fullName: string | null
+  phoneNumber: string | null
+}
+
+export interface TripDriver {
+  id: string
+  fullName: string | null
+  ratingAvg: number | null
+  photoFileId: string | null
+  phoneMasked: string | null
+  /** Admin responses may carry the full number instead of the masked one. */
+  phoneNumber?: string | null
+  gender?: Gender
+}
+
+export interface TripVehicle {
+  make: string
+  model: string
+  color: string
+  plateNumber: string
+}
+
+export interface TripTimeline {
+  requestedAt: string | null
+  assignedAt: string | null
+  arrivedAt: string | null
+  startedAt: string | null
+  completedAt: string | null
+  cancelledAt: string | null
+}
+
+export interface TripEvent {
+  id?: string
+  type: string
+  actor: TripActor
+  actorName?: string | null
+  actorUserId?: string | null
+  lat?: number | null
+  lng?: number | null
+  data?: unknown
+  createdAt: string
+}
+
+export interface TripDetail {
+  id: string
+  tripNumber: string
+  status: TripStatus
+  bookingType: BookingType
+  scheduledAt: string | null
+  rideCategory: { id: string; code: string; name: string } | null
+  pickup: TripPoint
+  dropoff: TripPoint
+  stops: TripStop[]
+  paymentMethod: PaymentMethod
+  pricingMode: PricingMode
+  offeredPrice: number | null
+  estimatedFare: number | null
+  finalFare: number | null
+  estimatedDistanceMeters: number | null
+  estimatedDurationSeconds: number | null
+  finalDistanceMeters?: number | null
+  finalDurationSeconds?: number | null
+  preferFemaleDriver?: boolean
+  riderNote?: string | null
+  passenger?: TripPassenger | null
+  driver: TripDriver | null
+  vehicle: TripVehicle | null
+  waitingSeconds: number | null
+  cancelledBy: TripActor | null
+  cancellationReason: string | null
+  timeline: TripTimeline
+  events: TripEvent[]
+}
+
+export type LiveDriverStatus = 'idle' | 'on_trip'
+
+export interface LiveDriver {
+  driverId: string
+  name: string | null
+  lat: number
+  lng: number
+  isOnline: boolean
+  status: LiveDriverStatus
+  categoryCode: string | null
+  /** Present when the driver is currently assigned to a trip. */
+  currentTripId?: string | null
+  heading?: number | null
+  updatedAt?: string | null
+}
+
+export interface LiveTrip {
+  id: string
+  tripNumber?: string
+  status: TripStatus
+  pickup: TripPoint
+  dropoff: TripPoint
+  driverId: string | null
+  passengerName?: string | null
+  requestedAt?: string | null
+}
+
+export interface LiveSnapshot {
+  drivers: LiveDriver[]
+  activeTrips: LiveTrip[]
+  searchingTrips: LiveTrip[]
+  generatedAt?: string
+}

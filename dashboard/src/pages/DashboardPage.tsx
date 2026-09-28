@@ -12,7 +12,7 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { dashboard, drivers } from '../lib/admin'
+import { dashboard, drivers, live } from '../lib/admin'
 import { formatDate, formatNumber } from '../lib/format'
 import type { DashboardSummary } from '../lib/types'
 
@@ -28,6 +28,8 @@ const STATS: { key: keyof DashboardSummary; label: TranslationKey; icon: IconNam
 const QUICK_LINKS: { key: TranslationKey; icon: IconName; to: string }[] = [
   { key: 'quickReviewApplications', icon: 'document', to: '/drivers?status=submitted' },
   { key: 'quickManagePassengers', icon: 'users', to: '/passengers' },
+  { key: 'quickTrips', icon: 'route', to: '/trips' },
+  { key: 'quickLiveMap', icon: 'map', to: '/live' },
   { key: 'quickRideCategories', icon: 'layers', to: '/ride-categories' },
   { key: 'quickAuditLogs', icon: 'list', to: '/audit-logs' },
 ]
@@ -38,6 +40,14 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const summary = useQuery(() => dashboard.summary(), 'dashboard-summary')
   const pending = useQuery(() => drivers.list({ status: 'submitted', page: 1, pageSize: 5 }), 'dashboard-pending')
+  const liveNow = useQuery(() => live.snapshot(), 'dashboard-live')
+  const liveStats = liveNow.data
+    ? [
+        { key: 'searchingTrips' as const, value: liveNow.data.searchingTrips.length, tone: 'warning' as const },
+        { key: 'activeTrips' as const, value: liveNow.data.activeTrips.length, tone: 'brand' as const },
+        { key: 'driversOnline' as const, value: liveNow.data.drivers.filter((driver) => driver.isOnline).length, tone: 'ink' as const },
+      ]
+    : null
 
   return (
     <>
@@ -63,6 +73,29 @@ export function DashboardPage() {
             />
           ))}
         </div>
+      )}
+
+      {!liveNow.error && (
+        <Card
+          className="mb-6"
+          title={t('liveNow')}
+          description={t('liveNowCopy')}
+          action={
+            <Link to="/live" className="inline-flex items-center gap-1 text-sm font-bold text-brand">
+              {t('openLiveMap')}
+              <Icon name="chevron" className="size-4 rtl:rotate-180" />
+            </Link>
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(liveStats ?? [{ key: 'searchingTrips' as const, value: null, tone: 'warning' as const }, { key: 'activeTrips' as const, value: null, tone: 'brand' as const }, { key: 'driversOnline' as const, value: null, tone: 'ink' as const }]).map((stat) => (
+              <div key={stat.key} className="flex items-center justify-between rounded-2xl bg-cloud px-4 py-3">
+                <span className="text-sm font-bold text-muted">{t(stat.key)}</span>
+                <Badge tone={stat.tone}>{stat.value === null ? '…' : formatNumber(stat.value)}</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">

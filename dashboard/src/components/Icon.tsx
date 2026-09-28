@@ -34,6 +34,9 @@ export type IconName =
   | 'refresh'
   | 'download'
   | 'info'
+  | 'map'
+  | 'route'
+  | 'star'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -196,6 +199,20 @@ const paths: Record<IconName, ReactNode> = {
       <path d="M12 11v5M12 8h.01" />
     </>
   ),
+  map: (
+    <>
+      <path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
+      <path d="M9 4v14M15 6v14" />
+    </>
+  ),
+  route: (
+    <>
+      <circle cx="6" cy="19" r="2.5" />
+      <circle cx="18" cy="5" r="2.5" />
+      <path d="M8.5 19H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5" />
+    </>
+  ),
+  star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z" />,
 }
 
 export function Icon({ name, className = 'size-5' }: { name: IconName; className?: string }) {

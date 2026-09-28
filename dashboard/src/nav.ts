@@ -26,6 +26,8 @@ export const NAV_ITEMS: NavItem[] = [
     isActive: (pathname, search) => pathname === '/drivers' && statusOf(search) === 'approved',
   },
   { key: 'navPassengers', icon: 'users', to: '/passengers', isActive: (pathname) => pathname.startsWith('/passengers') },
+  { key: 'navTrips', icon: 'route', to: '/trips', isActive: (pathname) => pathname.startsWith('/trips') },
+  { key: 'navLiveMap', icon: 'map', to: '/live', isActive: (pathname) => pathname.startsWith('/live') },
   { key: 'navRideCategories', icon: 'layers', to: '/ride-categories', isActive: (pathname) => pathname.startsWith('/ride-categories') },
   { key: 'navAuditLogs', icon: 'list', to: '/audit-logs', isActive: (pathname) => pathname.startsWith('/audit-logs') },
 ]
@@ -36,6 +38,9 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (/^\/drivers\/[^/]+/.test(pathname)) return 'driverDetailTitle'
   if (pathname.startsWith('/drivers')) return 'driversTitle'
   if (pathname.startsWith('/passengers')) return 'passengersTitle'
+  if (/^\/trips\/[^/]+/.test(pathname)) return 'tripDetailTitle'
+  if (pathname.startsWith('/trips')) return 'tripsTitle'
+  if (pathname.startsWith('/live')) return 'liveMapTitle'
   if (pathname.startsWith('/ride-categories')) return 'rideCategoriesTitle'
   if (pathname.startsWith('/audit-logs')) return 'auditLogsTitle'
   return 'appName'

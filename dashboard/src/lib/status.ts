@@ -1,5 +1,5 @@
 import type { TranslationKey } from '../i18n'
-import type { DocumentStatus, DriverStatus, UserStatus } from './types'
+import type { DocumentStatus, DriverStatus, TripStatus, UserStatus } from './types'
 
 export type StatusTone = 'brand' | 'ink' | 'muted' | 'danger' | 'warning'
 
@@ -32,4 +32,18 @@ export const userStatusMeta: Record<UserStatus, StatusMeta> = {
 
 export function driverStatusKey(status: DriverStatus | null | undefined): TranslationKey | null {
   return status ? (driverStatusMeta[status]?.key ?? null) : null
+}
+
+export const tripStatusMeta: Record<TripStatus, StatusMeta> = {
+  requested: { tone: 'muted', key: 'tripStatusRequested' },
+  searching: { tone: 'warning', key: 'tripStatusSearching' },
+  driver_assigned: { tone: 'ink', key: 'tripStatusDriverAssigned' },
+  driver_en_route: { tone: 'ink', key: 'tripStatusDriverEnRoute' },
+  driver_arrived: { tone: 'ink', key: 'tripStatusDriverArrived' },
+  waiting: { tone: 'warning', key: 'tripStatusWaiting' },
+  pin_verified: { tone: 'ink', key: 'tripStatusPinVerified' },
+  in_trip: { tone: 'brand', key: 'tripStatusInTrip' },
+  completed: { tone: 'brand', key: 'tripStatusCompleted' },
+  cancelled: { tone: 'danger', key: 'tripStatusCancelled' },
+  no_drivers: { tone: 'muted', key: 'tripStatusNoDrivers' },
 }

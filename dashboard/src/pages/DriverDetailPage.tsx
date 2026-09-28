@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { Badge, DocumentStatusBadge, DriverStatusBadge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
+import { DefinitionList } from '../components/DefinitionList'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { FilePreviewModal, type FilePreviewTarget } from '../components/FilePreviewModal'
@@ -310,26 +311,6 @@ export function DriverDetailPage() {
       />
       <FilePreviewModal target={preview} onClose={() => setPreview(null)} />
     </>
-  )
-}
-
-interface DefinitionItem {
-  label: string
-  value: string
-  /** Numbers, phones and identifiers are always rendered left-to-right. */
-  ltr?: boolean
-}
-
-function DefinitionList({ items }: { items: DefinitionItem[] }) {
-  return (
-    <dl className="grid gap-3 sm:grid-cols-2">
-      {items.map((item) => (
-        <div key={item.label} className="min-w-0 rounded-2xl bg-cloud px-4 py-3">
-          <dt className="text-xs font-bold text-muted">{item.label}</dt>
-          <dd className={`mt-1 truncate font-bold ${item.ltr ? 'ltr-nums' : ''}`}>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
   )
 }
 
