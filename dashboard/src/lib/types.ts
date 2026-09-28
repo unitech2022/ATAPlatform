@@ -47,6 +47,8 @@ export interface DashboardSummary {
   passengers: number
   tripsToday: number
   usersToday: number
+  /** Added by F21 (docs/12 §summary); rendered only when the backend provides it. */
+  today?: { completedTrips?: number; gmv?: number } | null
 }
 
 export type DriverStatus =
@@ -309,6 +311,9 @@ export interface TripDetail {
   cancellationReason: string | null
   timeline: TripTimeline
   events: TripEvent[]
+  /** F11 — card payment attached to the trip (null for cash/wallet trips). */
+  payment?: TripPayment | null
+  discountTotal?: number
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -603,4 +608,476 @@ export interface MatchingStats {
   /** 0..1 */
   offerAcceptanceRate: number | null
   averageRounds: number | null
+}
+
+// ---------------------------------------------------------------------------
+// F11 — payments, refunds, payouts, settlements, wallets, ledger
+// (docs/08-feature-f11-f13-payments-notifications.md §F11.2 / §F11.5)
+// ---------------------------------------------------------------------------
+
+export type PaymentStatus = 'initiated' | 'authorized' | 'captured' | 'failed' | 'voided' | 'refunded' | 'partially_refunded'
+export type PaymentPurpose = 'trip' | 'topup' | 'cancellation_fee'
+export type PaymentChannel = 'card' | 'apple_pay' | 'sandbox'
+export type PaymentProvider = 'sandbox' | 'moyasar'
+export type CardBrand = 'mada' | 'visa' | 'mastercard'
+
+export interface PaymentAction {
+  type: 'redirect'
+  url: string
+  expiresAt?: string | null
+}
+
+/** `Trip.payment` (§F11.5 "الراكب"). */
+export interface TripPayment {
+  id: string
+  status: PaymentStatus
+  method: PaymentChannel
+  brand?: CardBrand | string | null
+  last4?: string | null
+  authorizedAmount: number | null
+  capturedAmount: number | null
+  action?: PaymentAction | null
+}
+
+export interface PaymentListItem {
+  id: string
+  purpose: PaymentPurpose
+  status: PaymentStatus
+  method: PaymentChannel
+  provider: PaymentProvider | string
+  amount: number
+  capturedAmount: number | null
+  refundedAmount: number
+  userName: string | null
+  userPhone: string | null
+  tripNumber: string | null
+  gatewayPaymentId: string | null
+  createdAt: string
+}
+
+export type WebhookProcessingStatus = 'pending' | 'processed' | 'ignored' | 'failed'
+
+export interface PaymentWebhookEvent {
+  id: string
+  provider: string
+  eventId: string
+  eventType: string
+  gatewayPaymentId: string | null
+  signatureValid: boolean
+  payload?: unknown
+  processingStatus: WebhookProcessingStatus
+  error: string | null
+  receivedAt: string
+  processedAt: string | null
+}
+
+/** One ledger line tied to the payment (either a wallet transaction or a journal). */
+export interface LedgerLine {
+  id: string
+  account: string
+  debit: number
+  credit: number
+  transactionId?: string | null
+  journalId?: string | null
+  /** Wallet transaction type or journal type (§F11.3). */
+  type?: string | null
+  description?: string | null
+  createdAt: string
+}
+
+export type RefundStatus = 'pending_approval' | 'approved' | 'processing' | 'succeeded' | 'failed' | 'rejected'
+export type RefundDestination = 'original_method' | 'wallet'
+export type RefundReasonCode =
+  | 'fare_dispute'
+  | 'trip_not_taken'
+  | 'duplicate_charge'
+  | 'service_issue'
+  | 'cancellation_fee_waived'
+  | 'goodwill'
+  | 'other'
+
+export interface Refund {
+  id: string
+  refundNumber: string
+  paymentId: string | null
+  tripId: string | null
+  tripNumber?: string | null
+  userId: string
+  userName?: string | null
+  userPhone?: string | null
+  amount: number
+  type: 'full' | 'partial'
+  destination: RefundDestination
+  reasonCode: RefundReasonCode
+  reason: string | null
+  status: RefundStatus
+  requestedBy: string
+  requestedByName?: string | null
+  approvedBy: string | null
+  approvedByName?: string | null
+  approvedAt: string | null
+  rejectedBy?: string | null
+  rejectedByName?: string | null
+  rejectedReason: string | null
+  gatewayRefundId?: string | null
+  failureMessage: string | null
+  processedAt: string | null
+  createdAt: string
+}
+
+export interface RefundInput {
+  amount: number
+  reasonCode: RefundReasonCode
+  reason: string
+  destination?: RefundDestination
+}
+
+/** GET /admin/trips/{id}/receipt (§F11.6). */
+export interface ReceiptLine {
+  code: string
+  label: string
+  amount: number
+  source?: string | null
+  reference?: string | null
+}
+
+export interface Receipt {
+  tripId: string
+  tripNumber: string
+  status: string
+  issuedAt: string
+  currency: string
+  lines: ReceiptLine[]
+  subtotal: number
+  discountTotal: number
+  total: number
+  vatRate: number
+  vatIncluded: number
+  payment: {
+    method: PaymentMethod | string
+    brand?: string | null
+    last4?: string | null
+    status?: PaymentStatus | string | null
+    paidAmount: number | null
+    fallbackToCash: boolean
+  } | null
+  refunds: { id: string; amount: number; status: RefundStatus; destination: RefundDestination; createdAt: string }[]
+  netPaid: number
+}
+
+export interface PaymentDetail extends PaymentListItem {
+  userId: string
+  tripId: string | null
+  walletId: string | null
+  paymentMethodId: string | null
+  currency: string
+  authorizedAmount: number | null
+  captureMode: 'manual' | 'auto'
+  gatewayStatus: string | null
+  card?: { brand: CardBrand | string; last4: string } | null
+  actionUrl: string | null
+  actionExpiresAt: string | null
+  failureCode: string | null
+  failureMessage: string | null
+  idempotencyKey: string | null
+  authorizedAt: string | null
+  capturedAt: string | null
+  failedAt: string | null
+  voidedAt: string | null
+  updatedAt?: string | null
+  metadata?: unknown
+  webhookEvents: PaymentWebhookEvent[]
+  refunds: Refund[]
+  ledger: LedgerLine[]
+}
+
+export type PayoutStatus = 'requested' | 'approved' | 'paid' | 'rejected' | 'cancelled'
+
+export interface Payout {
+  id: string
+  payoutNumber: string
+  driverId?: string
+  driverName?: string | null
+  driverPhone?: string | null
+  batchId?: string | null
+  batchNumber?: string | null
+  amount: number
+  ibanMasked: string | null
+  accountHolderName?: string | null
+  status: PayoutStatus
+  requestedAt: string
+  approvedAt: string | null
+  paidAt: string | null
+  rejectedReason: string | null
+  bankReference: string | null
+}
+
+export type PayoutBatchStatus = 'open' | 'exported' | 'paid'
+
+export interface PayoutBatch {
+  id: string
+  batchNumber: string
+  status: PayoutBatchStatus
+  payoutsCount: number
+  totalAmount: number
+  exportedAt: string | null
+  exportedByName?: string | null
+  bankReference: string | null
+  paidAt: string | null
+  paidByName?: string | null
+  createdByName?: string | null
+  createdAt: string
+  /** Present on GET /admin/payout-batches/{id}. */
+  payouts?: Payout[]
+}
+
+export type SettlementBatchStatus = 'generating' | 'ready' | 'finalized' | 'failed'
+export type SettlementDirection = 'payable_to_driver' | 'due_from_driver' | 'zero'
+
+export interface SettlementBatch {
+  id: string
+  batchNumber: string
+  cityId: string | null
+  cityName?: string | null
+  periodStart: string
+  periodEnd: string
+  status: SettlementBatchStatus
+  driversCount: number
+  totalTrips: number
+  totalGrossFares: number
+  totalEarnings: number
+  totalCommission: number
+  totalCashCollected: number
+  totalIncentives: number
+  totalCompensation: number
+  totalAdjustments: number
+  totalNet: number
+  error: string | null
+  generatedByName?: string | null
+  generatedAt: string | null
+  finalizedByName?: string | null
+  finalizedAt: string | null
+  createdAt: string
+}
+
+export interface SettlementBatchInput {
+  periodStart: string
+  periodEnd: string
+  cityId?: string
+}
+
+export interface Settlement {
+  id: string
+  batchId: string
+  driverId: string
+  driverName: string | null
+  driverPhone?: string | null
+  tripsCount: number
+  grossFares: number
+  earnings: number
+  commission: number
+  cashCollected: number
+  incentives: number
+  cancellationCompensation: number
+  adjustments: number
+  fees: number
+  topups: number
+  payoutsInPeriod: number
+  netAmount: number
+  openingBalance: number
+  closingBalance: number
+  direction: SettlementDirection
+  payoutId: string | null
+  status: 'open' | 'finalized'
+  createdAt: string
+}
+
+export type WalletKind = 'passenger' | 'driver'
+export type WalletStatus = 'active' | 'frozen'
+export type WalletTransactionType =
+  | 'topup'
+  | 'trip_payment'
+  | 'trip_earning'
+  | 'refund'
+  | 'payout'
+  | 'payout_reversal'
+  | 'adjustment'
+  | 'incentive'
+  | 'cancellation_fee'
+  | 'cancellation_compensation'
+  | 'cash_collection'
+
+export interface WalletListItem {
+  id: string
+  userId: string
+  userName: string | null
+  phone: string | null
+  kind: WalletKind
+  balance: number
+  status: WalletStatus | string
+}
+
+export interface WalletTransaction {
+  id: string
+  type: WalletTransactionType | string
+  direction: 'credit' | 'debit'
+  amount: number
+  balanceAfter: number
+  referenceType?: string | null
+  referenceId?: string | null
+  description: string | null
+  createdByName?: string | null
+  createdAt: string
+}
+
+export interface WalletDetail extends WalletListItem {
+  currency?: string
+  /** Driver wallets: max(0, −balance). */
+  cashDebt?: number
+  createdAt?: string
+  transactions: WalletTransaction[]
+}
+
+export interface WalletAdjustmentInput {
+  direction: 'credit' | 'debit'
+  amount: number
+  reason: string
+}
+
+export interface LedgerBalance {
+  account: string
+  debit: number
+  credit: number
+  balance: number
+}
+
+// ---------------------------------------------------------------------------
+// F13 — notification templates, campaigns, deliveries (§F13.3 / §F13.6)
+// ---------------------------------------------------------------------------
+
+export type NotificationChannel = 'push' | 'sms' | 'inapp'
+export type NotificationCategory = 'trips' | 'offers' | 'safety' | 'wallet' | 'promotions' | 'system'
+
+export interface NotificationEvent {
+  code: string
+  category: NotificationCategory | string
+  isCritical: boolean
+  recipients: string[] | string
+  allowedChannels: NotificationChannel[]
+  placeholders: string[]
+  deepLink: string | null
+}
+
+export interface NotificationTemplate {
+  id: string
+  code: string
+  channel: NotificationChannel
+  titleAr: string | null
+  titleEn: string | null
+  bodyAr: string
+  bodyEn: string
+  isActive: boolean
+  updatedAt: string | null
+  updatedByName: string | null
+}
+
+export interface NotificationTemplateInput {
+  code: string
+  channel: NotificationChannel
+  titleAr: string | null
+  titleEn: string | null
+  bodyAr: string
+  bodyEn: string
+  isActive: boolean
+}
+
+export interface TemplatePreview {
+  title: string | null
+  body: string
+  length: number
+  smsSegments: number
+}
+
+export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'cancelled' | 'failed'
+export type CampaignCategory = 'promotions' | 'system' | 'trips' | 'wallet'
+export type CampaignChannel = 'inapp' | 'push' | 'sms'
+
+export interface CampaignAudience {
+  roles?: ('passenger' | 'driver')[]
+  cityIds?: string[]
+  languages?: ('ar' | 'en')[]
+  genders?: ('male' | 'female')[]
+  driverTiers?: string[]
+  lastActiveWithinDays?: number
+  hasCompletedTrip?: boolean
+  userIds?: string[]
+}
+
+export interface Campaign {
+  id: string
+  name: string
+  category: CampaignCategory
+  channels: CampaignChannel[]
+  audience: CampaignAudience
+  titleAr: string
+  titleEn: string
+  bodyAr: string
+  bodyEn: string
+  deepLink: string | null
+  status: CampaignStatus
+  scheduledAt: string | null
+  startedAt: string | null
+  completedAt: string | null
+  targetCount: number
+  inappCreated: number
+  pushSent: number
+  pushFailed: number
+  pushSkipped: number
+  smsSent: number
+  smsFailed: number
+  openedCount: number
+  createdByName?: string | null
+  createdAt: string
+  updatedAt?: string | null
+}
+
+export interface CampaignInput {
+  name: string
+  category: CampaignCategory
+  channels: CampaignChannel[]
+  audience: CampaignAudience
+  titleAr: string
+  titleEn: string
+  bodyAr: string
+  bodyEn: string
+  deepLink: string | null
+}
+
+export interface AudiencePreview {
+  count: number
+  sample: { userId: string; name: string | null; phoneMasked: string | null }[]
+}
+
+export type DeliveryStatus = 'queued' | 'sent' | 'failed' | 'skipped'
+export type DeliverySkippedReason = 'preference_off' | 'no_subscription' | 'template_inactive' | 'no_phone' | 'user_inactive'
+
+export interface NotificationDelivery {
+  id: string
+  eventCode: string
+  channel: 'push' | 'sms'
+  status: DeliveryStatus
+  skippedReason: DeliverySkippedReason | string | null
+  userId?: string | null
+  userName: string | null
+  phoneMasked: string | null
+  campaignId?: string | null
+  provider: string | null
+  providerMessageId: string | null
+  errorCode: string | null
+  errorMessage: string | null
+  attempts: number
+  sentAt: string | null
+  openedAt: string | null
+  createdAt: string
+  payload?: unknown
 }

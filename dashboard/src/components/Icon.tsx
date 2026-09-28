@@ -42,6 +42,11 @@ export type IconName =
   | 'activity'
   | 'sliders'
   | 'target'
+  | 'card'
+  | 'bank'
+  | 'receipt'
+  | 'send'
+  | 'book'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -241,6 +246,36 @@ const paths: Record<IconName, ReactNode> = {
       <circle cx="16" cy="7" r="2" />
       <circle cx="10" cy="17" r="2" />
       <circle cx="20" cy="12" r="2" />
+    </>
+  ),
+  card: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 10h18M7 15h4" />
+    </>
+  ),
+  bank: (
+    <>
+      <path d="m3 9 9-5 9 5" />
+      <path d="M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
+  send: (
+    <>
+      <path d="M21 3 10 14" />
+      <path d="m21 3-7 18-4-7-7-4z" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z" />
+      <path d="M4 19V5M8 7h8M8 11h6" />
     </>
   ),
   target: (

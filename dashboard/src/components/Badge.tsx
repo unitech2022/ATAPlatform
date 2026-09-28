@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useLang } from '../context/lang'
-import { documentStatusMeta, driverStatusMeta, tripStatusMeta, userStatusMeta, type StatusTone } from '../lib/status'
+import { documentStatusMeta, driverStatusMeta, metaOf, tripStatusMeta, userStatusMeta, type StatusMeta, type StatusTone } from '../lib/status'
 import type { DocumentStatus, DriverStatus, TripStatus, UserStatus } from '../lib/types'
 
 export type BadgeTone = StatusTone | 'white'
@@ -43,6 +43,24 @@ export function UserStatusBadge({ status }: { status: UserStatus }) {
 export function TripStatusBadge({ status, className }: { status: TripStatus; className?: string }) {
   const { t } = useLang()
   const meta = tripStatusMeta[status] ?? tripStatusMeta.requested
+  return (
+    <Badge tone={meta.tone} className={className}>
+      {t(meta.key)}
+    </Badge>
+  )
+}
+
+/** Badge for any status record in lib/status.ts; unknown values render as a muted raw code. */
+export function MetaBadge<K extends string>({ record, value, className }: { record: Record<K, StatusMeta>; value: string | null | undefined; className?: string }) {
+  const { t } = useLang()
+  const meta = metaOf(record, value)
+  if (!meta) {
+    return (
+      <Badge tone="muted" className={className}>
+        <span className="ltr-nums">{value || '—'}</span>
+      </Badge>
+    )
+  }
   return (
     <Badge tone={meta.tone} className={className}>
       {t(meta.key)}

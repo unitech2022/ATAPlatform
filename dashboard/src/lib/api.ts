@@ -142,10 +142,29 @@ export const api = {
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   delete: <T>(path: string) => request<T>('DELETE', path),
   /** Fetches a protected binary (e.g. /files/{id}) with the Bearer header. */
-  blob: async (path: string) => {
-    const response = await send('GET', path, {})
+  blob: async (path: string, query?: QueryParams) => {
+    const response = await send('GET', path, { query })
     return response.blob()
   },
+  /** Like `blob`, plus the file name the server suggests in `Content-Disposition` (CSV exports). */
+  download: async (path: string, query?: QueryParams): Promise<{ blob: Blob; fileName: string | null }> => {
+    const response = await send('GET', path, { query })
+    return { blob: await response.blob(), fileName: fileNameFrom(response.headers.get('Content-Disposition')) }
+  },
+}
+
+function fileNameFrom(disposition: string | null): string | null {
+  if (!disposition) return null
+  const encoded = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(disposition)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ''))
+    } catch {
+      // fall through to the plain filename
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)
+  return plain ? plain[1].trim() : null
 }
 
 export function isApiError(error: unknown): error is ApiError {

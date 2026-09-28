@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { Icon } from './Icon'
 
 interface FieldShellProps {
@@ -32,6 +32,7 @@ function borderFor(error: unknown) {
 }
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  ref?: Ref<HTMLInputElement>
   label?: ReactNode
   hint?: ReactNode
   error?: ReactNode
@@ -79,6 +80,7 @@ export function Select({ label, hint, error, id, className = '', wrapperClassNam
 }
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  ref?: Ref<HTMLTextAreaElement>
   label?: ReactNode
   hint?: ReactNode
   error?: ReactNode

@@ -40,6 +40,39 @@ export const PRICING_OPS_ITEMS: NavItem[] = [
   { key: 'navMatchingSettings', icon: 'sliders', to: '/matching-settings', isActive: (pathname) => pathname.startsWith('/matching-settings') },
 ]
 
+/** F11 — finance group ("المالية"). */
+export const FINANCE_ITEMS: NavItem[] = [
+  { key: 'navPayments', icon: 'card', to: '/payments', isActive: (pathname) => pathname.startsWith('/payments') },
+  { key: 'navRefunds', icon: 'receipt', to: '/refunds', isActive: (pathname) => pathname.startsWith('/refunds') },
+  { key: 'navPayouts', icon: 'upload', to: '/payouts', isActive: (pathname) => pathname.startsWith('/payouts') },
+  { key: 'navPayoutBatches', icon: 'bank', to: '/payout-batches', isActive: (pathname) => pathname.startsWith('/payout-batches') },
+  { key: 'navSettlements', icon: 'document', to: '/settlements', isActive: (pathname) => pathname.startsWith('/settlements') },
+  { key: 'navWallets', icon: 'wallet', to: '/wallets', isActive: (pathname) => pathname.startsWith('/wallets') },
+  { key: 'navLedger', icon: 'book', to: '/ledger', isActive: (pathname) => pathname.startsWith('/ledger') },
+]
+
+/** F13 — notifications group ("الإشعارات"). */
+export const NOTIFICATION_ITEMS: NavItem[] = [
+  {
+    key: 'navTemplates',
+    icon: 'edit',
+    to: '/notifications/templates',
+    isActive: (pathname) => pathname.startsWith('/notifications/templates'),
+  },
+  {
+    key: 'navCampaigns',
+    icon: 'send',
+    to: '/notifications/campaigns',
+    isActive: (pathname) => pathname.startsWith('/notifications/campaigns'),
+  },
+  {
+    key: 'navDeliveries',
+    icon: 'bell',
+    to: '/notifications/deliveries',
+    isActive: (pathname) => pathname.startsWith('/notifications/deliveries'),
+  },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -49,6 +82,8 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   { items: NAV_ITEMS },
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
+  { key: 'navGroupFinance', items: FINANCE_ITEMS },
+  { key: 'navGroupNotifications', items: NOTIFICATION_ITEMS },
 ]
 
 /** Title shown in the top bar for the current path. */
@@ -66,5 +101,20 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/pricing-rules')) return 'pricingRulesTitle'
   if (pathname.startsWith('/demand')) return 'demandTitle'
   if (pathname.startsWith('/matching-settings')) return 'matchingSettingsTitle'
+  if (/^\/payments\/[^/]+/.test(pathname)) return 'paymentDetailTitle'
+  if (pathname.startsWith('/payments')) return 'paymentsTitle'
+  if (pathname.startsWith('/refunds')) return 'refundsTitle'
+  if (/^\/payout-batches\/[^/]+/.test(pathname)) return 'payoutBatchDetailTitle'
+  if (pathname.startsWith('/payout-batches')) return 'payoutBatchesTitle'
+  if (pathname.startsWith('/payouts')) return 'payoutsTitle'
+  if (/^\/settlements\/[^/]+/.test(pathname)) return 'settlementDetailTitle'
+  if (pathname.startsWith('/settlements')) return 'settlementsTitle'
+  if (/^\/wallets\/[^/]+/.test(pathname)) return 'walletDetailTitle'
+  if (pathname.startsWith('/wallets')) return 'walletsTitle'
+  if (pathname.startsWith('/ledger')) return 'ledgerTitle'
+  if (pathname.startsWith('/notifications/templates')) return 'templatesTitle'
+  if (/^\/notifications\/campaigns\/[^/]+/.test(pathname)) return 'campaignDetailTitle'
+  if (pathname.startsWith('/notifications/campaigns')) return 'campaignsTitle'
+  if (pathname.startsWith('/notifications/deliveries')) return 'deliveriesTitle'
   return 'appName'
 }

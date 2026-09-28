@@ -4,6 +4,7 @@ import { Badge, DocumentStatusBadge, DriverStatusBadge } from '../components/Bad
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { DefinitionList } from '../components/DefinitionList'
+import { DriverFinanceCard } from '../components/DriverFinanceCard'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { FilePreviewModal, type FilePreviewTarget } from '../components/FilePreviewModal'
@@ -249,6 +250,8 @@ export function DriverDetailPage() {
 
         <VehicleCard driver={driver} />
       </div>
+
+      {(driver.status === 'approved' || driver.status === 'suspended') && <DriverFinanceCard driver={driver} />}
 
       <Card
         className="mb-6"

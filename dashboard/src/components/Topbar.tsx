@@ -3,6 +3,7 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { pageTitleKey } from '../nav'
 import { Button } from './Button'
+import { DutyToggle } from './DutyToggle'
 import { Icon } from './Icon'
 
 export interface TopbarProps {
@@ -31,6 +32,7 @@ export function Topbar({ onOpenMenu, onLogout }: TopbarProps) {
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <DutyToggle />
         <Button variant="secondary" size="sm" icon="globe" onClick={toggleLang} className="rounded-full">
           {t('switchLanguage')}
         </Button>

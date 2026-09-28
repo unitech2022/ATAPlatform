@@ -12,11 +12,12 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { dashboard, drivers, live } from '../lib/admin'
-import { formatDate, formatNumber } from '../lib/format'
+import { dashboard, drivers, live, payments, payouts, refunds } from '../lib/admin'
+import { formatDate, formatMoney, formatNumber } from '../lib/format'
+import { todayIso } from '../lib/pricing'
 import type { DashboardSummary } from '../lib/types'
 
-const STATS: { key: keyof DashboardSummary; label: TranslationKey; icon: IconName; tone?: 'brand' | 'danger' }[] = [
+const STATS: { key: Exclude<keyof DashboardSummary, 'today'>; label: TranslationKey; icon: IconName; tone?: 'brand' | 'danger' }[] = [
   { key: 'pendingDriverApplications', label: 'statPendingApplications', icon: 'document', tone: 'danger' },
   { key: 'approvedDrivers', label: 'statApprovedDrivers', icon: 'shield' },
   { key: 'onlineDrivers', label: 'statOnlineDrivers', icon: 'car' },
@@ -41,6 +42,19 @@ export function DashboardPage() {
   const summary = useQuery(() => dashboard.summary(), 'dashboard-summary')
   const pending = useQuery(() => drivers.list({ status: 'submitted', page: 1, pageSize: 5 }), 'dashboard-pending')
   const liveNow = useQuery(() => live.snapshot(), 'dashboard-live')
+  const today = todayIso()
+  // Finance counters come from the list endpoints' totals (pageSize=1) — docs/08 has no finance summary.
+  const captured = useQuery(() => payments.list({ status: 'captured', from: today, to: today, page: 1, pageSize: 1 }), `dashboard-captured:${today}`)
+  const pendingPayouts = useQuery(() => payouts.list({ status: 'requested', page: 1, pageSize: 1 }), 'dashboard-payouts')
+  const pendingRefunds = useQuery(() => refunds.list({ status: 'pending_approval', page: 1, pageSize: 1 }), 'dashboard-refunds')
+  const gmv = summary.data?.today?.gmv
+  const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
+    ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
+    { key: 'statCapturedToday', value: countOf(captured), icon: 'wallet', to: `/payments?status=captured&from=${today}&to=${today}` },
+    { key: 'statPendingPayouts', value: countOf(pendingPayouts), icon: 'upload', to: '/payouts', tone: 'danger' },
+    { key: 'statPendingRefunds', value: countOf(pendingRefunds), icon: 'refresh', to: '/refunds', tone: 'danger' },
+  ]
+  const financeUnavailable = Boolean(captured.error && pendingPayouts.error && pendingRefunds.error)
   const liveStats = liveNow.data
     ? [
         { key: 'searchingTrips' as const, value: liveNow.data.searchingTrips.length, tone: 'warning' as const },
@@ -71,6 +85,16 @@ export function DashboardPage() {
               tone={stat.tone}
               value={summary.loading ? '…' : formatNumber(summary.data?.[stat.key])}
             />
+          ))}
+        </div>
+      )}
+
+      {!financeUnavailable && (
+        <div className={`mb-6 grid gap-4 sm:grid-cols-2 ${financeStats.length > 3 ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
+          {financeStats.map((stat) => (
+            <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
+              <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={t('finance')} />
+            </Link>
           ))}
         </div>
       )}
@@ -170,4 +194,10 @@ export function DashboardPage() {
       </div>
     </>
   )
+}
+
+function countOf(query: { data: { total: number } | null; loading: boolean; error: unknown }) {
+  if (query.loading && !query.data) return '…'
+  if (query.error || !query.data) return '—'
+  return formatNumber(query.data.total)
 }

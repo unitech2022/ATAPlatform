@@ -12,6 +12,7 @@ import { MapView } from '../components/MapView'
 import { ReasonModal } from '../components/ReasonModal'
 import { PageSpinner } from '../components/Spinner'
 import { Table, type Column } from '../components/Table'
+import { TripPaymentCard } from '../components/TripPaymentCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -184,6 +185,8 @@ export function TripDetailPage() {
           </div>
         </Card>
       </div>
+
+      <TripPaymentCard trip={trip} />
 
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
         <Card title={t('timeline')}>

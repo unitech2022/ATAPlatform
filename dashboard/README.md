@@ -1,6 +1,6 @@
 # ATA — لوحة الإدارة (dashboard)
 
-واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10).
+واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10)، والمالية (F11: المدفوعات، الاستردادات، السحوبات، التسويات، المحافظ، الدفتر) والإشعارات (F13: القوالب، الحملات، سجل الإرسال).
 
 - React 19 + Vite + TypeScript
 - Tailwind CSS v4 (`@theme` بنفس Tokens نظام التصميم في `docs/01-design-system.md`)
@@ -47,16 +47,22 @@ src/
   lib/                     api.ts (Bearer + تجديد التوكن + أخطاء مُهيكلة)، admin.ts (نقاط /admin)،
                            types.ts، session.ts، format.ts، status.ts، transitions.ts،
                            trips.ts (مجموعات الحالات/الحالات النهائية)، leaflet.ts (أيقونات العلامات + أنماط المضلعات + إصلاح الأيقونة الافتراضية)،
-                           leafletDraw.ts (تحميل leaflet-draw + تعريب أدواته)، pricing.ts (أيام الأسبوع، المضلعات، الأوزان، تحويل التواريخ)
+                           leafletDraw.ts (تحميل leaflet-draw + تعريب أدواته)، pricing.ts (أيام الأسبوع، المضلعات، الأوزان، تحويل التواريخ)،
+                           finance.ts (قوائم الحالات والأسباب، تسميات الحسابات والحركات، saveBlob، parseAmount)،
+                           notifications.ts (القنوات والفئات، العناصر النائبة، بيانات المعاينة، أجزاء SMS، تنظيف الجمهور)
   context/                 اللغة، المصادقة، التنبيهات
-  hooks/                   useQuery، useDebouncedValue، useApiErrorMessage، useLiveSnapshot (استطلاع كل 5 ث + SignalR)،
+  hooks/                   useQuery، useDebouncedValue، useApiErrorMessage (+ رسائل أكواد F11/F13)، useUrlState/useUrlSearch (فلاتر متزامنة مع الرابط)، useLiveSnapshot (استطلاع كل 5 ث + SignalR)،
                            useCurrentDemand (استطلاع كل 30 ث + حدث DemandChanged عبر SignalR)
   components/              Icon, Button, Card, StatCard, Badge, Table, Pagination, Modal, Toast, DefinitionList,
                            Field (Input/Select/Textarea/Toggle), EmptyState, Spinner, Sidebar, Topbar, MapView (غلاف Leaflet)،
-                           ZonesMap (مضلعات المناطق)، PolygonEditor (leaflet-draw + إدخال JSON)…
+                           ZonesMap (مضلعات المناطق)، PolygonEditor (leaflet-draw + إدخال JSON)، Tabs، Money، MetaBadge،
+                           RefundModal/RefundActions (الأربع عيون)، MarkPaidModal، CampaignFormModal، DriverFinanceCard، TripPaymentCard، DutyToggle…
   layouts/                 RequireAuth (حماية المسارات) + AppLayout (الشريط الجانبي + الشريط العلوي)
   pages/                   Login, Dashboard, Drivers, DriverDetail, Passengers, RideCategories, AuditLogs,
-                           Trips, TripDetail, LiveMap, Zones, PricingRules, Demand, MatchingSettings
+                           Trips, TripDetail, LiveMap, Zones, PricingRules, Demand, MatchingSettings,
+                           Payments, PaymentDetail, Refunds, Payouts, PayoutBatches, PayoutBatchDetail, Settlements,
+                           SettlementBatchDetail, Wallets, WalletDetail, Ledger, NotificationTemplates, Campaigns,
+                           CampaignDetail, NotificationDeliveries
 ```
 
 ## المسارات
@@ -77,6 +83,19 @@ src/
 | `/pricing-rules` | قواعد التسعير (F10): فلاتر (الفئة/المنطقة/الحالة)، نموذج كامل مع مضاعِفات الوقت وتواريخ السريان (`/admin/pricing-rules`)، ومحاكاة السعر بنقرتين على الخريطة (`POST /admin/pricing/simulate`) |
 | `/demand` | الطلب (F10): شبكة الطلب الحالي لكل منطقة بلون المستوى + خريطة (`GET /admin/demand/current` كل 30 ث أو `DemandChanged`)، مضاعِفات المستويات (`PUT /admin/demand-levels/{id}`)، قواعد الطلب، التفعيل اليدوي (`/admin/demand-overrides`) |
 | `/matching-settings` | إعدادات المطابقة (F9): إحصاءات بفلتر تاريخ (`GET /admin/matching/stats`)، جدول + نموذج بالأوزان السبعة (مجموعها 1.00) (`/admin/matching-settings`) |
+| `/payments` | المدفوعات (F11): تبويبات الحالة، فلاتر الغرض/الطريقة/التاريخ، بحث بالجوال/رقم الرحلة/مرجع البوابة (`GET /admin/payments`) |
+| `/payments/:id` | تفاصيل الدفعة: المبالغ، الجدول الزمني، مراجع البوابة، الاستردادات، قيود الدفتر (مع فحص التوازن)، أحداث الـWebhook مع الحمولة؛ زر «استرداد» (المبلغ/السبب/الوجهة) وشريط «بانتظار موافقة ثانية» مع اعتماد/رفض (معطّل لمنشئ الطلب — الأربع عيون) |
+| `/refunds` | طابور الاستردادات (افتراضياً «بانتظار الموافقة»، `?status=all` للكل): اعتماد/رفض بسبب/إعادة محاولة (`/admin/refunds/{id}/approve|reject|retry`) |
+| `/payouts` | طلبات السحب: تبويبات الحالة، اعتماد (تأكيد)/رفض (سبب)/تأكيد الدفع (مرجع بنكي)، تحديد متعدد → «اعتماد المحدد» (طلب لكل سحب) أو «إنشاء دفعة تحويل»، فلتر `?driverId=` |
+| `/payout-batches` · `/payout-batches/:id` | دفعات التحويل: تصدير CSV (blob مع التوكن)، تأكيد دفع الدفعة برقم المرجع |
+| `/settlements` · `/settlements/:batchId` | دفعات التسوية + توليد لفترة (الأسبوع الماضي افتراضياً، مدينة اختيارية)؛ التفاصيل: الإجماليات، جدول السائقين (فلتر الاتجاه + بحث، صف قابل للتوسيع بكامل البيان وفحص معادلة الرصيد)، تصدير CSV، اعتماد نهائي/إعادة توليد، استطلاع كل 3 ث أثناء `generating` |
+| `/wallets` · `/wallets/:id` | المحافظ: بحث، نوع، «الأرصدة السالبة فقط»؛ التفاصيل: الرصيد ودين النقد مقابل الحد، الحركات، تعديل يدوي (اتجاه/مبلغ/سبب، مُدقَّق)، تجميد/إلغاء تجميد بسبب |
+| `/ledger` | أرصدة حسابات الدفتر لفترة (`GET /admin/ledger/balances`) |
+| `/notifications/templates` | القوالب (F13): جدول الأحداث من `/admin/notification-events` مع شارة لكل قناة (مفعّل/موقوف/غير موجود)؛ المحرر: عربي/إنجليزي جنباً إلى جنب، إدراج العناصر النائبة بالنقر في موضع المؤشر، تحذير العناصر غير المعرّفة، عدّاد الأحرف وأجزاء SMS، معاينة مباشرة ببيانات تجريبية قابلة للتعديل، تفعيل/إيقاف، إرسال تجريبي |
+| `/notifications/campaigns` · `/notifications/campaigns/:id` | الحملات: قائمة بتبويبات الحالة؛ نموذج (الاسم، الفئة، القنوات، الجمهور: الأدوار/المدن/اللغة/الجنس/المستويات/النشاط/مستخدمون محددون + «معاينة العدد»، البدء من قالب أو نص مخصص، الرابط العميق، مسودة/جدولة/إرسال الآن بتأكيد)؛ التفاصيل: الإحصاءات والتقدم (استطلاع أثناء الإرسال)، تعديل/جدولة/إرسال/إلغاء/حذف |
+| `/notifications/deliveries` | سجل الإرسال: فلاتر الحدث/المستخدم/القناة/الحالة/التاريخ/`?campaignId=`، الخطأ والحمولة، إعادة المحاولة |
+
+اختصارات تُحوَّل: `/notification-templates`، `/campaigns`، `/notification-deliveries`، `/notifications`. وفي `/drivers/:id` (المعتمد/الموقوف) بطاقة «المالية» (الرصيد، دين النقد مقابل الحد 500، آخر السحوبات)، وفي `/trips/:id` قسم «الدفع» (الدفعة، الإيصال، استرداد)، وفي `/` بطاقات المالية (المحصّل اليوم، السحوبات والاستردادات المعلّقة، وGMV اليوم إن أعادها الملخص)، وفي الشريط العلوي مفتاح «مناوب» (`/admin/me/duty`) يظهر فقط لمن يستجيب له الخادم.
 
 ## ملاحظات
 
@@ -88,3 +107,4 @@ src/
 - صفحة الطلب تستطلع `GET /admin/demand/current` كل 30 ثانية دائماً، ويؤدي حدث `DemandChanged` من الـHub إلى إعادة الجلب فوراً.
 - `leaflet-draw` يعتمد على `window.L` الذي يُنشئه Leaflet؛ لذلك يُستورد دائماً عبر `lib/leafletDraw.ts` بعد `lib/leaflet.ts`. المضلع يُحفظ مغلقاً (`[[lat,lng],…]` مع تكرار النقطة الأولى) ويُحسب المركز تلقائياً.
 - قوائم الإدارة الجديدة (المناطق، القواعد، الإعدادات) تُطلب بصفحة واحدة كبيرة (`pageSize=200`) وتقبل الاستجابة مصفوفةً أو غلافَ صفحات (`unwrapList`).
+- المالية: حد الاعتماد التلقائي للاسترداد (50) وحد دين النقد (500) قيم افتراضية من `docs/08 §F11.8` تُستخدم للتلميحات فقط؛ الخادم هو المرجع (`409 four_eyes_required`). ملفات CSV تُنزَّل عبر `api.download` (Bearer) مع قراءة `Content-Disposition` إن كشفه الخادم في CORS (`Access-Control-Expose-Headers`)، وإلا يُستخدم رقم الدفعة اسماً للملف.
