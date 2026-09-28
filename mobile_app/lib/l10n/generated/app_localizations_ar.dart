@@ -1411,4 +1411,393 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get locationStreaming => 'موقعك يُشارك مع الركاب';
+
+  @override
+  String get noDriversNearby => 'لا يوجد كباتن قريبون الآن';
+
+  @override
+  String get cardBrandMada => 'مدى';
+
+  @override
+  String get cardBrandVisa => 'فيزا';
+
+  @override
+  String get cardBrandMastercard => 'ماستركارد';
+
+  @override
+  String cardMasked(String brand, String last4) {
+    return '$brand •••• $last4';
+  }
+
+  @override
+  String cardExpiry(String expiry) {
+    return 'تنتهي $expiry';
+  }
+
+  @override
+  String get cardExpired => 'البطاقة منتهية الصلاحية';
+
+  @override
+  String get cardPendingVerification => 'بانتظار التحقق من البنك';
+
+  @override
+  String get cardDefault => 'الافتراضية';
+
+  @override
+  String get cardMakeDefault => 'تعيين كافتراضية';
+
+  @override
+  String get cardRemove => 'حذف';
+
+  @override
+  String get cardRemoveTitle => 'حذف البطاقة؟';
+
+  @override
+  String cardRemoveCopy(String card) {
+    return 'سيتم حذف $card من حسابك.';
+  }
+
+  @override
+  String get savedCardsTitle => 'بطاقاتي';
+
+  @override
+  String get savedCardsCopy => 'بطاقات الدفع المحفوظة للرحلات وشحن المحفظة.';
+
+  @override
+  String get savedCardsEmpty => 'لا توجد بطاقات محفوظة بعد';
+
+  @override
+  String get manageCards => 'إدارة البطاقات';
+
+  @override
+  String get addCard => 'إضافة بطاقة';
+
+  @override
+  String get addCardTitle => 'إضافة بطاقة جديدة';
+
+  @override
+  String get addCardCopy =>
+      'يتم ترميز بطاقتك على جهازك، ولا يصل رقمها إلى خوادمنا.';
+
+  @override
+  String get cardNumberLabel => 'رقم البطاقة';
+
+  @override
+  String get cardNumberHint => '0000 0000 0000 0000';
+
+  @override
+  String get cardNumberError => 'رقم البطاقة غير صحيح';
+
+  @override
+  String get cardExpiryLabel => 'تاريخ الانتهاء';
+
+  @override
+  String get cardExpiryHint => 'MM/YY';
+
+  @override
+  String get cardExpiryError => 'تاريخ غير صالح';
+
+  @override
+  String get cardCvcLabel => 'رمز الأمان';
+
+  @override
+  String get cardCvcHint => '123';
+
+  @override
+  String get cardCvcError => 'رمز غير صحيح';
+
+  @override
+  String get cardHolderLabel => 'اسم حامل البطاقة';
+
+  @override
+  String get cardHolderHint => 'كما يظهر على البطاقة';
+
+  @override
+  String get cardSetDefault => 'استخدامها كبطاقة افتراضية';
+
+  @override
+  String get saveCard => 'حفظ البطاقة';
+
+  @override
+  String get sandboxCardsHint =>
+      'بيئة تجريبية: 4000 0000 0000 0002 مرفوضة، 4000 0000 0000 3220 تتطلب تحققاً، وبطاقة مدى التجريبية 4406 4700 0000 0007.';
+
+  @override
+  String get paymentActionTitle => 'مطلوب تحقق من البنك';
+
+  @override
+  String get paymentActionCopy =>
+      'أكمل التحقق في صفحة البنك، وسيتم تحديث الحالة تلقائياً بعد التأكيد.';
+
+  @override
+  String get paymentActionOpen => 'فتح صفحة التحقق';
+
+  @override
+  String get topUpSource => 'طريقة الدفع';
+
+  @override
+  String get topUpToContinue => 'اشحن المحفظة للمتابعة';
+
+  @override
+  String get outstandingBalanceTitle => 'يوجد مبلغ مستحق على حسابك';
+
+  @override
+  String get outstandingBalanceCopy =>
+      'رصيد محفظتك سالب. اشحن المحفظة لتتمكن من طلب رحلات جديدة.';
+
+  @override
+  String outstandingBalanceError(String amount) {
+    return 'يوجد مبلغ مستحق $amount ر.س على حسابك، اشحن المحفظة للمتابعة';
+  }
+
+  @override
+  String get paymentFailedError =>
+      'تعذّر إتمام الدفع، جرّب بطاقة أخرى أو ادفع نقداً';
+
+  @override
+  String get paymentMethodExpiredError => 'البطاقة منتهية الصلاحية';
+
+  @override
+  String get paymentMethodInUseError => 'البطاقة مرتبطة برحلة جارية';
+
+  @override
+  String get paymentProviderUnavailableError =>
+      'خدمة الدفع غير متاحة حالياً، حاول لاحقاً';
+
+  @override
+  String get paymentFallbackCash =>
+      'تعذّر الدفع بالبطاقة، فتم تحويل الرحلة إلى الدفع نقداً';
+
+  @override
+  String collectCashLine(String amount) {
+    return 'حصّل نقداً من الراكب: $amount';
+  }
+
+  @override
+  String get viewReceipt => 'عرض الإيصال';
+
+  @override
+  String get receiptEyebrow => 'إيصال الرحلة';
+
+  @override
+  String get receiptBreakdown => 'تفاصيل الأجرة';
+
+  @override
+  String get receiptSubtotal => 'المجموع الفرعي';
+
+  @override
+  String get receiptDiscountTotal => 'إجمالي الخصم';
+
+  @override
+  String receiptVat(String rate, String amount) {
+    return 'شامل ضريبة القيمة المضافة $rate٪: $amount';
+  }
+
+  @override
+  String get receiptPaid => 'المبلغ المدفوع';
+
+  @override
+  String get receiptRefunded => 'المسترد';
+
+  @override
+  String get receiptNetPaid => 'صافي المدفوع';
+
+  @override
+  String get receiptUnavailable => 'لا يتوفر إيصال لهذه الرحلة';
+
+  @override
+  String get discountSourcePromotion => 'عرض ترويجي';
+
+  @override
+  String get discountSourceFavoriteDriver => 'الكابتن المفضل';
+
+  @override
+  String get cashDebtLimitError =>
+      'تجاوزت مستحقات النقد الحد المسموح، سدّدها للاتصال';
+
+  @override
+  String get cantGoOnlineTitle => 'لا يمكنك الاتصال الآن';
+
+  @override
+  String get cashDebtTitle => 'مستحقات النقد';
+
+  @override
+  String get cashDebtCopy =>
+      'أجور الرحلات النقدية المستحقة للمنصة. سدّدها قبل الوصول إلى الحد.';
+
+  @override
+  String cashDebtLimit(String limit) {
+    return 'الحد المسموح: $limit';
+  }
+
+  @override
+  String get settleDebt => 'سداد';
+
+  @override
+  String get settleDebtTitle => 'سداد مستحقات النقد';
+
+  @override
+  String get settleDebtCopy =>
+      'اشحن محفظة الكابتن لتسديد مستحقات الرحلات النقدية.';
+
+  @override
+  String get driverWalletEyebrow => 'المحفظة والأرباح';
+
+  @override
+  String get earningsStatementTitle => 'كشف الأرباح';
+
+  @override
+  String get earningsStatementCopy =>
+      'أرباحك وعمولة المنصة والنقد المحصّل للفترة.';
+
+  @override
+  String get periodToday => 'اليوم';
+
+  @override
+  String get periodWeek => 'الأسبوع';
+
+  @override
+  String get periodMonth => 'الشهر';
+
+  @override
+  String get statementNet => 'الصافي';
+
+  @override
+  String statementTrips(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رحلة',
+      few: '$count رحلات',
+      two: 'رحلتان',
+      one: 'رحلة واحدة',
+      zero: 'لا رحلات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementGross => 'إجمالي الأجور';
+
+  @override
+  String get statementCommission => 'عمولة المنصة';
+
+  @override
+  String get statementEarnings => 'أرباحك';
+
+  @override
+  String get statementIncentives => 'الحوافز';
+
+  @override
+  String get statementCompensation => 'تعويضات الإلغاء';
+
+  @override
+  String get statementAdjustments => 'التسويات';
+
+  @override
+  String get statementCashCollected => 'النقد المحصّل';
+
+  @override
+  String get statementPayouts => 'التحويلات';
+
+  @override
+  String get statementDaily => 'حسب اليوم';
+
+  @override
+  String get payoutsTitle => 'تحويل الأرباح';
+
+  @override
+  String get payoutsCopy => 'اطلب تحويل رصيدك إلى حسابك البنكي وتابع الحالة.';
+
+  @override
+  String get payoutsEmpty => 'لا توجد طلبات تحويل بعد';
+
+  @override
+  String get payoutHistory => 'سجل التحويلات';
+
+  @override
+  String get requestPayout => 'طلب تحويل';
+
+  @override
+  String get payoutRequestCopy =>
+      'يُحوَّل المبلغ إلى الآيبان المسجل بعد اعتماد الطلب.';
+
+  @override
+  String get payoutAvailable => 'المتاح للتحويل';
+
+  @override
+  String payoutAvailableLine(String amount) {
+    return 'المتاح للتحويل: $amount';
+  }
+
+  @override
+  String get payoutIban => 'الآيبان';
+
+  @override
+  String get payoutIbanMissing => 'غير مضاف';
+
+  @override
+  String get payoutAmountLabel => 'المبلغ';
+
+  @override
+  String get payoutAmountInvalid => 'أدخل مبلغاً صحيحاً';
+
+  @override
+  String payoutMinimumHint(String amount) {
+    return 'الحد الأدنى للتحويل $amount';
+  }
+
+  @override
+  String confirmPayout(String amount) {
+    return 'تأكيد تحويل $amount';
+  }
+
+  @override
+  String get payoutRequestedTitle => 'تم إرسال طلب التحويل';
+
+  @override
+  String get payoutRequestedCopy => 'سنبلغك عند اعتماد الطلب وتحويل المبلغ.';
+
+  @override
+  String get payoutUnavailable => 'طلب التحويل غير متاح حالياً';
+
+  @override
+  String get payoutRequested => 'قيد المراجعة';
+
+  @override
+  String get payoutApproved => 'معتمد';
+
+  @override
+  String get payoutPaid => 'مدفوع';
+
+  @override
+  String get payoutRejected => 'مرفوض';
+
+  @override
+  String get payoutCancelled => 'ملغى';
+
+  @override
+  String payoutRejectedReason(String reason) {
+    return 'السبب: $reason';
+  }
+
+  @override
+  String payoutBelowMinimumError(String amount) {
+    return 'المبلغ أقل من الحد الأدنى للسحب ($amount ر.س)';
+  }
+
+  @override
+  String get payoutBelowMinimumReason => 'رصيدك أقل من الحد الأدنى للسحب';
+
+  @override
+  String get payoutCashDebtReason => 'سدّد مستحقات النقد أولاً';
+
+  @override
+  String get payoutPendingExistsError => 'لديك طلب سحب قيد المعالجة';
+
+  @override
+  String get ibanMissingError => 'أضف رقم الآيبان أولاً';
+
+  @override
+  String get insufficientBalanceError => 'المبلغ أكبر من الرصيد المتاح';
 }

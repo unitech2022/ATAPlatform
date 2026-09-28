@@ -47,8 +47,7 @@ class RideCategoryList extends StatelessWidget {
           selector: (QuoteState quote) => quote.isLoading && !quote.hasQuote,
           builder: (BuildContext context, bool pricing) => Column(
             children: <Widget>[
-              for (final RideCategory category
-                  in state.categories) ...<Widget>[
+              for (final RideCategory category in state.categories) ...<Widget>[
                 _CategoryTile(
                   category: category,
                   quoted: state.quote?.forCategory(category.id),
@@ -84,7 +83,11 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final int? eta = quoted?.etaMinutes ?? category.estimate?.etaMinutes;
+    final QuoteCategory? quoted = this.quoted;
+    final int? eta = quoted != null
+        ? quoted.etaMinutes
+        : category.estimate?.etaMinutes;
+    final bool noDrivers = quoted?.hasNoNearbyDrivers ?? false;
     final double? price = quoted?.total ?? category.estimate?.price;
     final AtaIcons icon = RideCategoryList.iconFor(category.icon);
     return SelectableTile(
@@ -116,12 +119,19 @@ class _CategoryTile extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Text(category.name, style: AtaText.bodyStrong),
-                    if (eta != null) ...<Widget>[
+                    if (eta != null || noDrivers) ...<Widget>[
                       const SizedBox(width: AtaSpacing.xs),
-                      Text(
-                        l10n.minutesLabel(eta),
-                        style: AtaText.captionStrong.copyWith(
-                          color: AtaColors.brand,
+                      Flexible(
+                        child: Text(
+                          eta == null
+                              ? l10n.noDriversNearby
+                              : l10n.minutesLabel(eta),
+                          overflow: TextOverflow.ellipsis,
+                          style: AtaText.captionStrong.copyWith(
+                            color: eta == null
+                                ? AtaColors.muted
+                                : AtaColors.brand,
+                          ),
                         ),
                       ),
                     ],

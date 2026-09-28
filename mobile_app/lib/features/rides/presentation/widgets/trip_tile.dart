@@ -22,9 +22,12 @@ import 'package:flutter/material.dart';
 
 /// One trip in a list: car box, place, status, date and fare.
 class TripTile extends StatelessWidget {
-  const TripTile({super.key, required this.trip});
+  const TripTile({super.key, required this.trip, this.onTap});
 
   final TripSummary trip;
+
+  /// Opens the receipt (completed trips).
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +38,7 @@ class TripTile extends StatelessWidget {
     );
     final DateTime? date = trip.displayDate;
     return BorderedRow(
+      onTap: onTap,
       leading: const IconBox.cloud(
         icon: AtaIcons.car,
         size: AtaSizes.iconBox + 4,

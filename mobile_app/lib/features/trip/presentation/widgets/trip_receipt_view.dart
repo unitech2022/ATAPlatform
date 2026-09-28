@@ -13,10 +13,18 @@ import 'package:flutter/material.dart';
 
 /// Completed-trip summary: fare, distance, duration, payment, rating CTA.
 class TripReceiptView extends StatelessWidget {
-  const TripReceiptView({super.key, required this.trip, required this.onDone});
+  const TripReceiptView({
+    super.key,
+    required this.trip,
+    required this.onDone,
+    this.onReceipt,
+  });
 
   final Trip trip;
   final VoidCallback onDone;
+
+  /// Opens the itemised receipt (`/rides/{id}/receipt`).
+  final VoidCallback? onReceipt;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +85,29 @@ class TripReceiptView extends StatelessWidget {
             ],
           ),
         ),
+        if (trip.paymentFellBackToCash) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AtaSpacing.md),
+            decoration: const BoxDecoration(
+              color: AtaColors.warningSoft,
+              borderRadius: AtaRadii.itemRadius,
+            ),
+            child: Text(
+              l10n.paymentFallbackCash,
+              style: AtaText.label.copyWith(color: AtaColors.warning),
+            ),
+          ),
+        ],
+        if (onReceipt != null) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          AtaButton(
+            label: l10n.viewReceipt,
+            icon: AtaIcons.document,
+            variant: AtaButtonVariant.soft,
+            onPressed: onReceipt,
+          ),
+        ],
         const SizedBox(height: AtaSpacing.lg),
         AtaButton(
           label: '${l10n.rateTrip} · ${l10n.comingSoon}',

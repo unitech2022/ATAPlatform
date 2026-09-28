@@ -1,6 +1,7 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/core/models/page_result.dart';
 import 'package:ata_app/features/wallet/data/datasources/wallet_remote_data_source.dart';
+import 'package:ata_app/features/wallet/domain/entities/top_up_params.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_summary.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_transaction.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
@@ -24,5 +25,9 @@ class WalletRepositoryImpl implements WalletRepository {
 
   @override
   Future<Either<Failure, TopUpResult>> topUp({required double amount}) =>
-      guard(() => _remote.topUp(amount: amount, idempotencyKey: _uuid.v4()));
+      topUpWith(TopUpParams(amount: amount));
+
+  @override
+  Future<Either<Failure, TopUpResult>> topUpWith(TopUpParams params) =>
+      guard(() => _remote.topUp(params, idempotencyKey: _uuid.v4()));
 }

@@ -29,4 +29,6 @@ class NotificationsRemoteDataSource {
 
   Future<void> markRead(List<String>? ids) =>
       _api.post(_readPath, body: <String, dynamic>{'ids': ids});
+
+  Future<void> markOpened(String id) => _api.post('$_listPath/$id/opened');
 }

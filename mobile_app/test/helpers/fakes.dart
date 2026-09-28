@@ -1,5 +1,6 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/core/models/page_result.dart';
+import 'package:ata_app/core/push/push_event.dart';
 import 'package:ata_app/core/storage/token_storage.dart';
 import 'package:ata_app/features/account/domain/entities/notification_preferences.dart';
 import 'package:ata_app/features/account/domain/entities/profile.dart';
@@ -18,6 +19,7 @@ import 'package:ata_app/features/notifications/domain/repositories/notifications
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
 import 'package:ata_app/features/rides/domain/entities/trip_summary.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
+import 'package:ata_app/features/wallet/domain/entities/top_up_params.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_summary.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_transaction.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
@@ -142,6 +144,10 @@ class FakeAccountRepository implements AccountRepository {
       const Right<Failure, Profile>(Profile(user: testUser));
 
   @override
+  Future<Either<Failure, Unit>> registerDevice({String? pushToken}) async =>
+      const Right<Failure, Unit>(unit);
+
+  @override
   String getSavedLocale() => locale;
 
   @override
@@ -185,6 +191,16 @@ class FakeNotificationsRepository implements NotificationsRepository {
   @override
   Future<Either<Failure, Unit>> markRead(List<String>? ids) async =>
       const Right<Failure, Unit>(unit);
+
+  @override
+  Future<Either<Failure, Unit>> markOpened(String id) async =>
+      const Right<Failure, Unit>(unit);
+
+  @override
+  Stream<PushEvent> watchIncoming() => const Stream<PushEvent>.empty();
+
+  @override
+  Stream<PushEvent> watchOpened() => const Stream<PushEvent>.empty();
 }
 
 class FakeRidesRepository implements RidesRepository {
@@ -199,6 +215,7 @@ class FakeRidesRepository implements RidesRepository {
 
 class FakeWalletRepository implements WalletRepository {
   double balance = 125;
+  List<PaymentMethod> extraMethods = const <PaymentMethod>[];
 
   @override
   Future<Either<Failure, PageResult<WalletTransaction>>> getTransactions({
@@ -215,12 +232,21 @@ class FakeWalletRepository implements WalletRepository {
           kind: 'passenger',
           currency: 'SAR',
           balance: balance,
-          paymentMethods: const <PaymentMethod>[
-            PaymentMethod(type: 'wallet', label: 'محفظة ATA', isDefault: true),
-            PaymentMethod(type: 'cash', label: 'الدفع نقداً'),
+          paymentMethods: <PaymentMethod>[
+            const PaymentMethod(
+              type: 'wallet',
+              label: 'محفظة ATA',
+              isDefault: true,
+            ),
+            const PaymentMethod(type: 'cash', label: 'الدفع نقداً'),
+            ...extraMethods,
           ],
         ),
       );
+
+  @override
+  Future<Either<Failure, TopUpResult>> topUpWith(TopUpParams params) =>
+      topUp(amount: params.amount);
 
   @override
   Future<Either<Failure, TopUpResult>> topUp({required double amount}) async {

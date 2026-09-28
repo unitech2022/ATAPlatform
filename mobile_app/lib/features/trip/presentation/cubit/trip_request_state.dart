@@ -32,6 +32,14 @@ class TripRequestState extends Equatable {
   /// `422 quote_expired`: the quote must be refreshed and confirmed again.
   bool get isQuoteExpired => failure?.code == ErrorCodes.quoteExpired;
 
+  /// `422 outstanding_balance`: the wallet is negative and must be topped
+  /// up before requesting (`Payments:BlockOnOutstandingBalance`).
+  bool get isOutstandingBalance =>
+      failure?.code == ErrorCodes.outstandingBalance;
+
+  /// Amount owed, from `details.amount` (positive).
+  double? get outstandingAmount => failure?.numDetail(ErrorCodes.amount)?.abs();
+
   /// Range returned with `422 offer_out_of_range`, to clamp the offer.
   OfferBounds? get offerBounds {
     final Failure? failure = this.failure;

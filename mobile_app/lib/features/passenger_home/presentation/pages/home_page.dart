@@ -31,12 +31,14 @@ class HomePage extends StatelessWidget {
           )..loadCategories(),
         ),
         BlocProvider<QuoteCubit>(
-          create: (BuildContext context) => QuoteCubit(getFareQuote: getIt())
-            ..update(buildQuoteRequest(const HomeState(), context.l10n)),
+          create: (BuildContext context) =>
+              QuoteCubit(getFareQuote: getIt())
+                ..update(buildQuoteRequest(const HomeState(), context.l10n)),
         ),
         BlocProvider<DemandCubit>(
           create: (_) =>
-              DemandCubit(getDemand: getIt())..watch(TripPlaces.currentLocation),
+              DemandCubit(getDemand: getIt())
+                ..watch(TripPlaces.currentLocation),
         ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(
@@ -52,10 +54,13 @@ class HomePage extends StatelessWidget {
             return Stack(
               children: <Widget>[
                 Positioned.fill(
-                  child: BlocSelector<HomeCubit, HomeState, int>(
+                  child: BlocSelector<HomeCubit, HomeState, int?>(
                     selector: (HomeState state) => state.displayEta,
-                    builder: (BuildContext context, int eta) =>
-                        MapSection(etaLabel: context.l10n.minutesLabel(eta)),
+                    builder: (BuildContext context, int? eta) => MapSection(
+                      etaLabel: eta == null
+                          ? context.l10n.noDriversNearby
+                          : context.l10n.minutesLabel(eta),
+                    ),
                   ),
                 ),
                 Align(

@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/design/tokens/ata_colors.dart';
@@ -13,9 +14,10 @@ import 'package:ata_app/design/widgets/progress_bar.dart';
 import 'package:ata_app/features/driver_dashboard/domain/entities/earnings_summary.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// Dark weekly-earnings card with progress toward the target. The transfer
-/// button is disabled ("coming soon") in Step 1.
+/// Dark weekly-earnings card with progress toward the target and the
+/// "transfer earnings" button (payout request, F11).
 class EarningsCard extends StatelessWidget {
   const EarningsCard({super.key, required this.earnings});
 
@@ -68,10 +70,10 @@ class EarningsCard extends StatelessWidget {
           ),
           const SizedBox(height: AtaSpacing.xl),
           AtaButton(
-            label: '${l10n.transferEarnings} · ${l10n.comingSoon}',
+            label: l10n.transferEarnings,
             variant: AtaButtonVariant.white,
             height: AtaSizes.buttonCompact,
-            onPressed: null,
+            onPressed: () => context.push(AppRoutes.driverPayoutRequest),
           ),
         ],
       ),

@@ -16,6 +16,19 @@ abstract final class ErrorCodes {
   static const String pinLocked = 'pin_locked';
   static const String offerOutOfRange = 'offer_out_of_range';
   static const String quoteExpired = 'quote_expired';
+  static const String paymentFailed = 'payment_failed';
+  static const String paymentMethodExpired = 'payment_method_expired';
+  static const String paymentMethodInUse = 'payment_method_in_use';
+  static const String paymentProviderUnavailable =
+      'payment_provider_unavailable';
+  static const String outstandingBalance = 'outstanding_balance';
+  static const String cashDebtLimitExceeded = 'cash_debt_limit_exceeded';
+  static const String payoutBelowMinimum = 'payout_below_minimum';
+  static const String payoutPendingExists = 'payout_pending_exists';
+  static const String ibanMissing = 'iban_missing';
+  static const String insufficientBalance = 'insufficient_balance';
+  static const String amount = 'amount';
+  static const String minAmount = 'minAmount';
   static const String offerMin = 'offerMin';
   static const String offerMax = 'offerMax';
   static const String attemptsLeft = 'attemptsLeft';
@@ -68,5 +81,37 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
     case ErrorCodes.quoteExpired:
       return l10n.quoteExpiredError;
   }
-  return failure.message.isEmpty ? l10n.errorUnexpected : failure.message;
+  return _paymentText(failure, l10n) ??
+      (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
+}
+
+/// F11 payment, wallet and payout errors.
+String? _paymentText(ServerFailure failure, AppLocalizations l10n) {
+  switch (failure.code) {
+    case ErrorCodes.paymentFailed:
+      return l10n.paymentFailedError;
+    case ErrorCodes.paymentMethodExpired:
+      return l10n.paymentMethodExpiredError;
+    case ErrorCodes.paymentMethodInUse:
+      return l10n.paymentMethodInUseError;
+    case ErrorCodes.paymentProviderUnavailable:
+      return l10n.paymentProviderUnavailableError;
+    case ErrorCodes.outstandingBalance:
+      return l10n.outstandingBalanceError(
+        Money.fixed(failure.numDetail(ErrorCodes.amount)?.abs() ?? 0),
+      );
+    case ErrorCodes.cashDebtLimitExceeded:
+      return l10n.cashDebtLimitError;
+    case ErrorCodes.payoutBelowMinimum:
+      return l10n.payoutBelowMinimumError(
+        Money.compact(failure.numDetail(ErrorCodes.minAmount) ?? 0),
+      );
+    case ErrorCodes.payoutPendingExists:
+      return l10n.payoutPendingExistsError;
+    case ErrorCodes.ibanMissing:
+      return l10n.ibanMissingError;
+    case ErrorCodes.insufficientBalance:
+      return l10n.insufficientBalanceError;
+  }
+  return null;
 }

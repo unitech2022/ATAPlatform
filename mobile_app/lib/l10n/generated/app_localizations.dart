@@ -2646,6 +2646,690 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'موقعك يُشارك مع الركاب'**
   String get locationStreaming;
+
+  /// No description provided for @noDriversNearby.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد كباتن قريبون الآن'**
+  String get noDriversNearby;
+
+  /// No description provided for @cardBrandMada.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدى'**
+  String get cardBrandMada;
+
+  /// No description provided for @cardBrandVisa.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيزا'**
+  String get cardBrandVisa;
+
+  /// No description provided for @cardBrandMastercard.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماستركارد'**
+  String get cardBrandMastercard;
+
+  /// No description provided for @cardMasked.
+  ///
+  /// In ar, this message translates to:
+  /// **'{brand} •••• {last4}'**
+  String cardMasked(String brand, String last4);
+
+  /// No description provided for @cardExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي {expiry}'**
+  String cardExpiry(String expiry);
+
+  /// No description provided for @cardExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'البطاقة منتهية الصلاحية'**
+  String get cardExpired;
+
+  /// No description provided for @cardPendingVerification.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار التحقق من البنك'**
+  String get cardPendingVerification;
+
+  /// No description provided for @cardDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'الافتراضية'**
+  String get cardDefault;
+
+  /// No description provided for @cardMakeDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين كافتراضية'**
+  String get cardMakeDefault;
+
+  /// No description provided for @cardRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get cardRemove;
+
+  /// No description provided for @cardRemoveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف البطاقة؟'**
+  String get cardRemoveTitle;
+
+  /// No description provided for @cardRemoveCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم حذف {card} من حسابك.'**
+  String cardRemoveCopy(String card);
+
+  /// No description provided for @savedCardsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقاتي'**
+  String get savedCardsTitle;
+
+  /// No description provided for @savedCardsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقات الدفع المحفوظة للرحلات وشحن المحفظة.'**
+  String get savedCardsCopy;
+
+  /// No description provided for @savedCardsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بطاقات محفوظة بعد'**
+  String get savedCardsEmpty;
+
+  /// No description provided for @manageCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة البطاقات'**
+  String get manageCards;
+
+  /// No description provided for @addCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة بطاقة'**
+  String get addCard;
+
+  /// No description provided for @addCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة بطاقة جديدة'**
+  String get addCardTitle;
+
+  /// No description provided for @addCardCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتم ترميز بطاقتك على جهازك، ولا يصل رقمها إلى خوادمنا.'**
+  String get addCardCopy;
+
+  /// No description provided for @cardNumberLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم البطاقة'**
+  String get cardNumberLabel;
+
+  /// No description provided for @cardNumberHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'0000 0000 0000 0000'**
+  String get cardNumberHint;
+
+  /// No description provided for @cardNumberError.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم البطاقة غير صحيح'**
+  String get cardNumberError;
+
+  /// No description provided for @cardExpiryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get cardExpiryLabel;
+
+  /// No description provided for @cardExpiryHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'MM/YY'**
+  String get cardExpiryHint;
+
+  /// No description provided for @cardExpiryError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ غير صالح'**
+  String get cardExpiryError;
+
+  /// No description provided for @cardCvcLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز الأمان'**
+  String get cardCvcLabel;
+
+  /// No description provided for @cardCvcHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'123'**
+  String get cardCvcHint;
+
+  /// No description provided for @cardCvcError.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز غير صحيح'**
+  String get cardCvcError;
+
+  /// No description provided for @cardHolderLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم حامل البطاقة'**
+  String get cardHolderLabel;
+
+  /// No description provided for @cardHolderHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كما يظهر على البطاقة'**
+  String get cardHolderHint;
+
+  /// No description provided for @cardSetDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدامها كبطاقة افتراضية'**
+  String get cardSetDefault;
+
+  /// No description provided for @saveCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ البطاقة'**
+  String get saveCard;
+
+  /// No description provided for @sandboxCardsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيئة تجريبية: 4000 0000 0000 0002 مرفوضة، 4000 0000 0000 3220 تتطلب تحققاً، وبطاقة مدى التجريبية 4406 4700 0000 0007.'**
+  String get sandboxCardsHint;
+
+  /// No description provided for @paymentActionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطلوب تحقق من البنك'**
+  String get paymentActionTitle;
+
+  /// No description provided for @paymentActionCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكمل التحقق في صفحة البنك، وسيتم تحديث الحالة تلقائياً بعد التأكيد.'**
+  String get paymentActionCopy;
+
+  /// No description provided for @paymentActionOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح صفحة التحقق'**
+  String get paymentActionOpen;
+
+  /// No description provided for @topUpSource.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة الدفع'**
+  String get topUpSource;
+
+  /// No description provided for @topUpToContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشحن المحفظة للمتابعة'**
+  String get topUpToContinue;
+
+  /// No description provided for @outstandingBalanceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجد مبلغ مستحق على حسابك'**
+  String get outstandingBalanceTitle;
+
+  /// No description provided for @outstandingBalanceCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد محفظتك سالب. اشحن المحفظة لتتمكن من طلب رحلات جديدة.'**
+  String get outstandingBalanceCopy;
+
+  /// No description provided for @outstandingBalanceError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجد مبلغ مستحق {amount} ر.س على حسابك، اشحن المحفظة للمتابعة'**
+  String outstandingBalanceError(String amount);
+
+  /// No description provided for @paymentFailedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر إتمام الدفع، جرّب بطاقة أخرى أو ادفع نقداً'**
+  String get paymentFailedError;
+
+  /// No description provided for @paymentMethodExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'البطاقة منتهية الصلاحية'**
+  String get paymentMethodExpiredError;
+
+  /// No description provided for @paymentMethodInUseError.
+  ///
+  /// In ar, this message translates to:
+  /// **'البطاقة مرتبطة برحلة جارية'**
+  String get paymentMethodInUseError;
+
+  /// No description provided for @paymentProviderUnavailableError.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمة الدفع غير متاحة حالياً، حاول لاحقاً'**
+  String get paymentProviderUnavailableError;
+
+  /// No description provided for @paymentFallbackCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الدفع بالبطاقة، فتم تحويل الرحلة إلى الدفع نقداً'**
+  String get paymentFallbackCash;
+
+  /// No description provided for @collectCashLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصّل نقداً من الراكب: {amount}'**
+  String collectCashLine(String amount);
+
+  /// No description provided for @viewReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الإيصال'**
+  String get viewReceipt;
+
+  /// No description provided for @receiptEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيصال الرحلة'**
+  String get receiptEyebrow;
+
+  /// No description provided for @receiptBreakdown.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الأجرة'**
+  String get receiptBreakdown;
+
+  /// No description provided for @receiptSubtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموع الفرعي'**
+  String get receiptSubtotal;
+
+  /// No description provided for @receiptDiscountTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الخصم'**
+  String get receiptDiscountTotal;
+
+  /// No description provided for @receiptVat.
+  ///
+  /// In ar, this message translates to:
+  /// **'شامل ضريبة القيمة المضافة {rate}٪: {amount}'**
+  String receiptVat(String rate, String amount);
+
+  /// No description provided for @receiptPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المدفوع'**
+  String get receiptPaid;
+
+  /// No description provided for @receiptRefunded.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسترد'**
+  String get receiptRefunded;
+
+  /// No description provided for @receiptNetPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي المدفوع'**
+  String get receiptNetPaid;
+
+  /// No description provided for @receiptUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يتوفر إيصال لهذه الرحلة'**
+  String get receiptUnavailable;
+
+  /// No description provided for @discountSourcePromotion.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض ترويجي'**
+  String get discountSourcePromotion;
+
+  /// No description provided for @discountSourceFavoriteDriver.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن المفضل'**
+  String get discountSourceFavoriteDriver;
+
+  /// No description provided for @cashDebtLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت مستحقات النقد الحد المسموح، سدّدها للاتصال'**
+  String get cashDebtLimitError;
+
+  /// No description provided for @cantGoOnlineTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكنك الاتصال الآن'**
+  String get cantGoOnlineTitle;
+
+  /// No description provided for @cashDebtTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحقات النقد'**
+  String get cashDebtTitle;
+
+  /// No description provided for @cashDebtCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أجور الرحلات النقدية المستحقة للمنصة. سدّدها قبل الوصول إلى الحد.'**
+  String get cashDebtCopy;
+
+  /// No description provided for @cashDebtLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد المسموح: {limit}'**
+  String cashDebtLimit(String limit);
+
+  /// No description provided for @settleDebt.
+  ///
+  /// In ar, this message translates to:
+  /// **'سداد'**
+  String get settleDebt;
+
+  /// No description provided for @settleDebtTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سداد مستحقات النقد'**
+  String get settleDebtTitle;
+
+  /// No description provided for @settleDebtCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشحن محفظة الكابتن لتسديد مستحقات الرحلات النقدية.'**
+  String get settleDebtCopy;
+
+  /// No description provided for @driverWalletEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة والأرباح'**
+  String get driverWalletEyebrow;
+
+  /// No description provided for @earningsStatementTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الأرباح'**
+  String get earningsStatementTitle;
+
+  /// No description provided for @earningsStatementCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرباحك وعمولة المنصة والنقد المحصّل للفترة.'**
+  String get earningsStatementCopy;
+
+  /// No description provided for @periodToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get periodToday;
+
+  /// No description provided for @periodWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع'**
+  String get periodWeek;
+
+  /// No description provided for @periodMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر'**
+  String get periodMonth;
+
+  /// No description provided for @statementNet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصافي'**
+  String get statementNet;
+
+  /// No description provided for @statementTrips.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لا رحلات} =1{رحلة واحدة} =2{رحلتان} few{{count} رحلات} other{{count} رحلة}}'**
+  String statementTrips(int count);
+
+  /// No description provided for @statementGross.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأجور'**
+  String get statementGross;
+
+  /// No description provided for @statementCommission.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمولة المنصة'**
+  String get statementCommission;
+
+  /// No description provided for @statementEarnings.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرباحك'**
+  String get statementEarnings;
+
+  /// No description provided for @statementIncentives.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحوافز'**
+  String get statementIncentives;
+
+  /// No description provided for @statementCompensation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعويضات الإلغاء'**
+  String get statementCompensation;
+
+  /// No description provided for @statementAdjustments.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسويات'**
+  String get statementAdjustments;
+
+  /// No description provided for @statementCashCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقد المحصّل'**
+  String get statementCashCollected;
+
+  /// No description provided for @statementPayouts.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحويلات'**
+  String get statementPayouts;
+
+  /// No description provided for @statementDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب اليوم'**
+  String get statementDaily;
+
+  /// No description provided for @payoutsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل الأرباح'**
+  String get payoutsTitle;
+
+  /// No description provided for @payoutsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب تحويل رصيدك إلى حسابك البنكي وتابع الحالة.'**
+  String get payoutsCopy;
+
+  /// No description provided for @payoutsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات تحويل بعد'**
+  String get payoutsEmpty;
+
+  /// No description provided for @payoutHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل التحويلات'**
+  String get payoutHistory;
+
+  /// No description provided for @requestPayout.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب تحويل'**
+  String get requestPayout;
+
+  /// No description provided for @payoutRequestCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُحوَّل المبلغ إلى الآيبان المسجل بعد اعتماد الطلب.'**
+  String get payoutRequestCopy;
+
+  /// No description provided for @payoutAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح للتحويل'**
+  String get payoutAvailable;
+
+  /// No description provided for @payoutAvailableLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح للتحويل: {amount}'**
+  String payoutAvailableLine(String amount);
+
+  /// No description provided for @payoutIban.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآيبان'**
+  String get payoutIban;
+
+  /// No description provided for @payoutIbanMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مضاف'**
+  String get payoutIbanMissing;
+
+  /// No description provided for @payoutAmountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get payoutAmountLabel;
+
+  /// No description provided for @payoutAmountInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل مبلغاً صحيحاً'**
+  String get payoutAmountInvalid;
+
+  /// No description provided for @payoutMinimumHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى للتحويل {amount}'**
+  String payoutMinimumHint(String amount);
+
+  /// No description provided for @confirmPayout.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد تحويل {amount}'**
+  String confirmPayout(String amount);
+
+  /// No description provided for @payoutRequestedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال طلب التحويل'**
+  String get payoutRequestedTitle;
+
+  /// No description provided for @payoutRequestedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنبلغك عند اعتماد الطلب وتحويل المبلغ.'**
+  String get payoutRequestedCopy;
+
+  /// No description provided for @payoutUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب التحويل غير متاح حالياً'**
+  String get payoutUnavailable;
+
+  /// No description provided for @payoutRequested.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد المراجعة'**
+  String get payoutRequested;
+
+  /// No description provided for @payoutApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'معتمد'**
+  String get payoutApproved;
+
+  /// No description provided for @payoutPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوع'**
+  String get payoutPaid;
+
+  /// No description provided for @payoutRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرفوض'**
+  String get payoutRejected;
+
+  /// No description provided for @payoutCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغى'**
+  String get payoutCancelled;
+
+  /// No description provided for @payoutRejectedReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب: {reason}'**
+  String payoutRejectedReason(String reason);
+
+  /// No description provided for @payoutBelowMinimumError.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ أقل من الحد الأدنى للسحب ({amount} ر.س)'**
+  String payoutBelowMinimumError(String amount);
+
+  /// No description provided for @payoutBelowMinimumReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيدك أقل من الحد الأدنى للسحب'**
+  String get payoutBelowMinimumReason;
+
+  /// No description provided for @payoutCashDebtReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سدّد مستحقات النقد أولاً'**
+  String get payoutCashDebtReason;
+
+  /// No description provided for @payoutPendingExistsError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديك طلب سحب قيد المعالجة'**
+  String get payoutPendingExistsError;
+
+  /// No description provided for @ibanMissingError.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف رقم الآيبان أولاً'**
+  String get ibanMissingError;
+
+  /// No description provided for @insufficientBalanceError.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ أكبر من الرصيد المتاح'**
+  String get insufficientBalanceError;
 }
 
 class _AppLocalizationsDelegate

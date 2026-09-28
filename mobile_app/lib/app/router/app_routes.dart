@@ -15,12 +15,27 @@ abstract final class AppRoutes {
   static const String driverPending = '/driver/pending';
   static const String driverOffer = '/driver/offer';
   static const String driverTrip = '/driver/trip';
+  static const String driverEarnings = '/driver/earnings';
+  static const String driverPayouts = '/driver/payouts';
+  static const String driverPayoutRequest = '/driver/payouts/request';
+  static const String driverTopUp = '/driver/top-up';
+
+  /// Query parameter selecting the dashboard tab (`/driver?tab=documents`).
+  static const String tabParam = 'tab';
+
+  /// Query parameter pre-filling the top-up amount.
+  static const String amountParam = 'amount';
+
+  /// Path parameter of the rides detail / receipt routes.
+  static const String tripIdParam = 'tripId';
 
   static const String home = '/home';
   static const String trip = '/trip';
   static const String rides = '/rides';
   static const String wallet = '/wallet';
   static const String walletTopUp = '/wallet/top-up';
+  static const String walletPaymentMethods = '/wallet/payment-methods';
+  static const String walletAddCard = '/wallet/payment-methods/add';
   static const String safety = '/safety';
   static const String account = '/account';
   static const String accountNotifications = '/account/notifications';
@@ -33,6 +48,14 @@ abstract final class AppRoutes {
   static const String roleParam = 'role';
 
   static String phoneFor(UserRole role) => '$phone?$roleParam=${role.apiValue}';
+
+  /// `/rides/{tripId}/receipt` (F11).
+  static String rideReceipt(String tripId) => '$rides/$tripId/receipt';
+
+  /// `/driver/top-up?amount=…` (settles the cash debt).
+  static String driverTopUpFor(double? amount) => amount == null || amount <= 0
+      ? driverTopUp
+      : '$driverTopUp?$amountParam=${amount.ceil()}';
 
   /// Full-screen map pages of the rider (no bottom navigation).
   static bool isMapPage(String location) =>

@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/failure_text.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_colors.dart';
@@ -23,6 +24,7 @@ import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// The white sheet of the passenger trip page, rendered per status.
 class ActiveTripSheet extends StatelessWidget {
@@ -82,7 +84,15 @@ class _StageBody extends StatelessWidget {
     } else if (stage.isRiding) {
       body = TripProgressView(trip: trip);
     } else if (stage == TripStage.completed) {
-      body = TripReceiptView(trip: trip, onDone: cubit.dismiss);
+      body = TripReceiptView(
+        trip: trip,
+        onDone: cubit.dismiss,
+        onReceipt: () {
+          // Leave the pinned /trip page first, then open the receipt.
+          cubit.dismiss();
+          context.go(AppRoutes.rideReceipt(trip.id));
+        },
+      );
     } else if (stage.isTerminal) {
       body = TripEndedView(
         stage: stage,

@@ -13,6 +13,9 @@ abstract interface class AccountRepository {
   updateNotificationPreferences(NotificationPreferences preferences);
   Future<Either<Failure, Unit>> deleteAccount();
 
+  /// `PUT /me/devices` with the push subscription id (diagnostics only).
+  Future<Either<Failure, Unit>> registerDevice({String? pushToken});
+
   /// Locally persisted locale (`ar` by default).
   String getSavedLocale();
   Future<Either<Failure, Unit>> saveLocale(String languageCode);

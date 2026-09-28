@@ -17,12 +17,20 @@ import 'package:ata_app/features/driver_dashboard/domain/repositories/driver_das
 import 'package:ata_app/features/driver_onboarding/data/datasources/driver_onboarding_remote_data_source.dart';
 import 'package:ata_app/features/driver_onboarding/data/repositories/driver_onboarding_repository_impl.dart';
 import 'package:ata_app/features/driver_onboarding/domain/repositories/driver_onboarding_repository.dart';
+import 'package:ata_app/features/driver_wallet/data/datasources/driver_wallet_remote_data_source.dart';
+import 'package:ata_app/features/driver_wallet/data/repositories/driver_wallet_repository_impl.dart';
+import 'package:ata_app/features/driver_wallet/domain/repositories/driver_wallet_repository.dart';
 import 'package:ata_app/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:ata_app/features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:ata_app/features/passenger_home/data/datasources/passenger_remote_data_source.dart';
 import 'package:ata_app/features/passenger_home/data/repositories/passenger_repository_impl.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
+import 'package:ata_app/features/payments/data/datasources/payments_remote_data_source.dart';
+import 'package:ata_app/features/payments/data/repositories/payments_repository_impl.dart';
+import 'package:ata_app/features/payments/data/tokenizers/sandbox_card_tokenizer.dart';
+import 'package:ata_app/features/payments/domain/repositories/card_tokenizer.dart';
+import 'package:ata_app/features/payments/domain/repositories/payments_repository.dart';
 import 'package:ata_app/features/pricing/data/datasources/pricing_remote_data_source.dart';
 import 'package:ata_app/features/pricing/data/repositories/pricing_repository_impl.dart';
 import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.dart';
@@ -82,7 +90,18 @@ void registerData({
       () => WalletRepositoryImpl(WalletRemoteDataSource(getIt())),
     )
     ..registerLazySingleton<NotificationsRepository>(
-      () => NotificationsRepositoryImpl(NotificationsRemoteDataSource(getIt())),
+      () => NotificationsRepositoryImpl(
+        NotificationsRemoteDataSource(getIt()),
+        getIt(),
+      ),
+    )
+    ..registerLazySingleton<PaymentsRepository>(
+      () => PaymentsRepositoryImpl(PaymentsRemoteDataSource(getIt())),
+    )
+    // Swap for the provider SDK tokenizer (MoyasarCardTokenizer) in F11 prod.
+    ..registerLazySingleton<CardTokenizer>(() => const SandboxCardTokenizer())
+    ..registerLazySingleton<DriverWalletRepository>(
+      () => DriverWalletRepositoryImpl(DriverWalletRemoteDataSource(getIt())),
     )
     ..registerLazySingleton<DriverOnboardingRepository>(
       () => DriverOnboardingRepositoryImpl(

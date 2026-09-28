@@ -1,6 +1,18 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:equatable/equatable.dart';
 
+/// Going online was refused because the cash debt exceeds the limit
+/// (`403 cash_debt_limit_exceeded` with `details { cashDebt, limit }`).
+class CashDebtBlock extends Equatable {
+  const CashDebtBlock({this.cashDebt, this.limit});
+
+  final double? cashDebt;
+  final double? limit;
+
+  @override
+  List<Object?> get props => <Object?>[cashDebt, limit];
+}
+
 /// State of the online/offline toggle.
 class OnlineStatusState extends Equatable {
   const OnlineStatusState({
@@ -8,6 +20,7 @@ class OnlineStatusState extends Equatable {
     this.canGoOnline = true,
     this.updating = false,
     this.failure,
+    this.debtBlock,
   });
 
   final bool isOnline;
@@ -15,17 +28,23 @@ class OnlineStatusState extends Equatable {
   final bool updating;
   final Failure? failure;
 
+  /// Set while the driver cannot go online until the debt is settled.
+  final CashDebtBlock? debtBlock;
+
   OnlineStatusState copyWith({
     bool? isOnline,
     bool? canGoOnline,
     bool? updating,
     Failure? failure,
+    CashDebtBlock? debtBlock,
     bool clearFailure = false,
+    bool clearDebtBlock = false,
   }) => OnlineStatusState(
     isOnline: isOnline ?? this.isOnline,
     canGoOnline: canGoOnline ?? this.canGoOnline,
     updating: updating ?? this.updating,
     failure: clearFailure ? null : failure ?? this.failure,
+    debtBlock: clearDebtBlock ? null : debtBlock ?? this.debtBlock,
   );
 
   @override
@@ -34,5 +53,6 @@ class OnlineStatusState extends Equatable {
     canGoOnline,
     updating,
     failure,
+    debtBlock,
   ];
 }

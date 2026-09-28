@@ -8,6 +8,7 @@ import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/design/widgets/setting_row.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
 import 'package:ata_app/features/notifications/domain/entities/notification_item.dart';
+import 'package:ata_app/features/notifications/presentation/cubit/deep_link_cubit.dart';
 import 'package:ata_app/features/notifications/presentation/cubit/notifications_cubit.dart';
 import 'package:ata_app/features/notifications/presentation/cubit/notifications_state.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -111,17 +112,21 @@ class _NotificationRow extends StatelessWidget {
   final NotificationItem item;
   final bool last;
 
-  static AtaIcons _iconFor(String type) => switch (type) {
-    'trip' || 'ride' => AtaIcons.car,
-    'wallet' || 'payment' => AtaIcons.wallet,
-    'safety' || 'security' => AtaIcons.shield,
+  static AtaIcons _iconFor(String category) => switch (category) {
+    'trips' || 'offers' => AtaIcons.car,
+    'wallet' => AtaIcons.wallet,
+    'safety' => AtaIcons.shield,
     _ => AtaIcons.bell,
   };
 
   @override
   Widget build(BuildContext context) {
     return SettingRow(
-      leading: IconBox(icon: _iconFor(item.type), size: AtaSizes.iconBoxSmall),
+      leading: IconBox(
+        icon: _iconFor(item.resolvedCategory),
+        size: AtaSizes.iconBoxSmall,
+      ),
+      onTap: () => _open(context),
       title: item.title,
       subtitle: item.body,
       showChevron: false,
@@ -139,5 +144,13 @@ class _NotificationRow extends StatelessWidget {
             )
           : null,
     );
+  }
+
+  /// Marks the row read and opens its deep link through [DeepLinkCubit].
+  void _open(BuildContext context) {
+    final DeepLinkCubit deepLinks = context.read<DeepLinkCubit>();
+    context.read<NotificationsCubit>().markItemRead(item.id);
+    Navigator.of(context).pop();
+    deepLinks.open(item.deepLink, notificationId: item.id);
   }
 }

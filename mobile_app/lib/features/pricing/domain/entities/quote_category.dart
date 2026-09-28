@@ -33,12 +33,18 @@ class QuoteCategory extends Equatable {
   final String rideCategoryId;
   final String code;
   final String name;
-  final int etaMinutes;
+
+  /// Minutes until the nearest driver arrives; `null` when no driver is
+  /// nearby for this category.
+  final int? etaMinutes;
   final double total;
   final double driverNetEarnings;
   final double offerMin;
   final double offerMax;
   final FareBreakdown breakdown;
+
+  /// The category was priced but no driver is close enough right now.
+  bool get hasNoNearbyDrivers => etaMinutes == null;
 
   OfferBounds get offerBounds => OfferBounds(min: offerMin, max: offerMax);
 

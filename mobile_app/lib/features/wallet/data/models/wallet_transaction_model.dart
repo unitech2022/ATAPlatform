@@ -1,3 +1,5 @@
+import 'package:ata_app/features/payments/data/models/saved_card_model.dart';
+import 'package:ata_app/features/trip/data/models/json_readers.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_transaction.dart';
 
 /// JSON mapping for [WalletTransaction].
@@ -31,11 +33,18 @@ class TopUpResultModel extends TopUpResult {
   const TopUpResultModel({
     required super.transactionId,
     required super.balance,
+    super.paymentId,
+    super.status,
+    super.action,
   });
 
   factory TopUpResultModel.fromJson(Map<String, dynamic> json) =>
       TopUpResultModel(
-        transactionId: json['transactionId'] as String,
-        balance: (json['balance'] as num?)?.toDouble() ?? 0,
+        transactionId: JsonReaders.string(json, 'transactionId'),
+        balance: JsonReaders.number(json, 'balance'),
+        paymentId: JsonReaders.optionalString(json, 'paymentId'),
+        status:
+            JsonReaders.optionalString(json, 'status') ?? TopUpResult.captured,
+        action: PaymentActionModel.fromJson(JsonReaders.object(json, 'action')),
       );
 }

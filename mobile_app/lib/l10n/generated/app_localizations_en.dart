@@ -1426,4 +1426,396 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locationStreaming => 'Your location is shared with passengers';
+
+  @override
+  String get noDriversNearby => 'No drivers nearby';
+
+  @override
+  String get cardBrandMada => 'mada';
+
+  @override
+  String get cardBrandVisa => 'Visa';
+
+  @override
+  String get cardBrandMastercard => 'Mastercard';
+
+  @override
+  String cardMasked(String brand, String last4) {
+    return '$brand •••• $last4';
+  }
+
+  @override
+  String cardExpiry(String expiry) {
+    return 'Expires $expiry';
+  }
+
+  @override
+  String get cardExpired => 'Card expired';
+
+  @override
+  String get cardPendingVerification => 'Awaiting bank verification';
+
+  @override
+  String get cardDefault => 'Default';
+
+  @override
+  String get cardMakeDefault => 'Make default';
+
+  @override
+  String get cardRemove => 'Remove';
+
+  @override
+  String get cardRemoveTitle => 'Remove card?';
+
+  @override
+  String cardRemoveCopy(String card) {
+    return '$card will be removed from your account.';
+  }
+
+  @override
+  String get savedCardsTitle => 'My cards';
+
+  @override
+  String get savedCardsCopy => 'Saved cards for trips and wallet top-ups.';
+
+  @override
+  String get savedCardsEmpty => 'No saved cards yet';
+
+  @override
+  String get manageCards => 'Manage cards';
+
+  @override
+  String get addCard => 'Add card';
+
+  @override
+  String get addCardTitle => 'Add a new card';
+
+  @override
+  String get addCardCopy =>
+      'Your card is tokenised on this device; its number never reaches our servers.';
+
+  @override
+  String get cardNumberLabel => 'Card number';
+
+  @override
+  String get cardNumberHint => '0000 0000 0000 0000';
+
+  @override
+  String get cardNumberError => 'Invalid card number';
+
+  @override
+  String get cardExpiryLabel => 'Expiry';
+
+  @override
+  String get cardExpiryHint => 'MM/YY';
+
+  @override
+  String get cardExpiryError => 'Invalid date';
+
+  @override
+  String get cardCvcLabel => 'CVC';
+
+  @override
+  String get cardCvcHint => '123';
+
+  @override
+  String get cardCvcError => 'Invalid code';
+
+  @override
+  String get cardHolderLabel => 'Cardholder name';
+
+  @override
+  String get cardHolderHint => 'As shown on the card';
+
+  @override
+  String get cardSetDefault => 'Use as default card';
+
+  @override
+  String get saveCard => 'Save card';
+
+  @override
+  String get sandboxCardsHint =>
+      'Sandbox: 4000 0000 0000 0002 is declined, 4000 0000 0000 3220 needs verification, mada cards start with 4406 4700 0000 0007.';
+
+  @override
+  String get paymentActionTitle => 'Bank verification required';
+
+  @override
+  String get paymentActionCopy =>
+      'Complete the verification on your bank\'s page; the status updates automatically once confirmed.';
+
+  @override
+  String get paymentActionOpen => 'Open verification page';
+
+  @override
+  String get topUpSource => 'Pay with';
+
+  @override
+  String get topUpToContinue => 'Top up to continue';
+
+  @override
+  String get outstandingBalanceTitle => 'You have an outstanding balance';
+
+  @override
+  String get outstandingBalanceCopy =>
+      'Your wallet balance is negative. Top up to request new rides.';
+
+  @override
+  String outstandingBalanceError(String amount) {
+    return 'You owe SAR $amount. Top up your wallet to continue.';
+  }
+
+  @override
+  String get paymentFailedError =>
+      'Payment failed. Try another card or pay cash.';
+
+  @override
+  String get paymentMethodExpiredError => 'The card has expired';
+
+  @override
+  String get paymentMethodInUseError => 'The card is linked to an ongoing trip';
+
+  @override
+  String get paymentProviderUnavailableError =>
+      'The payment service is unavailable. Try again later.';
+
+  @override
+  String get paymentFallbackCash =>
+      'The card could not be charged, so the trip was switched to cash.';
+
+  @override
+  String collectCashLine(String amount) {
+    return 'Collect in cash from the rider: $amount';
+  }
+
+  @override
+  String get viewReceipt => 'View receipt';
+
+  @override
+  String get receiptEyebrow => 'Trip receipt';
+
+  @override
+  String get receiptBreakdown => 'Fare breakdown';
+
+  @override
+  String get receiptSubtotal => 'Subtotal';
+
+  @override
+  String get receiptDiscountTotal => 'Total discount';
+
+  @override
+  String receiptVat(String rate, String amount) {
+    return 'Includes $rate% VAT: $amount';
+  }
+
+  @override
+  String get receiptPaid => 'Amount paid';
+
+  @override
+  String get receiptRefunded => 'Refunded';
+
+  @override
+  String get receiptNetPaid => 'Net paid';
+
+  @override
+  String get receiptUnavailable => 'No receipt is available for this trip';
+
+  @override
+  String get discountSourcePromotion => 'Promotion';
+
+  @override
+  String get discountSourceFavoriteDriver => 'Favourite driver';
+
+  @override
+  String get cashDebtLimitError =>
+      'Your cash dues exceed the limit. Settle them to go online.';
+
+  @override
+  String get cantGoOnlineTitle => 'You can\'t go online';
+
+  @override
+  String get cashDebtTitle => 'Cash dues';
+
+  @override
+  String get cashDebtCopy =>
+      'Cash fares owed to the platform. Settle them before reaching the limit.';
+
+  @override
+  String cashDebtLimit(String limit) {
+    return 'Limit: $limit';
+  }
+
+  @override
+  String get settleDebt => 'Settle';
+
+  @override
+  String get settleDebtTitle => 'Settle cash dues';
+
+  @override
+  String get settleDebtCopy =>
+      'Top up your driver wallet to settle cash-trip dues.';
+
+  @override
+  String get driverWalletEyebrow => 'Wallet & earnings';
+
+  @override
+  String get earningsStatementTitle => 'Earnings statement';
+
+  @override
+  String get earningsStatementCopy =>
+      'Your earnings, platform commission and cash collected for the period.';
+
+  @override
+  String get periodToday => 'Today';
+
+  @override
+  String get periodWeek => 'Week';
+
+  @override
+  String get periodMonth => 'Month';
+
+  @override
+  String get statementNet => 'Net';
+
+  @override
+  String statementTrips(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips',
+      one: '1 trip',
+      zero: 'No trips',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statementGross => 'Gross fares';
+
+  @override
+  String get statementCommission => 'Platform commission';
+
+  @override
+  String get statementEarnings => 'Your earnings';
+
+  @override
+  String get statementIncentives => 'Incentives';
+
+  @override
+  String get statementCompensation => 'Cancellation compensation';
+
+  @override
+  String get statementAdjustments => 'Adjustments';
+
+  @override
+  String get statementCashCollected => 'Cash collected';
+
+  @override
+  String get statementPayouts => 'Payouts';
+
+  @override
+  String get statementDaily => 'By day';
+
+  @override
+  String get payoutsTitle => 'Payouts';
+
+  @override
+  String get payoutsCopy =>
+      'Request a transfer to your bank account and track its status.';
+
+  @override
+  String get payoutsEmpty => 'No payout requests yet';
+
+  @override
+  String get payoutHistory => 'Payout history';
+
+  @override
+  String get requestPayout => 'Request payout';
+
+  @override
+  String get payoutRequestCopy =>
+      'The amount is sent to your registered IBAN once approved.';
+
+  @override
+  String get payoutAvailable => 'Available';
+
+  @override
+  String payoutAvailableLine(String amount) {
+    return 'Available: $amount';
+  }
+
+  @override
+  String get payoutIban => 'IBAN';
+
+  @override
+  String get payoutIbanMissing => 'Not added';
+
+  @override
+  String get payoutAmountLabel => 'Amount';
+
+  @override
+  String get payoutAmountInvalid => 'Enter a valid amount';
+
+  @override
+  String payoutMinimumHint(String amount) {
+    return 'Minimum payout $amount';
+  }
+
+  @override
+  String confirmPayout(String amount) {
+    return 'Confirm payout of $amount';
+  }
+
+  @override
+  String get payoutRequestedTitle => 'Payout requested';
+
+  @override
+  String get payoutRequestedCopy =>
+      'We\'ll notify you when it is approved and paid.';
+
+  @override
+  String get payoutUnavailable => 'Payouts are unavailable right now';
+
+  @override
+  String get payoutRequested => 'Requested';
+
+  @override
+  String get payoutApproved => 'Approved';
+
+  @override
+  String get payoutPaid => 'Paid';
+
+  @override
+  String get payoutRejected => 'Rejected';
+
+  @override
+  String get payoutCancelled => 'Cancelled';
+
+  @override
+  String payoutRejectedReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String payoutBelowMinimumError(String amount) {
+    return 'The amount is below the minimum payout (SAR $amount)';
+  }
+
+  @override
+  String get payoutBelowMinimumReason =>
+      'Your balance is below the minimum payout';
+
+  @override
+  String get payoutCashDebtReason => 'Settle your cash dues first';
+
+  @override
+  String get payoutPendingExistsError =>
+      'You already have a payout in progress';
+
+  @override
+  String get ibanMissingError => 'Add your IBAN first';
+
+  @override
+  String get insufficientBalanceError =>
+      'The amount exceeds your available balance';
 }

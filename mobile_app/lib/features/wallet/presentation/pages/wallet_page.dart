@@ -6,16 +6,19 @@ import 'package:ata_app/core/widgets/failure_view.dart';
 import 'package:ata_app/design/tokens/ata_colors.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
+import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/ata_card.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
+import 'package:ata_app/features/payments/presentation/widgets/payment_text.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_summary.dart';
 import 'package:ata_app/features/wallet/presentation/cubit/wallet_cubit.dart';
 import 'package:ata_app/features/wallet/presentation/cubit/wallet_state.dart';
 import 'package:ata_app/features/wallet/presentation/widgets/balance_card.dart';
+import 'package:ata_app/features/wallet/presentation/widgets/outstanding_balance_banner.dart';
 import 'package:ata_app/features/wallet/presentation/widgets/payment_method_tile.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +56,16 @@ class WalletPage extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
+                  if (state.wallet?.hasOutstandingBalance ?? false) ...<Widget>[
+                    OutstandingBalanceBanner(
+                      title: l10n.outstandingBalanceTitle,
+                      message: l10n.outstandingBalanceCopy,
+                      actionLabel: l10n.topUpToContinue,
+                      amount: -state.balance,
+                      onAction: () => _MethodsCard.openTopUp(context),
+                    ),
+                    const SizedBox(height: AtaSpacing.md),
+                  ],
                   BalanceCard(balance: state.balance),
                   const SizedBox(height: AtaSpacing.xl),
                   _MethodsCard(state: state),
@@ -71,8 +84,6 @@ class _MethodsCard extends StatelessWidget {
 
   final WalletState state;
 
-  static const String _cardDigits = '2841';
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -85,21 +96,25 @@ class _MethodsCard extends StatelessWidget {
     final PaymentMethod? cash = methods
         .where((PaymentMethod m) => m.type == 'cash')
         .firstOrNull;
+    final List<PaymentMethod> cards = methods
+        .where((PaymentMethod m) => m.isCard)
+        .toList(growable: false);
     return AtaCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Text(l10n.paymentMethods, style: AtaText.section),
+              Expanded(
+                child: Text(l10n.paymentMethods, style: AtaText.section),
+              ),
               PillButton(
                 label: l10n.topUp,
                 icon: AtaIcons.plus,
                 background: AtaColors.brand,
                 foreground: AtaColors.white,
                 elevated: false,
-                onTap: () => _openTopUp(context),
+                onTap: () => openTopUp(context),
               ),
             ],
           ),
@@ -110,23 +125,43 @@ class _MethodsCard extends StatelessWidget {
             selected: true,
           ),
           const SizedBox(height: AtaSpacing.sm),
-          PaymentMethodTile(
-            title: l10n.madaCard,
-            subtitle: l10n.cardEnding(_cardDigits),
-            selected: false,
-          ),
-          const SizedBox(height: AtaSpacing.sm),
+          for (final PaymentMethod card in cards) ...<Widget>[
+            PaymentMethodTile(
+              title: card.label.isNotEmpty
+                  ? card.label
+                  : PaymentText.brand(l10n, card.brand),
+              subtitle: card.isDefault
+                  ? l10n.cardDefault
+                  : l10n.cardEnding(card.last4 ?? ''),
+              selected: false,
+            ),
+            const SizedBox(height: AtaSpacing.sm),
+          ],
           PaymentMethodTile(
             title: cash?.label ?? l10n.payCash,
             subtitle: l10n.payCashCopy,
             selected: false,
+          ),
+          const SizedBox(height: AtaSpacing.sm),
+          AtaButton(
+            label: l10n.manageCards,
+            icon: AtaIcons.wallet,
+            variant: AtaButtonVariant.soft,
+            height: AtaSizes.buttonCompact,
+            onPressed: () => _manageCards(context),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _openTopUp(BuildContext context) async {
+  Future<void> _manageCards(BuildContext context) async {
+    final WalletCubit cubit = context.read<WalletCubit>();
+    await context.push<void>(AppRoutes.walletPaymentMethods);
+    await cubit.load();
+  }
+
+  static Future<void> openTopUp(BuildContext context) async {
     final WalletCubit cubit = context.read<WalletCubit>();
     final double? newBalance = await context.push<double>(
       AppRoutes.walletTopUp,

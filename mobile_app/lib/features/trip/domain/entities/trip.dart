@@ -51,7 +51,12 @@ class Trip extends Equatable {
     this.cancellationReason,
     this.timeline = const TripTimeline(),
     this.events = const <TripEvent>[],
+    this.collectCashAmount,
   });
+
+  /// Trip event recorded when a card capture failed and the fare moved to
+  /// cash (`docs/08` §F11.4).
+  static const String paymentFallbackEvent = 'payment_fallback_cash';
 
   final String id;
   final String tripNumber;
@@ -81,6 +86,14 @@ class Trip extends Equatable {
   final String? cancellationReason;
   final TripTimeline timeline;
   final List<TripEvent> events;
+
+  /// Driver view: cash to collect after completion (includes a failed card
+  /// capture).
+  final double? collectCashAmount;
+
+  /// The card could not be charged and the trip is paid in cash.
+  bool get paymentFellBackToCash =>
+      events.any((TripEvent e) => e.type == paymentFallbackEvent);
 
   /// Final fare when known, otherwise the estimate (or the offered price).
   double get fare => finalFare ?? offeredPrice ?? estimatedFare;
@@ -117,6 +130,7 @@ class Trip extends Equatable {
     cancellationReason: cancellationReason,
     timeline: timeline,
     events: events,
+    collectCashAmount: collectCashAmount,
   );
 
   @override
@@ -149,5 +163,6 @@ class Trip extends Equatable {
     cancellationReason,
     timeline,
     events,
+    collectCashAmount,
   ];
 }

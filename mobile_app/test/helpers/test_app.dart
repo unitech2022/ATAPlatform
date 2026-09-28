@@ -1,5 +1,5 @@
 import 'package:ata_app/app/app.dart';
-import 'package:ata_app/app/router/app_router.dart';
+import 'package:ata_app/app/bootstrap.dart';
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/di/use_case_module.dart';
 import 'package:ata_app/core/storage/preferences_storage.dart';
@@ -7,7 +7,6 @@ import 'package:ata_app/design/theme/ata_theme.dart';
 import 'package:ata_app/features/account/domain/repositories/account_repository.dart';
 import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
@@ -15,7 +14,6 @@ import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
-import 'package:ata_app/features/trip/presentation/cubit/trip_cubits.dart';
 import 'package:ata_app/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -48,26 +46,9 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
   registerUseCases();
 }
 
-/// Builds the full app against the registered test dependencies.
-AtaApp buildTestApp() {
-  final SessionCubit session = SessionCubit(
-    restoreSession: getIt(),
-    logout: getIt(),
-    events: getIt(),
-  );
-  final LocaleCubit locale = LocaleCubit(
-    getSavedLocale: getIt(),
-    changeLanguage: getIt(),
-  );
-  final TripCubits trips = TripCubits.fromInjector()..bindSession(session);
-  session.restore();
-  return AtaApp(
-    sessionCubit: session,
-    localeCubit: locale,
-    tripCubits: trips,
-    router: createAppRouter(session, trips),
-  );
-}
+/// Builds the full app against the registered test dependencies (same
+/// wiring as production: session, trips, deep links, push binding).
+AtaApp buildTestApp() => bootstrapApp();
 
 /// Wraps a widget with the theme, localizations and RTL direction.
 Widget wrapForTest(Widget child, {Locale locale = const Locale('ar')}) {

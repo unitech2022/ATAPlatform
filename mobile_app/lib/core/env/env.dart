@@ -28,6 +28,12 @@ abstract final class Env {
     'SIMULATE_LOCATION',
   );
 
+  /// OneSignal app id (`--dart-define=ONESIGNAL_APP_ID=...`). When empty,
+  /// push is disabled and a no-op service is used.
+  static const String oneSignalAppId = String.fromEnvironment(
+    'ONESIGNAL_APP_ID',
+  );
+
   /// Reported to the API in the `device.appVersion` field.
   static const String appVersion = '1.0.0';
 

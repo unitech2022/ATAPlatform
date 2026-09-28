@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/core/widgets/failure_view.dart';
@@ -17,6 +18,7 @@ import 'package:ata_app/features/rides/presentation/widgets/trip_tile.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// Trip history with the promo card.
 class RidesPage extends StatelessWidget {
@@ -94,7 +96,12 @@ class _TripsCard extends StatelessWidget {
               return Column(
                 children: <Widget>[
                   for (final TripSummary trip in state.trips) ...<Widget>[
-                    TripTile(trip: trip),
+                    TripTile(
+                      trip: trip,
+                      onTap: trip.status == TripStatus.completed
+                          ? () => context.push(AppRoutes.rideReceipt(trip.id))
+                          : null,
+                    ),
                     const SizedBox(height: AtaSpacing.sm),
                   ],
                 ],

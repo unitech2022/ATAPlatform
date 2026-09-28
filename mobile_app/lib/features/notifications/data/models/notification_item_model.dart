@@ -8,6 +8,7 @@ class NotificationItemModel extends NotificationItem {
     required super.title,
     required super.body,
     required super.createdAt,
+    super.category,
     super.data,
     super.readAt,
   });
@@ -18,6 +19,7 @@ class NotificationItemModel extends NotificationItem {
         type: json['type'] as String? ?? 'general',
         title: json['title'] as String? ?? '',
         body: json['body'] as String? ?? '',
+        category: json['category'] as String?,
         data: json['data'] as Map<String, dynamic>?,
         readAt: DateTime.tryParse(json['readAt'] as String? ?? ''),
         createdAt:

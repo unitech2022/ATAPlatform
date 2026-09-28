@@ -63,7 +63,7 @@ class QuoteCategoryModel extends QuoteCategory {
       rideCategoryId: JsonReaders.string(json, 'rideCategoryId'),
       code: JsonReaders.string(json, 'code'),
       name: JsonReaders.string(json, 'name'),
-      etaMinutes: JsonReaders.integer(json, 'etaMinutes'),
+      etaMinutes: JsonReaders.optionalInteger(json, 'etaMinutes'),
       total: total,
       driverNetEarnings: JsonReaders.number(json, 'driverNetEarnings'),
       offerMin: JsonReaders.optionalNumber(json, 'offerMin') ?? total,

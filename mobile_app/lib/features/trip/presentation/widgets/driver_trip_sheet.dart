@@ -171,6 +171,22 @@ class _Ended extends StatelessWidget {
             ],
           ),
         ),
+        if (trip.collectCashAmount != null) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AtaSpacing.md),
+            decoration: const BoxDecoration(
+              color: AtaColors.warningSoft,
+              borderRadius: AtaRadii.itemRadius,
+            ),
+            child: Text(
+              l10n.collectCashLine(
+                TripText.price(l10n, trip.collectCashAmount!),
+              ),
+              style: AtaText.label.copyWith(color: AtaColors.warning),
+            ),
+          ),
+        ],
         const SizedBox(height: AtaSpacing.lg),
         AtaButton(label: l10n.backToDashboard, onPressed: onDone),
       ],

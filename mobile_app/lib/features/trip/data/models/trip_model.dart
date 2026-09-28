@@ -36,6 +36,7 @@ class TripModel extends Trip {
     super.cancellationReason,
     super.timeline,
     super.events,
+    super.collectCashAmount,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -106,6 +107,7 @@ class TripModel extends Trip {
         json,
         'events',
       ).map(TripEventModel.fromJson).toList(growable: false),
+      collectCashAmount: JsonReaders.optionalNumber(json, 'collectCashAmount'),
     );
   }
 
@@ -183,5 +185,6 @@ class TripModel extends Trip {
           },
         )
         .toList(growable: false),
+    'collectCashAmount': collectCashAmount,
   };
 }

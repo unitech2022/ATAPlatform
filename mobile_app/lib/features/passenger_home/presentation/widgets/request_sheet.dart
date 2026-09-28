@@ -1,3 +1,4 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/failure_text.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/core/utils/money.dart';
@@ -24,9 +25,11 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/trip_reques
 import 'package:ata_app/features/pricing/presentation/widgets/demand_badge.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
+import 'package:ata_app/features/wallet/presentation/widgets/outstanding_balance_banner.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// The white bottom sheet with the request form. Once a trip is created the
 /// router moves the rider to `/trip`.
@@ -138,7 +141,16 @@ class _RequestButton extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                if (request.failure != null) ...<Widget>[
+                if (request.isOutstandingBalance) ...<Widget>[
+                  OutstandingBalanceBanner(
+                    title: l10n.outstandingBalanceTitle,
+                    message: failureText(request.failure!, l10n),
+                    actionLabel: l10n.topUpToContinue,
+                    amount: request.outstandingAmount,
+                    onAction: () => _topUp(context),
+                  ),
+                  const SizedBox(height: AtaSpacing.sm),
+                ] else if (request.failure != null) ...<Widget>[
                   InlineError(message: failureText(request.failure!, l10n)),
                   const SizedBox(height: AtaSpacing.sm),
                 ],
@@ -146,7 +158,10 @@ class _RequestButton extends StatelessWidget {
                   label: l10n.requestRide(name, price),
                   trailingIcon: AtaIcons.arrow,
                   loading: request.isBusy || request.isSearching,
-                  onPressed: state.canRequest && !request.isBusy
+                  onPressed:
+                      state.canRequest &&
+                          !request.isBusy &&
+                          !request.isOutstandingBalance
                       ? () => cubit.request(buildTripRequest(state, l10n))
                       : null,
                 ),
@@ -156,5 +171,12 @@ class _RequestButton extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Opens the top-up and unblocks the request once the rider is back.
+  Future<void> _topUp(BuildContext context) async {
+    final TripRequestCubit cubit = context.read<TripRequestCubit>();
+    await context.push<double>(AppRoutes.walletTopUp);
+    cubit.reset();
   }
 }

@@ -7,6 +7,7 @@ import 'package:ata_app/design/widgets/stat_card.dart';
 import 'package:ata_app/features/driver_dashboard/domain/entities/earnings_summary.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_overview_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_overview_state.dart';
+import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_wallet_links.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/earnings_card.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/recent_trips_card.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -81,6 +82,8 @@ class OverviewTab extends StatelessWidget {
             RecentTripsCard(trips: state.trips, loading: state.loading),
             const SizedBox(height: AtaSpacing.xl),
             EarningsCard(earnings: e),
+            const SizedBox(height: AtaSpacing.xl),
+            const DriverWalletLinks(),
           ],
         );
       },

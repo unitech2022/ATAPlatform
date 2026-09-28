@@ -58,7 +58,13 @@ class HomeState extends Equatable {
 
   /// Price and ETA shown for the selected category.
   double get displayPrice => quoteCategory?.total ?? estimate.price;
-  int get displayEta => quoteCategory?.etaMinutes ?? estimate.etaMinutes;
+
+  /// ETA of the selected category: the quoted value once a quote covers it
+  /// (`null` = no drivers nearby), the catalog estimate before that.
+  int? get displayEta {
+    final QuoteCategory? quoted = quoteCategory;
+    return quoted != null ? quoted.etaMinutes : estimate.etaMinutes;
+  }
 
   /// Accepted "offer your price" range.
   OfferBounds get offerBounds {

@@ -5,8 +5,11 @@ Rider + driver app for the ATA ride-hailing platform. Step 1 covers sign-in
 request sheet), rides, wallet, safety, account, driver onboarding status and
 the approved-driver dashboard. F8 adds the trip lifecycle: real ride
 requests, dispatch offers for drivers, the passenger/driver trip screens,
-live updates over SignalR and driver location streaming. Google Maps arrives
-with the Maps integration (the map is still the painted canvas).
+live updates over SignalR and driver location streaming. F9/F10 add fare
+quotes, price offers and demand. F11 adds saved cards, card top-ups, trip
+receipts and the driver wallet (statement, cash debt, payouts); F13 adds
+OneSignal push with `ata://` deep links. Google Maps arrives with the Maps
+integration (the map is still the painted canvas).
 
 ## Run
 
@@ -15,7 +18,8 @@ flutter pub get
 flutter gen-l10n            # also runs automatically on build
 flutter run \
   --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/v1 \
-  --dart-define=DRIVER_PORTAL_URL=http://10.0.2.2:5173/driver
+  --dart-define=DRIVER_PORTAL_URL=http://10.0.2.2:5173/driver \
+  --dart-define=ONESIGNAL_APP_ID=<onesignal-app-id>   # optional
 ```
 
 | `--dart-define`     | Default                          | Purpose                                                   |
@@ -25,6 +29,7 @@ flutter run \
 | `SHOW_DEV_OTP`      | `true`                           | Show the `devCode` returned by the API on the OTP screen  |
 | `HUB_URL`           | derived: `<API origin>/hubs/trips` | SignalR trips hub (JWT sent as `access_token` query param) |
 | `SIMULATE_LOCATION` | `false`                          | Emit a fake Riyadh position instead of the GPS (emulators / tests) |
+| `ONESIGNAL_APP_ID`  | empty                            | OneSignal app id; empty = push disabled (`NoopPushService`) |
 
 Quality gates:
 
@@ -93,6 +98,83 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
   `passengerOffered` (or `pricingMode: offer`) and a "الجولة n" chip for
   matching rounds above 1; net earnings stay the prominent figure.
 
+### Payments (F11)
+
+- `payments` feature: `PaymentMethodsPage` (`/wallet/payment-methods`) lists
+  the saved cards (`GET /passenger/payment-methods`), sets the default
+  (`POST …/{id}/default`) and deletes (`DELETE …/{id}`, `409
+  payment_method_in_use` shown inline). `AddCardPage`
+  (`/wallet/payment-methods/add`) validates number (Luhn), expiry (`MM/YY`,
+  not past) and CVC on the device, then `AddPaymentMethod` tokenises through
+  the `CardTokenizer` abstraction and sends **only the token**
+  (`{ token, setDefault, returnUrl: ata://payments/return }`); the PAN never
+  reaches our API. `SandboxCardTokenizer` (registered in `data_module.dart`,
+  swap for the provider SDK tokenizer in production) maps test cards:
+  `4000 0000 0000 0002` → `tok_sandbox_declined`, `4000 0000 0000 3220` →
+  `tok_sandbox_3ds`, mada BINs (`4406 4700 0000 0007`) → `tok_sandbox_mada`,
+  anything else → `tok_sandbox_visa`.
+- 3-D Secure (`202` with `action`): the card / top-up flow shows
+  `PaymentActionView`, which opens `action.url` in the browser; the final
+  state always comes from the API (never trusted from the return URL).
+- Top-up: `TopUpCubit` picks a saved card (default preselected) or the
+  sandbox (`POST /wallet/topups` `method: card|sandbox`, `paymentMethodId`,
+  `Idempotency-Key`); the driver variant (`/driver/top-up?amount=`) sends
+  `?kind=driver` to settle the cash debt.
+- Receipts: `ReceiptPage` (`/rides/:tripId/receipt`, also `/rides/:tripId`)
+  renders `GET /passenger/trips/{id}/receipt`: API-localized lines, discount
+  source badges (promotion / favourite driver), subtotal, total, VAT,
+  payment (card brand •••• last4), card→cash fallback notice, refunds and net
+  paid; `409` shows "no receipt". Reached from completed trips in the rides
+  list and from the end-of-trip view ("عرض الإيصال").
+- Blocks and fallbacks: a negative wallet shows a "top up to continue"
+  banner on the wallet page; `422 outstanding_balance` on `POST
+  /passenger/trips` replaces the home request error with the same banner and
+  disables the button until the rider comes back from the top-up. Payment
+  error codes (`payment_failed`, `payment_method_expired`,
+  `payment_method_in_use`, `payment_provider_unavailable`, …) have their own
+  texts; `payment_fallback_cash` trip events show a notice to the rider and
+  `collectCashAmount` a "collect in cash" line to the driver.
+- `driver_wallet` feature: `DriverEarningsPage` (`/driver/earnings`,
+  today / week / month filter over `GET /driver/earnings/statement`),
+  `DriverPayoutsPage` (`/driver/payouts`: cash-debt card, history with
+  status badges, cancel while `requested`) and `PayoutRequestPage`
+  (`/driver/payouts/request`: available balance, masked IBAN, amount checked
+  against `minPayoutAmount` and `availableForPayout` before `POST
+  /driver/payouts`). The overview shows the cash-debt card (debt vs. limit,
+  "سداد") and links; "تحويل الأرباح" opens the payout request.
+  `OnlineStatusCubit` turns `403 cash_debt_limit_exceeded` (`details {
+  cashDebt, limit }`) into a "can't go online" card with a settle button.
+
+### Notifications and deep links (F13)
+
+- `core/push/`: `PushService` with `OneSignalPushService`
+  (`onesignal_flutter`, initialized in `configureDependencies` when
+  `ONESIGNAL_APP_ID` is set) and `NoopPushService` (empty id, tests).
+  Foreground pushes for `offer.received`, `trip.*` and `safety.check` are
+  rendered by the app (`PushForegroundPolicy`), others as system banners.
+- `PushSessionBinder` (`app/push/`, bound in `bootstrapApp`) follows
+  `SessionCubit` / `LocaleCubit`: sign-in → `login(userId)`, tags `role` /
+  `lang` / `city` (`riyadh` until the profile exposes a city),
+  `setLanguage`, the permission prompt (only after a sign-in) and `PUT
+  /me/devices` with the subscription id; role / locale changes update the
+  tags; sign-out → `logout()`.
+- `DeepLinkCubit` (app-wide) receives tapped pushes (`data.deepLink`,
+  `notificationId` → `POST /notifications/{id}/opened`) and inbox rows,
+  parks links until the session is ready, and `AtaApp` navigates with
+  `router.go`. `ParseDeepLink` implements the `docs/08` §F13.7 table
+  (`ata://trip/{id}` → `/trip` when active else `/rides/{id}`,
+  `ata://rides/{id}/receipt`, `ata://wallet`, `ata://driver/documents` →
+  `/driver?tab=documents`, `ata://driver/payouts`, `ata://notifications` →
+  inbox sheet, …); unknown links or a role mismatch fall back to `/home` /
+  `/driver`, and routes not shipped yet hit the router's `onException`
+  fallback. Redirect rules (active trip, pending offer) still win.
+- `NotificationsCubit` reloads the inbox on every foreground push; rows use
+  the event category icon, legacy `snake_case` types are normalized and
+  older rows get a derived link.
+- Platform setup for real pushes (not in this repo): OneSignal app with the
+  FCM / APNs credentials, iOS Push capability and Notification Service
+  Extension.
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -109,7 +191,8 @@ lib/
   app/                      AtaApp (MaterialApp.router), bootstrap, splash,
                             router/ (routes, redirect rules, GoRouter), shell/ (rider header, menu, bottom nav)
   core/                     di/ (get_it, manual registration), env/, errors/ (Failure, AppException),
-                            network/ (dio ApiClient + interceptors), storage/ (secure tokens, prefs),
+                            network/ (dio ApiClient + interceptors), push/ (PushService, OneSignal, no-op),
+                            storage/ (secure tokens, prefs),
                             usecases/ (UseCase base), utils/, localization/ (failure text, l10n ext), widgets/
   design/                   tokens/ (colors, shadows, radii, spacing, text), theme/,
                             painting/ (SVG path parser, map painter),
@@ -124,7 +207,7 @@ lib/
 
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
-`pricing`.
+`pricing`, `payments`, `driver_wallet`.
 
 ### Rules
 
@@ -166,7 +249,8 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `AccountCubit`           | account            | `GET /me` profile                                 |
 | `NotificationPrefsCubit` | account            | notification toggles (optimistic)                 |
 | `DeleteAccountCubit`     | account            | `DELETE /me` confirmation                         |
-| `NotificationsCubit`     | notifications      | inbox + unread badge                              |
+| `NotificationsCubit`     | notifications      | inbox + unread badge, reload on foreground push   |
+| `DeepLinkCubit`          | notifications (app-wide) | `ata://` links from pushes / inbox → router location |
 | `HomeCubit`              | passenger_home     | categories, stops, time, payment, female driver, applied quote, bounded price offer |
 | `QuoteCubit`             | pricing            | debounced `POST /pricing/quote`, expiry tracking, refresh |
 | `DemandCubit`            | pricing            | `GET /pricing/demand` for the pickup, 60 s refresh, badge level |
@@ -176,11 +260,18 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `DriverTripCubit`        | trip (app-wide)    | driver trip feed, next step, PIN entry, cancel            |
 | `LocationStreamCubit`    | trip (app-wide)    | permission, GPS stream, `PUT /driver/location`           |
 | `RidesCubit`             | rides              | trip history                                      |
-| `WalletCubit`            | wallet             | balance + payment methods                         |
-| `TopUpCubit`             | wallet             | amount, confirm, success                          |
+| `WalletCubit`            | wallet             | balance (negative → banner) + payment methods     |
+| `TopUpCubit`             | wallet             | amount, card / sandbox source, 3-D Secure step, success, driver `kind` |
+| `PaymentMethodsCubit`    | payments           | saved cards, default card, delete                 |
+| `AddCardCubit`           | payments           | card form validation, tokenise → save → 3-D Secure |
+| `ReceiptCubit`           | payments           | itemised trip receipt                             |
+| `EarningsStatementCubit` | driver_wallet      | statement for today / week / month                |
+| `PayoutSummaryCubit`     | driver_wallet      | balance, cash debt vs. limit, payout eligibility  |
+| `PayoutRequestCubit`     | driver_wallet      | payout amount validation + request                |
+| `PayoutsCubit`           | driver_wallet      | payout history, cancel                            |
 | `DriverPendingCubit`     | driver_onboarding  | application + documents status, portal link       |
 | `DriverTabsCubit`        | driver_dashboard   | selected tab                                      |
-| `OnlineStatusCubit`      | driver_dashboard   | online toggle (`PUT /driver/status`)              |
+| `OnlineStatusCubit`      | driver_dashboard   | online toggle (`PUT /driver/status`), cash-debt block |
 | `DriverOverviewCubit`    | driver_dashboard   | earnings summary + recent trips                   |
 | `DriverDocumentsCubit`   | driver_dashboard   | documents + vehicle                               |
 
@@ -188,8 +279,9 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 
 Typed clients for sections 1–7 of `docs/05-api-contract.md`, the F8
 endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
-endpoints of `docs/07-feature-f9-f10-matching-pricing.md` live in each
-feature's `data/datasources`. `core/network/api_client.dart` adds
+endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
+driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` live
+in each feature's `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope
 `{ error: { code, message, details } }` to `AppException` → `Failure`.

@@ -47,6 +47,16 @@ class AccountRepositoryImpl implements AccountRepository {
   });
 
   @override
+  Future<Either<Failure, Unit>> registerDevice({String? pushToken}) =>
+      guard(() async {
+        await _remote.registerDevice(
+          deviceId: _prefs.deviceId,
+          pushToken: pushToken,
+        );
+        return unit;
+      });
+
+  @override
   String getSavedLocale() => _prefs.localeCode;
 
   @override

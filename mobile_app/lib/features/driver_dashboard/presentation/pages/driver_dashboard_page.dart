@@ -13,6 +13,7 @@ import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_he
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_tabs.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/overview_tab.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/settings_tab.dart';
+import 'package:ata_app/features/driver_wallet/presentation/cubit/payout_summary_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/driver_offer_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/location_stream_cubit.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +23,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// online starts the offer feed and the location stream; going offline
 /// stops them.
 class DriverDashboardPage extends StatelessWidget {
-  const DriverDashboardPage({super.key});
+  const DriverDashboardPage({super.key, this.initialTab = DriverTab.overview});
+
+  final DriverTab initialTab;
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
-        BlocProvider<DriverTabsCubit>(create: (_) => DriverTabsCubit()),
+        BlocProvider<DriverTabsCubit>(
+          create: (_) => DriverTabsCubit(initial: initialTab),
+        ),
+        BlocProvider<PayoutSummaryCubit>(
+          create: (_) => PayoutSummaryCubit(getSummary: getIt())..load(),
+        ),
         BlocProvider<OnlineStatusCubit>(
           create: (_) =>
               OnlineStatusCubit(getStatus: getIt(), setOnline: getIt())..load(),
