@@ -9,6 +9,11 @@ public static class NotificationTypes
     public const string DriverSuspended = "driver_suspended";
     public const string DriverReinstated = "driver_reinstated";
     public const string DriverUnderReview = "driver_application_under_review";
+    public const string TripDriverAssigned = "trip_driver_assigned";
+    public const string TripDriverArrived = "trip_driver_arrived";
+    public const string TripCompleted = "trip_completed";
+    public const string TripCancelled = "trip_cancelled";
+    public const string TripNoDrivers = "trip_no_drivers";
 }
 
 public class Notification : Entity

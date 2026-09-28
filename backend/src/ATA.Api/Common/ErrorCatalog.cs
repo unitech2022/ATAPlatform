@@ -29,6 +29,10 @@ public static class ErrorCatalog
         [ErrorCodes.FileTooLarge] = new(StatusCodes.Status422UnprocessableEntity, "حجم الملف يتجاوز الحد المسموح (10MB)", "The file exceeds the maximum size (10MB)"),
         [ErrorCodes.UnsupportedFileType] = new(StatusCodes.Status422UnprocessableEntity, "نوع الملف غير مدعوم (PDF/JPG/PNG)", "Unsupported file type (PDF/JPG/PNG)"),
         [ErrorCodes.InsufficientBalance] = new(StatusCodes.Status422UnprocessableEntity, "الرصيد غير كافٍ", "Insufficient balance"),
+        [ErrorCodes.TripActiveExists] = new(StatusCodes.Status409Conflict, "لديك رحلة نشطة بالفعل", "You already have an active trip"),
+        [ErrorCodes.OfferExpired] = new(StatusCodes.Status409Conflict, "انتهت صلاحية العرض", "The offer has expired"),
+        [ErrorCodes.PinInvalid] = new(StatusCodes.Status400BadRequest, "رمز الرحلة غير صحيح", "The trip PIN is incorrect"),
+        [ErrorCodes.PinLocked] = new(StatusCodes.Status429TooManyRequests, "تم تجاوز عدد محاولات إدخال رمز الرحلة", "Too many PIN attempts for this trip"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

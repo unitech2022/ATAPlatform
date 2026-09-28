@@ -14,4 +14,13 @@ public class RideCategory : AuditableEntity
     public byte MaxStops { get; set; } = 2;
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // FlatPricing inputs (F8); replaced by pricing rules in F10.
+    public decimal BaseFare { get; set; }
+    public decimal PerKm { get; set; }
+    public decimal PerMinute { get; set; }
+    public decimal BookingFee { get; set; }
+    public decimal MinFare { get; set; }
+    /// <summary>Share of the fare paid out to the driver, in percent (default 80).</summary>
+    public decimal DriverSharePercent { get; set; } = 80m;
 }

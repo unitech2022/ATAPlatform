@@ -6,6 +6,9 @@ using ATA.Api.Modules.Files;
 using ATA.Api.Modules.Identity;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Passengers;
+using ATA.Api.Modules.Trips;
+using ATA.Api.Modules.Trips.Matching;
+using ATA.Api.Modules.Trips.Realtime;
 using ATA.Api.Modules.Wallet;
 using ATA.Domain.Common;
 using ATA.Infrastructure;
@@ -26,12 +29,15 @@ builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true)
 builder.Services.Configure<JsonOptions>(o => JsonDefaults.Configure(o.SerializerOptions));
 builder.Services.AddOpenApi("v1");
 builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("mysql");
+builder.Services.AddDataProtection();
+builder.Services.AddSignalR().AddJsonProtocol(o => JsonDefaults.Configure(o.PayloadSerializerOptions));
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(origins)
     .AllowAnyHeader()
     .AllowAnyMethod()
+    .AllowCredentials()
     .WithExposedHeaders("Retry-After", "Content-Disposition")));
 
 builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection(OtpOptions.Section));
@@ -47,6 +53,24 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<AdminDriverService>();
 builder.Services.AddScoped<AdminService>();
+
+builder.Services.Configure<TripOptions>(builder.Configuration.GetSection(TripOptions.Section));
+builder.Services.Configure<MatchingOptions>(builder.Configuration.GetSection(MatchingOptions.Section));
+builder.Services.Configure<RealtimeOptions>(builder.Configuration.GetSection(RealtimeOptions.Section));
+builder.Services.AddSingleton<IPricingService, FlatPricing>();
+builder.Services.AddSingleton<ITripNotifier, SignalRTripNotifier>();
+builder.Services.AddScoped<IMatcher, SimpleMatcher>();
+builder.Services.AddScoped<TripPinService>();
+builder.Services.AddScoped<TripEventRecorder>();
+builder.Services.AddScoped<TripNumberGenerator>();
+builder.Services.AddScoped<TripReadService>();
+builder.Services.AddScoped<TripPaymentService>();
+builder.Services.AddScoped<PassengerTripService>();
+builder.Services.AddScoped<DriverTripService>();
+builder.Services.AddScoped<AdminTripService>();
+builder.Services.AddScoped<MatchingService>();
+builder.Services.AddHostedService<MatchingBackgroundService>();
+builder.Services.AddHostedService<LiveSnapshotService>();
 
 var app = builder.Build();
 
@@ -77,10 +101,12 @@ CatalogEndpoints.Map(api);
 PassengerEndpoints.Map(api);
 WalletEndpoints.Map(api);
 DriverEndpoints.Map(api);
+TripEndpoints.Map(api);
 NotificationEndpoints.Map(api);
 FileEndpoints.Map(api);
 AdminEndpoints.Map(api);
 api.MapFallback((HttpContext http) => http.WriteErrorAsync(ErrorCodes.NotFound, http.GetLanguage()));
+app.MapHub<TripsHub>("/hubs/trips");
 
 if (app.Environment.IsDevelopment())
 {

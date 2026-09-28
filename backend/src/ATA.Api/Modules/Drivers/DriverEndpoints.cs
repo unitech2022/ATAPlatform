@@ -1,6 +1,7 @@
 using ATA.Api.Common;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
+using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,13 +72,10 @@ public static class DriverEndpoints
 
         group.MapGet("/earnings/summary", async (DriverStatusService service, CancellationToken ct) => Results.Ok(await service.GetEarningsSummaryAsync(ct)))
             .Produces<EarningsSummaryDto>();
-
-        group.MapGet("/trips", (int? page, int? pageSize) => Results.Ok(Paging.From(page, pageSize).Result<DriverTripDto>([], 0)))
-            .Produces<PagedResult<DriverTripDto>>();
     }
 }
 
-/// <summary>Online/offline state with status logs, and the step-1 earnings summary (online hours only).</summary>
+/// <summary>Online/offline state with status logs, and the earnings summary (completed trips + online hours from status logs).</summary>
 public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUser, IClock clock)
 {
     public const decimal WeeklyTarget = 2500m;
@@ -112,6 +110,7 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
             {
                 DriverId = driver.Id, IsOnline = isOnline, ChangedAt = now, Latitude = request.Latitude, Longitude = request.Longitude,
             });
+            await SyncLocationAsync(driver, request, now, ct);
             await db.SaveChangesAsync(ct);
         }
 
@@ -146,10 +145,44 @@ public sealed class DriverStatusService(AtaDbContext db, ICurrentUser currentUse
 
         if (cursorOnline) online += now - cursorAt;
 
+        // Saudi work week starts on Sunday.
+        var weekStart = dayStart.AddDays(-(int)dayStart.DayOfWeek);
+        var completed = await db.Trips.AsNoTracking()
+            .Where(t => t.DriverId == driver.Id && t.Status == TripStatus.Completed && t.CompletedAt >= weekStart)
+            .Select(t => new { t.CompletedAt, Earnings = t.DriverEarnings ?? 0m })
+            .ToListAsync(ct);
+        var today = completed.Where(t => t.CompletedAt >= dayStart).ToList();
+
         return new EarningsSummaryDto(
-            new EarningsTodayDto(0m, 0, Math.Round(online.TotalHours, 2)),
-            new EarningsWeekDto(0m, WeeklyTarget),
+            new EarningsTodayDto(today.Sum(t => t.Earnings), today.Count, Math.Round(online.TotalHours, 2)),
+            new EarningsWeekDto(completed.Sum(t => t.Earnings), WeeklyTarget),
             driver.RatingAvg);
+    }
+
+    /// <summary>Keeps <c>driver_locations.is_online</c> in step with the driver flag so the matcher sees the change immediately.</summary>
+    private async Task SyncLocationAsync(DriverProfile driver, UpdateDriverStatusRequest request, DateTime now, CancellationToken ct)
+    {
+        var location = await db.DriverLocations.FirstOrDefaultAsync(l => l.DriverId == driver.Id, ct);
+        if (location is null)
+        {
+            if (request.Latitude is null || request.Longitude is null)
+            {
+                return;
+            }
+
+            location = new DriverLocation { DriverId = driver.Id };
+            db.DriverLocations.Add(location);
+        }
+
+        if (request.Latitude is { } lat && request.Longitude is { } lng)
+        {
+            location.Lat = lat;
+            location.Lng = lng;
+        }
+
+        location.IsOnline = driver.IsOnline;
+        location.CurrentTripId = driver.CurrentTripId;
+        location.UpdatedAt = now;
     }
 
     private async Task<DriverProfile> LoadAsync(CancellationToken ct)

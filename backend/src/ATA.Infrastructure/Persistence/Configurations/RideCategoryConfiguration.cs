@@ -17,5 +17,6 @@ public sealed class RideCategoryConfiguration : IEntityTypeConfiguration<RideCat
         b.Property(x => x.DescriptionAr).HasMaxLength(255);
         b.Property(x => x.DescriptionEn).HasMaxLength(255);
         b.Property(x => x.Icon).HasMaxLength(40);
+        b.Property(x => x.DriverSharePercent).HasPrecision(5, 2);
     }
 }

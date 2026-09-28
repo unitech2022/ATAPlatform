@@ -4,6 +4,7 @@ using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Identity;
+using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
             await db.Drivers.CountAsync(d => d.ApplicationStatus == ApplicationStatus.Approved, ct),
             await db.Drivers.CountAsync(d => d.IsOnline, ct),
             await db.Passengers.CountAsync(ct),
-            0,
+            await db.Trips.CountAsync(t => t.RequestedAt >= today, ct),
             await db.Users.CountAsync(u => u.CreatedAt >= today, ct));
     }
 
@@ -37,9 +38,12 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         }
 
         var total = await query.CountAsync(ct);
-        var items = await query.OrderByDescending(x => x.User.CreatedAt).Skip(paging.Skip).Take(paging.PageSize)
-            .Select(x => new AdminPassengerListItemDto(x.Passenger.Id, x.User.FullName, x.User.PhoneNumber, x.User.Status, x.User.CreatedAt, 0))
-            .ToListAsync(ct);
+        var rows = await query.OrderByDescending(x => x.User.CreatedAt).Skip(paging.Skip).Take(paging.PageSize).ToListAsync(ct);
+        var passengerIds = rows.Select(r => r.Passenger.Id).ToList();
+        var tripCounts = await db.Trips.AsNoTracking().Where(t => passengerIds.Contains(t.PassengerId) && t.Status == TripStatus.Completed)
+            .GroupBy(t => t.PassengerId).Select(g => new { PassengerId = g.Key, Count = g.Count() }).ToDictionaryAsync(x => x.PassengerId, x => x.Count, ct);
+        var items = rows.Select(x => new AdminPassengerListItemDto(
+            x.Passenger.Id, x.User.FullName, x.User.PhoneNumber, x.User.Status, x.User.CreatedAt, tripCounts.GetValueOrDefault(x.Passenger.Id))).ToList();
         return paging.Result(items, total);
     }
 
@@ -157,6 +161,12 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         v.Rule(nameof(request.Code), request.Code is null || request.Code.Trim().All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '_'), "lowercase letters, digits and underscores only")
          .Rule(nameof(request.Seats), request.Seats is null or (>= 1 and <= 12), "must be between 1 and 12")
          .Rule(nameof(request.MaxStops), request.MaxStops is null or <= 5, "must be at most 5")
+         .Rule(nameof(request.BaseFare), request.BaseFare is null or >= 0, "must be positive")
+         .Rule(nameof(request.PerKm), request.PerKm is null or >= 0, "must be positive")
+         .Rule(nameof(request.PerMinute), request.PerMinute is null or >= 0, "must be positive")
+         .Rule(nameof(request.BookingFee), request.BookingFee is null or >= 0, "must be positive")
+         .Rule(nameof(request.MinFare), request.MinFare is null or >= 0, "must be positive")
+         .Rule(nameof(request.DriverSharePercent), request.DriverSharePercent is null or (>= 0 and <= 100), "must be between 0 and 100")
          .ThrowIfInvalid();
     }
 
@@ -171,8 +181,15 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         if (request.MaxStops is not null) category.MaxStops = request.MaxStops.Value;
         if (request.SortOrder is not null) category.SortOrder = request.SortOrder.Value;
         if (request.IsActive is not null) category.IsActive = request.IsActive.Value;
+        if (request.BaseFare is not null) category.BaseFare = request.BaseFare.Value;
+        if (request.PerKm is not null) category.PerKm = request.PerKm.Value;
+        if (request.PerMinute is not null) category.PerMinute = request.PerMinute.Value;
+        if (request.BookingFee is not null) category.BookingFee = request.BookingFee.Value;
+        if (request.MinFare is not null) category.MinFare = request.MinFare.Value;
+        if (request.DriverSharePercent is not null) category.DriverSharePercent = request.DriverSharePercent.Value;
     }
 
     private static RideCategoryAdminDto ToDto(RideCategory c) =>
-        new(c.Id, c.Code, c.NameAr, c.NameEn, c.DescriptionAr, c.DescriptionEn, c.Icon, c.Seats, c.MaxStops, c.SortOrder, c.IsActive);
+        new(c.Id, c.Code, c.NameAr, c.NameEn, c.DescriptionAr, c.DescriptionEn, c.Icon, c.Seats, c.MaxStops, c.SortOrder, c.IsActive,
+            c.BaseFare, c.PerKm, c.PerMinute, c.BookingFee, c.MinFare, c.DriverSharePercent);
 }

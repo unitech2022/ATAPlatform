@@ -18,5 +18,9 @@ public static class ErrorCodes
     public const string FileTooLarge = "file_too_large";
     public const string UnsupportedFileType = "unsupported_file_type";
     public const string InsufficientBalance = "insufficient_balance";
+    public const string TripActiveExists = "trip_active_exists";
+    public const string OfferExpired = "offer_expired";
+    public const string PinInvalid = "pin_invalid";
+    public const string PinLocked = "pin_locked";
     public const string InternalError = "internal_error";
 }

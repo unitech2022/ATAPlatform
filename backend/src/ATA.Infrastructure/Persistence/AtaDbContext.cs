@@ -6,6 +6,7 @@ using ATA.Domain.Files;
 using ATA.Domain.Identity;
 using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
+using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,13 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<DriverDocument> DriverDocuments => Set<DriverDocument>();
     public DbSet<DriverStatusLog> DriverStatusLogs => Set<DriverStatusLog>();
+
+    public DbSet<Trip> Trips => Set<Trip>();
+    public DbSet<TripStop> TripStops => Set<TripStop>();
+    public DbSet<TripOffer> TripOffers => Set<TripOffer>();
+    public DbSet<TripEvent> TripEvents => Set<TripEvent>();
+    public DbSet<DriverLocation> DriverLocations => Set<DriverLocation>();
+    public DbSet<DriverLocationHistory> DriverLocationHistory => Set<DriverLocationHistory>();
 
     public DbSet<RideCategory> RideCategories => Set<RideCategory>();
     public DbSet<DocumentType> DocumentTypes => Set<DocumentType>();
@@ -91,6 +99,15 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
                     break;
                 case DriverStatusLog log when entry.State == EntityState.Added && log.ChangedAt == default:
                     log.ChangedAt = now;
+                    break;
+                case TripOffer offer when entry.State == EntityState.Added && offer.SentAt == default:
+                    offer.SentAt = now;
+                    break;
+                case DriverLocation location when entry.State is EntityState.Added or EntityState.Modified:
+                    location.UpdatedAt = now;
+                    break;
+                case DriverLocationHistory history when entry.State == EntityState.Added && history.RecordedAt == default:
+                    history.RecordedAt = now;
                     break;
             }
         }

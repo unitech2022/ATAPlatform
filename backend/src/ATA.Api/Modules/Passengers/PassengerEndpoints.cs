@@ -18,18 +18,9 @@ public sealed record PassengerPreferencesDto(bool PreferFemaleDriver, PaymentMet
 
 public static class PassengerEndpoints
 {
-    private static readonly string[] TripStatuses = ["all", "active", "completed", "cancelled"];
-
     public static void Map(IEndpointRouteBuilder api)
     {
         var group = api.MapGroup("/passenger").WithTags("Passenger").RequireAuthorization(Policies.Passenger);
-
-        group.MapGet("/trips", (string? status, int? page, int? pageSize) =>
-            {
-                new Validator().Rule("status", status is null || TripStatuses.Contains(status), "must be all|active|completed|cancelled").ThrowIfInvalid();
-                return Results.Ok(Paging.From(page, pageSize).Result<TripSummaryDto>([], 0));
-            })
-            .Produces<PagedResult<TripSummaryDto>>();
 
         group.MapGet("/saved-places", async (PassengerService service, CancellationToken ct) =>
                 Results.Ok(await service.GetSavedPlacesAsync(ct)))

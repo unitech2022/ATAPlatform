@@ -34,17 +34,34 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
 
     private async Task SeedRideCategoriesAsync(CancellationToken ct)
     {
-        var existing = await db.RideCategories.Select(c => c.Code).ToListAsync(ct);
+        var existing = await db.RideCategories.ToListAsync(ct);
         RideCategory[] categories =
         [
-            new() { Id = SeedIds.RideCategories.Saver, Code = "saver", NameAr = "توفير", NameEn = "Saver", DescriptionAr = "أقل سعر", DescriptionEn = "Lowest fare", Icon = "car-small", Seats = 4, MaxStops = 1, SortOrder = 1 },
-            new() { Id = SeedIds.RideCategories.Economy, Code = "economy", NameAr = "اقتصادي", NameEn = "Economy", DescriptionAr = "سيارة مريحة", DescriptionEn = "Comfortable car", Icon = "car", Seats = 4, MaxStops = 2, SortOrder = 2 },
-            new() { Id = SeedIds.RideCategories.Comfort, Code = "comfort", NameAr = "مريح", NameEn = "Comfort", DescriptionAr = "سيارات أحدث ومساحة أكبر", DescriptionEn = "Newer cars with more room", Icon = "car-comfort", Seats = 4, MaxStops = 2, SortOrder = 3 },
-            new() { Id = SeedIds.RideCategories.Family, Code = "family", NameAr = "عائلي", NameEn = "Family (XL)", DescriptionAr = "حتى 6 مقاعد", DescriptionEn = "Up to 6 seats", Icon = "van", Seats = 6, MaxStops = 2, SortOrder = 4 },
-            new() { Id = SeedIds.RideCategories.Premium, Code = "premium", NameAr = "ATA بلس", NameEn = "ATA Plus", DescriptionAr = "سيارات فاخرة", DescriptionEn = "Premium cars", Icon = "car-premium", Seats = 4, MaxStops = 2, SortOrder = 5 },
-            new() { Id = SeedIds.RideCategories.Airport, Code = "airport", NameAr = "المطار", NameEn = "Airport", DescriptionAr = "رحلات المطار بسعر ثابت", DescriptionEn = "Fixed-fare airport rides", Icon = "plane", Seats = 4, MaxStops = 1, SortOrder = 6 },
+            new() { Id = SeedIds.RideCategories.Saver, Code = "saver", NameAr = "توفير", NameEn = "Saver", DescriptionAr = "أقل سعر", DescriptionEn = "Lowest fare", Icon = "car-small", Seats = 4, MaxStops = 1, SortOrder = 1, BaseFare = 6m, PerKm = 1.5m, PerMinute = 0.3m, BookingFee = 2m, MinFare = 10m },
+            new() { Id = SeedIds.RideCategories.Economy, Code = "economy", NameAr = "اقتصادي", NameEn = "Economy", DescriptionAr = "سيارة مريحة", DescriptionEn = "Comfortable car", Icon = "car", Seats = 4, MaxStops = 2, SortOrder = 2, BaseFare = 8m, PerKm = 1.8m, PerMinute = 0.35m, BookingFee = 2m, MinFare = 12m },
+            new() { Id = SeedIds.RideCategories.Comfort, Code = "comfort", NameAr = "مريح", NameEn = "Comfort", DescriptionAr = "سيارات أحدث ومساحة أكبر", DescriptionEn = "Newer cars with more room", Icon = "car-comfort", Seats = 4, MaxStops = 2, SortOrder = 3, BaseFare = 12m, PerKm = 2.4m, PerMinute = 0.45m, BookingFee = 3m, MinFare = 18m },
+            new() { Id = SeedIds.RideCategories.Family, Code = "family", NameAr = "عائلي", NameEn = "Family (XL)", DescriptionAr = "حتى 6 مقاعد", DescriptionEn = "Up to 6 seats", Icon = "van", Seats = 6, MaxStops = 2, SortOrder = 4, BaseFare = 15m, PerKm = 3m, PerMinute = 0.55m, BookingFee = 3m, MinFare = 22m },
+            new() { Id = SeedIds.RideCategories.Premium, Code = "premium", NameAr = "ATA بلس", NameEn = "ATA Plus", DescriptionAr = "سيارات فاخرة", DescriptionEn = "Premium cars", Icon = "car-premium", Seats = 4, MaxStops = 2, SortOrder = 5, BaseFare = 20m, PerKm = 4m, PerMinute = 0.8m, BookingFee = 5m, MinFare = 35m },
+            new() { Id = SeedIds.RideCategories.Airport, Code = "airport", NameAr = "المطار", NameEn = "Airport", DescriptionAr = "رحلات المطار بسعر ثابت", DescriptionEn = "Fixed-fare airport rides", Icon = "plane", Seats = 4, MaxStops = 1, SortOrder = 6, BaseFare = 30m, PerKm = 2.5m, PerMinute = 0.4m, BookingFee = 5m, MinFare = 60m },
         ];
-        db.RideCategories.AddRange(categories.Where(c => !existing.Contains(c.Code)));
+        foreach (var category in categories)
+        {
+            var current = existing.FirstOrDefault(c => c.Code == category.Code);
+            if (current is null)
+            {
+                db.RideCategories.Add(category);
+            }
+            else if (current.BaseFare == 0m && current.PerKm == 0m && current.MinFare == 0m)
+            {
+                // Rows created before F8 have no pricing yet: back-fill the defaults once, without touching edited values.
+                current.BaseFare = category.BaseFare;
+                current.PerKm = category.PerKm;
+                current.PerMinute = category.PerMinute;
+                current.BookingFee = category.BookingFee;
+                current.MinFare = category.MinFare;
+                current.DriverSharePercent = category.DriverSharePercent;
+            }
+        }
     }
 
     private async Task SeedDocumentTypesAsync(CancellationToken ct)

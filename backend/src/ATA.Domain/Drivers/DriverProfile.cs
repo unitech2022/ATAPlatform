@@ -22,6 +22,9 @@ public class DriverProfile : AuditableEntity
     public DateTime? ApprovedAt { get; set; }
     public Guid? ApprovedBy { get; set; }
     public DateTime? SubmittedAt { get; set; }
+    public Guid? CurrentTripId { get; set; }
+    public int AcceptanceCount { get; set; }
+    public int RejectionCount { get; set; }
 
     public ICollection<Vehicle> Vehicles { get; set; } = [];
     public ICollection<DriverDocument> Documents { get; set; } = [];

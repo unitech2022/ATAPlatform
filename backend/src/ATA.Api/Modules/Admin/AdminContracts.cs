@@ -39,8 +39,12 @@ public sealed record AdminPassengerListItemDto(Guid Id, string? FullName, string
 
 public sealed record UserStatusChangeDto(Guid UserId, UserStatus Status);
 
-public sealed record RideCategoryAdminDto(Guid Id, string Code, string NameAr, string NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte Seats, byte MaxStops, int SortOrder, bool IsActive);
+public sealed record RideCategoryAdminDto(
+    Guid Id, string Code, string NameAr, string NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte Seats, byte MaxStops, int SortOrder, bool IsActive,
+    decimal BaseFare, decimal PerKm, decimal PerMinute, decimal BookingFee, decimal MinFare, decimal DriverSharePercent);
 
-public sealed record RideCategoryUpsertRequest(string? Code, string? NameAr, string? NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte? Seats, byte? MaxStops, int? SortOrder, bool? IsActive);
+public sealed record RideCategoryUpsertRequest(
+    string? Code, string? NameAr, string? NameEn, string? DescriptionAr, string? DescriptionEn, string? Icon, byte? Seats, byte? MaxStops, int? SortOrder, bool? IsActive,
+    decimal? BaseFare, decimal? PerKm, decimal? PerMinute, decimal? BookingFee, decimal? MinFare, decimal? DriverSharePercent);
 
 public sealed record AuditLogDto(Guid Id, Guid? ActorUserId, string? ActorRole, string Action, string EntityType, Guid? EntityId, JsonElement? Before, JsonElement? After, string? IpAddress, DateTime CreatedAt);

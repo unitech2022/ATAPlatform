@@ -53,6 +53,17 @@ public static class AuthSetup
                 };
                 options.Events = new JwtBearerEvents
                 {
+                    // SignalR clients cannot set headers on WebSocket/SSE requests: accept the JWT as ?access_token= on hub paths.
+                    OnMessageReceived = context =>
+                    {
+                        var token = context.Request.Query["access_token"].ToString();
+                        if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = token;
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnChallenge = async context =>
                     {
                         context.HandleResponse();
