@@ -38,10 +38,10 @@
 | F8 | **دورة الرحلة** (Trips/Stops/Events، الحالات، PIN، السائق المعيّن، التتبع SignalR) | trips module | `trip` (راكب + سائق) | — | الرحلات + Live Map | ✅ مُسلَّم |
 | F9 | **المطابقة** (بحث جغرافي، أهلية، Score، عرض، مهلة، التالي) | matching + driver_locations | استقبال الطلب للسائق | — | قواعد المطابقة | ✅ مُسلَّم |
 | F10 | **التسعير والمناطق والطلب** (Base+Distance+Time+Fees+Waiting×Demand−Discount، Zones، Demand Levels، Offer Your Price) | pricing + zones | تقدير السعر واقتراح السعر | — | Pricing Rules / Zones / Demand | ✅ مُسلَّم |
-| F11 | **المدفوعات** (بوابة الدفع + Tokenization، مدى/Visa/MC/Apple Pay، الاسترداد، التسويات والسحب) | payments + payouts | طرق الدفع، السحب للسائق | — | Payments & Settlements | ⏳ |
-| F12 | **السلامة** (مشاركة الرحلة، جهات موثوقة، طوارئ، كشف التوقف/الانحراف، البلاغات) | safety | `safety` | — | Safety Cases | ⏳ |
-| F13 | **الإشعارات الفورية** (OneSignal عبر External ID، Tags للدور واللغة، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ⏳ |
-| F14 | **الإلغاء والموثوقية** (قواعد، أسباب، أحداث، عقوبات الطرفين، ReliabilityProfiles) | cancellation | إلغاء بسبب + رسوم | — | قواعد الإلغاء | ⏳ |
+| F11 | **المدفوعات** (بوابة الدفع + Tokenization، مدى/Visa/MC/Apple Pay، الاسترداد، التسويات والسحب) | payments + payouts | طرق الدفع، السحب للسائق | — | Payments & Settlements | ✅ مُسلَّم |
+| F12 | **السلامة** (مشاركة الرحلة، جهات موثوقة، طوارئ، كشف التوقف/الانحراف، البلاغات) | safety | `safety` | — | Safety Cases | 🔨 قيد التنفيذ (اللوحة والموقع ✅) |
+| F13 | **الإشعارات الفورية** (OneSignal عبر External ID، Tags للدور واللغة، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ✅ مُسلَّم (المفاتيح الحقيقية تُضاف عند الإطلاق) |
+| F14 | **الإلغاء والموثوقية** (قواعد، أسباب، أحداث، عقوبات الطرفين، ReliabilityProfiles) | cancellation | إلغاء بسبب + رسوم | — | قواعد الإلغاء | 🔨 قيد التنفيذ (اللوحة ✅) |
 | F15 | **التقييم والعروض** (Ratings، Promo Codes، مستويات السائق، الحوافز) | ratings + promotions + incentives | `rating`, `promotions` | — | Promotions / Incentives | ⏳ |
 | F16 | **السائق المفضل** (المفضلة، الاختيار بالاسم، الخصم، قواعد عدم الجمع) | favorites | `favorite_drivers` | — | قواعد خصم المفضل | ⏳ |
 | F17 | **الرحلات المجدولة والمطار** (نافذة 7 أيام، تذكيرات، سياسات إلغاء، Terminal/Pickup Zone) | scheduling + airport | الجدولة + المطار | — | قواعد الجدولة | ⏳ |
