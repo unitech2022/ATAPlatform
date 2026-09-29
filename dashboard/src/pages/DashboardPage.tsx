@@ -13,7 +13,7 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { cancellations, dashboard, drivers, live, payments, payouts, refunds, safety } from '../lib/admin'
+import { cancellations, dashboard, drivers, live, payments, payouts, promotions, refunds, safety } from '../lib/admin'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
 import { daysAgoIso, todayIso } from '../lib/pricing'
 import { formatDuration } from '../lib/safety'
@@ -53,6 +53,13 @@ export function DashboardPage() {
   const safetySummary = useQuery(() => safety.summary(), 'dashboard-safety')
   const kpiFrom = daysAgoIso(6)
   const cancellationStats = useQuery(() => cancellations.stats({ from: kpiFrom, to: today }), `dashboard-cancellations:${kpiFrom}:${today}`)
+  // F15 — each card hides on its own error (403 without the permission, 404 for the assumed redemptions endpoint).
+  const activePromotions = useQuery(() => promotions.list({ status: 'active', page: 1, pageSize: 1 }), 'dashboard-promotions')
+  const redemptionsToday = useQuery(() => promotions.allRedemptions({ from: today, to: today, page: 1, pageSize: 1 }), `dashboard-redemptions:${today}`)
+  const marketingStats: { key: TranslationKey; value: string; icon: IconName; to: string; meta: string }[] = [
+    ...(activePromotions.error ? [] : [{ key: 'statActivePromotions' as const, value: countOf(activePromotions), icon: 'gift' as const, to: '/promotions?status=active', meta: t('navGroupMarketing') }]),
+    ...(redemptionsToday.error ? [] : [{ key: 'statRedemptionsToday' as const, value: countOf(redemptionsToday), icon: 'tag' as const, to: '/promotions', meta: t('navGroupMarketing') }]),
+  ]
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
     ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
@@ -100,6 +107,16 @@ export function DashboardPage() {
           {financeStats.map((stat) => (
             <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
               <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={t('finance')} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {marketingStats.length > 0 && (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          {marketingStats.map((stat) => (
+            <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
+              <StatCard title={t(stat.key)} icon={stat.icon} value={stat.value} meta={stat.meta} />
             </Link>
           ))}
         </div>

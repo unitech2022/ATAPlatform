@@ -28,6 +28,9 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'navPassengers', icon: 'users', to: '/passengers', isActive: (pathname) => pathname.startsWith('/passengers') },
   { key: 'navTrips', icon: 'route', to: '/trips', isActive: (pathname) => pathname.startsWith('/trips') },
   { key: 'navLiveMap', icon: 'map', to: '/live', isActive: (pathname) => pathname.startsWith('/live') },
+  // F15 — ratings sit with the operational screens.
+  { key: 'navRatings', icon: 'star', to: '/ratings', isActive: (pathname) => pathname === '/ratings' },
+  { key: 'navRatingFlags', icon: 'flag', to: '/ratings/flags', isActive: (pathname) => pathname.startsWith('/ratings/flags') },
   { key: 'navRideCategories', icon: 'layers', to: '/ride-categories', isActive: (pathname) => pathname.startsWith('/ride-categories') },
   { key: 'navAuditLogs', icon: 'list', to: '/audit-logs', isActive: (pathname) => pathname.startsWith('/audit-logs') },
 ]
@@ -107,6 +110,13 @@ export const CANCELLATION_ITEMS: NavItem[] = [
   },
 ]
 
+/** F15 — marketing & loyalty group ("التسويق والولاء"). */
+export const MARKETING_ITEMS: NavItem[] = [
+  { key: 'navPromotions', icon: 'gift', to: '/promotions', isActive: (pathname) => pathname.startsWith('/promotions') },
+  { key: 'navIncentives', icon: 'target', to: '/incentives', isActive: (pathname) => pathname.startsWith('/incentives') },
+  { key: 'navDriverTiers', icon: 'trophy', to: '/driver-tiers', isActive: (pathname) => pathname.startsWith('/driver-tiers') },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -118,6 +128,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { key: 'navGroupSafety', items: SAFETY_ITEMS },
   { key: 'navGroupCancellation', items: CANCELLATION_ITEMS },
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
+  { key: 'navGroupMarketing', items: MARKETING_ITEMS },
   { key: 'navGroupFinance', items: FINANCE_ITEMS },
   { key: 'navGroupNotifications', items: NOTIFICATION_ITEMS },
 ]
@@ -160,6 +171,13 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/cancellation/rules')) return 'cxRulesTitle'
   if (pathname.startsWith('/cancellation/excuses')) return 'cxExcusesTitle'
   if (pathname.startsWith('/cancellation')) return 'cxEventsTitle'
+  if (pathname.startsWith('/ratings/flags')) return 'rtFlagsTitle'
+  if (pathname.startsWith('/ratings')) return 'rtTitle'
+  if (/^\/promotions\/[^/]+/.test(pathname)) return 'prDetailTitle'
+  if (pathname.startsWith('/promotions')) return 'prTitle'
+  if (pathname.startsWith('/driver-tiers')) return 'tierTitle'
+  if (/^\/incentives\/[^/]+/.test(pathname)) return 'icDetailTitle'
+  if (pathname.startsWith('/incentives')) return 'icTitle'
   if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
   if (pathname.startsWith('/reliability')) return 'rlTitle'
   return 'appName'

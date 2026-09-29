@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { DriverStatusBadge } from '../components/Badge'
+import { DriverStatusBadge, MetaBadge } from '../components/Badge'
 import { Card } from '../components/Card'
 import { ErrorState } from '../components/ErrorState'
 import { SearchInput } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { Stars } from '../components/Stars'
 import { Table, type Column } from '../components/Table'
 import { useLang } from '../context/lang'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
@@ -13,6 +14,7 @@ import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
 import { drivers } from '../lib/admin'
 import { formatDate, formatNumber } from '../lib/format'
+import { driverTierMeta } from '../lib/status'
 import type { DriverListItem, DriverStatus } from '../lib/types'
 
 const PAGE_SIZE = 20
@@ -93,6 +95,15 @@ export function DriversPage() {
     { key: 'status', header: t('status'), render: (row) => <DriverStatusBadge status={row.status} /> },
   ]
 
+  // F15: tier and rating only make sense for operating drivers; shown when filtered to them or when the rows carry them.
+  const rows = query.data?.items ?? []
+  if (status === 'approved' || status === 'suspended' || rows.some((row) => row.tier || typeof row.ratingAvg === 'number')) {
+    columns.splice(columns.length - 1, 0,
+      { key: 'tier', header: t('tierLabel'), render: (row) => (row.tier ? <MetaBadge record={driverTierMeta} value={row.tier} /> : <span className="text-muted">—</span>) },
+      { key: 'rating', header: t('rating'), render: (row) => <Stars value={row.ratingAvg} low={typeof row.ratingAvg === 'number' && row.ratingAvg < 4.3} /> },
+    )
+  }
+
   return (
     <>
       <PageHeader title={t('driversTitle')} description={t('driversCopy')} />
@@ -137,7 +148,7 @@ export function DriversPage() {
           <>
             <Table
               columns={columns}
-              rows={query.data?.items ?? []}
+              rows={rows}
               rowKey={(row) => row.id}
               loading={query.loading}
               onRowClick={(row) => navigate(`/drivers/${row.id}`)}

@@ -20,6 +20,14 @@ const CODE_KEY: Record<string, TranslationKey> = {
   cancellation_reason_invalid: 'errCancellationReasonInvalid',
   cancellation_fee_changed: 'errCancellationFeeChanged',
   account_restricted: 'errAccountRestricted',
+  // F15 (docs/10)
+  rating_window_closed: 'errRatingWindowClosed',
+  rating_exists: 'errRatingExists',
+  promo_not_found: 'errPromoNotFound',
+  promo_expired: 'errPromoExpired',
+  promo_not_eligible: 'errPromoNotEligible',
+  promo_usage_limit_reached: 'errPromoUsageLimit',
+  incentive_opt_in_closed: 'errIncentiveOptInClosed',
 }
 
 /** Turns any thrown value into a human-readable message in the current language. */

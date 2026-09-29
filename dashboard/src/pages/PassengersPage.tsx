@@ -7,6 +7,8 @@ import { ErrorState } from '../components/ErrorState'
 import { SearchInput } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { RatingSummaryCard } from '../components/RatingSummaryCard'
+import { Stars } from '../components/Stars'
 import { ReasonModal } from '../components/ReasonModal'
 import { ReliabilityCard } from '../components/ReliabilityCard'
 import { Table, type Column } from '../components/Table'
@@ -83,6 +85,16 @@ export function PassengersPage() {
     { key: 'phoneNumber', header: t('phoneNumber'), render: (row) => <span className="ltr-nums">{row.phoneNumber}</span> },
     { key: 'status', header: t('status'), render: (row) => <UserStatusBadge status={row.status} /> },
     {
+      key: 'rating',
+      header: t('rating'),
+      render: (row) => (
+        <span className="inline-flex items-center gap-1">
+          <Stars value={row.ratingAvg} low={typeof row.ratingAvg === 'number' && row.ratingAvg < 4} />
+          {typeof row.ratingCount === 'number' && <span className="ltr-nums text-xs text-muted">({formatNumber(row.ratingCount)})</span>}
+        </span>
+      ),
+    },
+    {
       key: 'tripsCount',
       header: t('tripsCount'),
       className: 'text-center',
@@ -102,7 +114,7 @@ export function PassengersPage() {
             aria-expanded={expandedId === row.id}
             onClick={() => setExpandedId((current) => (current === row.id ? null : row.id))}
           >
-            {t('rlCardTitle')}
+            {t('passengerDetails')}
           </Button>
           {row.status === 'suspended' ? (
             <Button variant="brand" size="sm" icon="play" loading={busyId === row.id} onClick={() => reinstate(row)}>
@@ -142,7 +154,14 @@ export function PassengersPage() {
               rows={query.data?.items ?? []}
               rowKey={(row) => row.id}
               loading={query.loading}
-              renderExpanded={(row) => (expandedId === row.id ? <ReliabilityCard userId={userIdOf(row)} role="passenger" bare /> : null)}
+              renderExpanded={(row) =>
+                expandedId === row.id ? (
+                  <div className="space-y-6">
+                    <ReliabilityCard userId={userIdOf(row)} role="passenger" bare />
+                    <RatingSummaryCard userId={userIdOf(row)} role="passenger" ratingAvg={row.ratingAvg} ratingCount={row.ratingCount} bare />
+                  </div>
+                ) : null
+              }
             />
             {query.data && (
               <Pagination

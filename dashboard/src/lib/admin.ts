@@ -1,5 +1,30 @@
 import { api } from './api'
 import type {
+  AdminRating,
+  City,
+  DriverIncentiveProgress,
+  DriverTier,
+  DriverTierHistoryEntry,
+  DriverTierRule,
+  DriverTierRuleInput,
+  Incentive,
+  IncentiveInput,
+  IncentiveProgress,
+  IncentiveProgressStatus,
+  Promotion,
+  PromotionInput,
+  PromotionListItem,
+  PromotionListStatus,
+  PromotionRedemption,
+  PromotionStats,
+  RaterRole,
+  RatingFlag,
+  RatingFlagReviewAction,
+  RatingFlagStatus,
+  RatingFlagType,
+  RatingStatus,
+  RatingTag,
+  RedemptionStatus,
   AtFault,
   BookingType,
   CancellationEvent,
@@ -536,4 +561,90 @@ export const reliabilityProfiles = {
     api.get<Paginated<ReliabilityProfileListItem> | ReliabilityProfileListItem[]>('/admin/reliability-profiles', query).then(asPage),
   get: (userId: string, role: ReliabilityRole) => api.get<ReliabilityProfileDetail>(`/admin/reliability-profiles/${userId}`, { role }),
   adjust: (userId: string, input: ReliabilityAdjustInput) => api.post<ReliabilityProfileDetail>(`/admin/reliability-profiles/${userId}/adjust`, input),
+}
+
+// ---------------------------------------------------------------------------
+// F15 — ratings, promotions, driver tiers, incentives (docs/10)
+// ---------------------------------------------------------------------------
+
+export const catalog = {
+  cities: () => api.get<City[]>('/catalog/cities'),
+  ratingTags: (target: RaterRole) => api.get<RatingTag[]>('/catalog/rating-tags', { target }),
+}
+
+export type RatingListQuery = DateRange &
+  PageQuery & {
+    raterRole?: RaterRole | ''
+    stars?: number | ''
+    flagged?: boolean | ''
+    userId?: string
+    /** Not in §F15.3 — sent for backends that support it; the page also filters the current page client-side. */
+    tag?: string
+    status?: RatingStatus | ''
+    search?: string
+  }
+
+export const ratings = {
+  list: (query: RatingListQuery) => api.get<Paginated<AdminRating> | AdminRating[]>('/admin/ratings', query).then(asPage),
+  /** Audited as `rating.hide`; hiding recomputes the ratee's average. */
+  hide: (id: string, reason: string) => api.post<AdminRating | undefined>(`/admin/ratings/${id}/hide`, { reason }),
+  unhide: (id: string) => api.post<AdminRating | undefined>(`/admin/ratings/${id}/unhide`),
+}
+
+export const ratingFlags = {
+  list: (query: PageQuery & { status?: RatingFlagStatus | ''; type?: RatingFlagType | '' }) =>
+    api.get<Paginated<RatingFlag> | RatingFlag[]>('/admin/rating-flags', query).then(asPage),
+  review: (id: string, action: RatingFlagReviewAction, note: string) =>
+    api.post<RatingFlag | undefined>(`/admin/rating-flags/${id}/review`, { action, note }),
+}
+
+export type PromotionListQuery = PageQuery & { status?: PromotionListStatus | ''; search?: string }
+export type RedemptionListQuery = PageQuery & { status?: RedemptionStatus | '' }
+
+export const promotions = {
+  list: (query: PromotionListQuery) =>
+    api.get<Paginated<PromotionListItem> | PromotionListItem[]>('/admin/promotions', query).then(asPage),
+  get: (id: string) => api.get<Promotion>(`/admin/promotions/${id}`),
+  create: (input: PromotionInput) => api.post<Promotion>('/admin/promotions', input),
+  /** `code` and `type` are locked after the first reservation (`409 conflict`). */
+  update: (id: string, input: PromotionInput) => api.put<Promotion>(`/admin/promotions/${id}`, input),
+  deactivate: (id: string) => api.post<Promotion | undefined>(`/admin/promotions/${id}/deactivate`),
+  redemptions: (id: string, query: RedemptionListQuery) =>
+    api.get<Paginated<PromotionRedemption> | PromotionRedemption[]>(`/admin/promotions/${id}/redemptions`, query).then(asPage),
+  stats: (id: string) => api.get<PromotionStats>(`/admin/promotions/${id}/stats`),
+  /**
+   * Assumed endpoint (not in §F15.6): redemptions across all promotions, used for the dashboard's
+   * "redemptions today" counter. Callers hide the card on 404/403.
+   */
+  allRedemptions: (query: DateRange & RedemptionListQuery) =>
+    api.get<Paginated<PromotionRedemption> | PromotionRedemption[]>('/admin/promotion-redemptions', query).then(asPage),
+}
+
+export const driverTiers = {
+  rules: () => api.get<Paginated<DriverTierRule> | DriverTierRule[]>('/admin/driver-tier-rules').then(unwrapList),
+  updateRule: (id: string, input: DriverTierRuleInput) => api.put<DriverTierRule>(`/admin/driver-tier-rules/${id}`, input),
+  /** `202 Accepted` — the weekly job runs now in the background. */
+  recalculate: () => api.post<void>('/admin/driver-tiers/recalculate'),
+  history: (driverId: string) =>
+    api.get<Paginated<DriverTierHistoryEntry> | DriverTierHistoryEntry[]>(`/admin/drivers/${driverId}/tier-history`).then(unwrapList),
+  /** Manual override until the next recalculation (audit `driver.tier_set`). */
+  setTier: (driverId: string, tier: DriverTier, reason: string) => api.post<void>(`/admin/drivers/${driverId}/tier`, { tier, reason }),
+}
+
+export type IncentiveProgressQuery = PageQuery & { status?: IncentiveProgressStatus | '' }
+
+export const incentives = {
+  list: (query: PageQuery & { status?: string } = {}) =>
+    api.get<Paginated<Incentive> | Incentive[]>('/admin/incentives', { ...ALL, ...query }).then(unwrapList),
+  get: (id: string) => api.get<Incentive>(`/admin/incentives/${id}`),
+  create: (input: IncentiveInput) => api.post<Incentive>('/admin/incentives', input),
+  update: (id: string, input: IncentiveInput) => api.put<Incentive>(`/admin/incentives/${id}`, input),
+  deactivate: (id: string) => api.post<Incentive | undefined>(`/admin/incentives/${id}/deactivate`),
+  progress: (id: string, query: IncentiveProgressQuery) =>
+    api.get<Paginated<IncentiveProgress> | IncentiveProgress[]>(`/admin/incentives/${id}/progress`, query).then(asPage),
+  /** Only before payout (audit `incentive_progress.void`). */
+  voidProgress: (progressId: string, reason: string) => api.post<void>(`/admin/incentive-progress/${progressId}/void`, { reason }),
+  /** Assumed endpoint (not in §F15.10): a driver's progress across incentives; callers hide the section on 404. */
+  forDriver: (driverId: string) =>
+    api.get<Paginated<DriverIncentiveProgress> | DriverIncentiveProgress[]>(`/admin/drivers/${driverId}/incentives`).then(unwrapList),
 }

@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { Badge, DocumentStatusBadge, DriverStatusBadge } from '../components/Badge'
+import { Badge, DocumentStatusBadge, DriverStatusBadge, MetaBadge } from '../components/Badge'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { DefinitionList } from '../components/DefinitionList'
 import { DriverFinanceCard } from '../components/DriverFinanceCard'
+import { DriverIncentivesCard } from '../components/DriverIncentivesCard'
+import { DriverTierCard } from '../components/DriverTierCard'
+import { RatingSummaryCard } from '../components/RatingSummaryCard'
+import { Stars } from '../components/Stars'
 import { ReliabilityCard } from '../components/ReliabilityCard'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
@@ -21,7 +25,7 @@ import type { TranslationKey } from '../i18n'
 import { documents as documentsApi, drivers } from '../lib/admin'
 import { isApiError } from '../lib/api'
 import { formatDate, formatDateTime, formatNumber } from '../lib/format'
-import { driverStatusKey } from '../lib/status'
+import { driverStatusKey, driverTierMeta } from '../lib/status'
 import { allowedActions } from '../lib/transitions'
 import type { DriverDetail, DriverDocument, DriverReviewAction, Gender, StatusHistoryEntry } from '../lib/types'
 
@@ -179,6 +183,13 @@ export function DriverDetailPage() {
               <h2 className="text-2xl font-bold leading-tight">{driver.profile.fullName || driver.user.fullName || t('unnamed')}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
                 <DriverStatusBadge status={driver.status} />
+                {driver.tier && <MetaBadge record={driverTierMeta} value={driver.tier} />}
+                {typeof driver.ratingAvg === 'number' && (
+                  <span className="inline-flex items-center gap-1">
+                    <Stars value={driver.ratingAvg} />
+                    {typeof driver.ratingCount === 'number' && <span className="ltr-nums text-xs">({formatNumber(driver.ratingCount)})</span>}
+                  </span>
+                )}
                 <span className="ltr-nums">{driver.user.phoneNumber ?? '—'}</span>
                 {driver.submittedAt && (
                   <span>
@@ -254,6 +265,13 @@ export function DriverDetailPage() {
 
       {(driver.status === 'approved' || driver.status === 'suspended') && <DriverFinanceCard driver={driver} />}
       {(driver.status === 'approved' || driver.status === 'suspended') && <ReliabilityCard userId={driver.user.id} role="driver" />}
+      {(driver.status === 'approved' || driver.status === 'suspended') && (
+        <>
+          <DriverTierCard driverId={driver.id} tier={driver.tier} onChanged={query.reload} />
+          <RatingSummaryCard userId={driver.user.id} role="driver" ratingAvg={driver.ratingAvg} ratingCount={driver.ratingCount} />
+          <DriverIncentivesCard driverId={driver.id} />
+        </>
+      )}
 
       <Card
         className="mb-6"

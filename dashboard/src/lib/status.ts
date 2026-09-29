@@ -1,5 +1,12 @@
 import type { TranslationKey } from '../i18n'
 import type {
+  DriverTier,
+  IncentiveListStatus,
+  IncentiveProgressStatus,
+  PromotionListStatus,
+  RatingFlagStatus,
+  RatingStatus,
+  RedemptionStatus,
   CancellationFeeStatus,
   ExcuseStatus,
   LostItemStatus,
@@ -206,6 +213,54 @@ export const restrictionLevelMeta: Record<RestrictionLevel, StatusMeta> = {
   incentives_reduced: { tone: 'danger', key: 'rlLevelIncentivesReduced' },
   temporarily_restricted: { tone: 'danger', key: 'rlLevelRestricted' },
   suspended: { tone: 'ink', key: 'rlLevelSuspended' },
+}
+
+// F15 — ratings, promotions, driver tiers, incentives
+
+export const ratingStatusMeta: Record<RatingStatus, StatusMeta> = {
+  visible: { tone: 'brand', key: 'rtStatusVisible' },
+  hidden: { tone: 'muted', key: 'rtStatusHidden' },
+}
+
+export const ratingFlagStatusMeta: Record<RatingFlagStatus, StatusMeta> = {
+  open: { tone: 'warning', key: 'rtFlagOpen' },
+  dismissed: { tone: 'muted', key: 'rtFlagDismissed' },
+  actioned: { tone: 'brand', key: 'rtFlagActioned' },
+}
+
+export const promotionStatusMeta: Record<PromotionListStatus, StatusMeta> = {
+  active: { tone: 'brand', key: 'prStatusActive' },
+  scheduled: { tone: 'warning', key: 'prStatusScheduled' },
+  expired: { tone: 'muted', key: 'prStatusExpired' },
+  inactive: { tone: 'danger', key: 'prStatusInactive' },
+}
+
+export const redemptionStatusMeta: Record<RedemptionStatus, StatusMeta> = {
+  reserved: { tone: 'warning', key: 'prRedReserved' },
+  applied: { tone: 'brand', key: 'prRedApplied' },
+  released: { tone: 'muted', key: 'prRedReleased' },
+}
+
+export const driverTierMeta: Record<DriverTier, StatusMeta> = {
+  bronze: { tone: 'muted', key: 'tierBronze' },
+  silver: { tone: 'ink', key: 'tierSilver' },
+  gold: { tone: 'warning', key: 'tierGold' },
+  platinum: { tone: 'brand', key: 'tierPlatinum' },
+}
+
+export const incentiveStatusMeta: Record<IncentiveListStatus, StatusMeta> = {
+  active: { tone: 'brand', key: 'icStatusActive' },
+  upcoming: { tone: 'warning', key: 'icStatusUpcoming' },
+  ended: { tone: 'muted', key: 'icStatusEnded' },
+  inactive: { tone: 'danger', key: 'icStatusInactive' },
+}
+
+export const incentiveProgressStatusMeta: Record<IncentiveProgressStatus, StatusMeta> = {
+  in_progress: { tone: 'ink', key: 'icProgInProgress' },
+  achieved: { tone: 'warning', key: 'icProgAchieved' },
+  paid: { tone: 'brand', key: 'icProgPaid' },
+  expired: { tone: 'muted', key: 'icProgExpired' },
+  voided: { tone: 'danger', key: 'icProgVoided' },
 }
 
 /** Looks up a meta record with an unknown (possibly newer) server value; falls back to a muted raw label. */

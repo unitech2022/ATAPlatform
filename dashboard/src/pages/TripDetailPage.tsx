@@ -16,6 +16,7 @@ import { Table, type Column } from '../components/Table'
 import { TripCancellationCard } from '../components/TripCancellationCard'
 import { TripMessagesPanel } from '../components/TripMessagesPanel'
 import { TripPaymentCard } from '../components/TripPaymentCard'
+import { TripRewardsCard } from '../components/TripRewardsCard'
 import { TripSafetyCard } from '../components/TripSafetyCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
@@ -192,6 +193,8 @@ export function TripDetailPage() {
       </div>
 
       <TripPaymentCard trip={trip} />
+
+      <TripRewardsCard trip={trip} />
 
       {(isCancelled || trip.cancellation) && <TripCancellationCard trip={trip} onChanged={query.reload} />}
 

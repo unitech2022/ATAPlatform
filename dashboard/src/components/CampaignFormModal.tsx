@@ -8,6 +8,7 @@ import { CAMPAIGN_CATEGORIES, CAMPAIGN_CHANNELS, CATEGORY_KEY, CHANNEL_KEY, clea
 import { fromLocalInput, toLocalInput } from '../lib/pricing'
 import type { AudiencePreview, Campaign, CampaignAudience, CampaignCategory, CampaignChannel, CampaignInput } from '../lib/types'
 import { Button } from './Button'
+import { ChipGroup } from './ChipGroup'
 import { ConfirmModal } from './ConfirmModal'
 import { Input, Select, Textarea } from './Field'
 import { Icon } from './Icon'
@@ -411,27 +412,5 @@ function Section({ title, description, children }: { title: string; description?
       {description && <p className="mb-3 text-xs text-muted">{description}</p>}
       <div className={description ? '' : 'mt-3'}>{children}</div>
     </section>
-  )
-}
-
-function ChipGroup<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T[]; onChange: (value: T[]) => void }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
-        const active = value.includes(option.value)
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(active ? value.filter((item) => item !== option.value) : [...value, option.value])}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-bold transition ${active ? 'border-brand bg-brand text-white' : 'border-line bg-white text-muted hover:bg-cloud'}`}
-          >
-            {active && <Icon name="check" className="size-3.5" />}
-            {option.label}
-          </button>
-        )
-      })}
-    </div>
   )
 }

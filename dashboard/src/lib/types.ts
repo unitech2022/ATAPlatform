@@ -69,6 +69,10 @@ export interface DriverListItem {
   vehicle: string | null
   submittedAt: string | null
   documentsPending: number
+  /** F15 — present for approved drivers once tiers are computed. */
+  tier?: DriverTier | null
+  ratingAvg?: number | null
+  ratingCount?: number | null
 }
 
 export type DocumentStatus = 'pending' | 'verified' | 'rejected' | 'expired'
@@ -142,6 +146,10 @@ export interface DriverDetail {
   requiredDocuments: RequiredDocument[]
   user: User
   statusHistory: StatusHistoryEntry[]
+  /** F15 — `drivers.tier` / `rating_avg` / `rating_count`. */
+  tier?: DriverTier | null
+  ratingAvg?: number | null
+  ratingCount?: number | null
 }
 
 export type DriverReviewAction = 'start_review' | 'approve' | 'reject' | 'suspend' | 'reinstate'
@@ -155,6 +163,9 @@ export interface PassengerListItem {
   status: UserStatus
   createdAt: string
   tripsCount: number
+  /** F15 — `passengers.rating_avg` / `rating_count`. */
+  ratingAvg?: number | null
+  ratingCount?: number | null
 }
 
 export interface RideCategory {
@@ -318,6 +329,11 @@ export interface TripDetail {
   cancellation?: TripCancellation | null
   /** F12 — planned route `[[lat,lng],…]` used by route-deviation detection (§F12.1). */
   plannedRoute?: LatLngTuple[] | null
+  /** F15 — promo reservation, stored breakdown and (assumed) both ratings. */
+  promotion?: TripPromotionInfo | null
+  fareBreakdown?: { discount?: number | null; discounts?: TripDiscountLine[] | null } | null
+  discounts?: TripDiscountLine[] | null
+  ratings?: TripRatingInfo[] | null
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -1558,4 +1574,315 @@ export interface ReliabilityAdjustInput {
   level?: Exclude<RestrictionLevel, 'none'>
   until?: string
   reason: string
+}
+
+// ---------------------------------------------------------------------------
+// F15 — ratings, promotions, driver tiers, incentives
+// (docs/10 §F15). Fields marked "assumed" are not in the
+// contract; they are optional so a backend without them still renders.
+// ---------------------------------------------------------------------------
+
+export type RaterRole = 'passenger' | 'driver'
+export type RatingStatus = 'visible' | 'hidden'
+export type RatingFlagType = 'low_rating' | 'low_average' | 'abusive_comment'
+export type RatingFlagStatus = 'open' | 'dismissed' | 'actioned'
+export type RatingFlagAction = 'warned' | 'suspension_review' | 'none'
+export type RatingFlagReviewAction = 'dismiss' | 'warn' | 'suspension_review'
+
+/** `GET /catalog/rating-tags?target=` item. */
+export interface RatingTag {
+  code: string
+  name: string
+}
+
+/** Row of `GET /admin/ratings` (§F15.3). */
+export interface AdminRating {
+  id: string
+  tripNumber: string
+  raterName: string | null
+  raterRole: RaterRole
+  rateeName: string | null
+  stars: number
+  tags: string[]
+  comment: string | null
+  status: RatingStatus
+  createdAt: string
+  /** Assumed: links and audit details the list may carry. */
+  tripId?: string | null
+  raterUserId?: string | null
+  rateeUserId?: string | null
+  rateeRole?: RaterRole | null
+  /** Assumed: comment auto-hidden by the abusive-words filter while the stars stay visible. */
+  commentHidden?: boolean | null
+  hiddenReason?: string | null
+  hiddenByName?: string | null
+  hiddenAt?: string | null
+  flagged?: boolean | null
+}
+
+/** Row of `GET /admin/rating-flags` — columns of `rating_flags` (§F15.1) in camelCase. */
+export interface RatingFlag {
+  id: string
+  userId: string
+  role: RaterRole
+  type: RatingFlagType
+  ratingId: string | null
+  /** Stars for `low_rating`, the average for `low_average`. */
+  value: number | null
+  status: RatingFlagStatus
+  action: RatingFlagAction | null
+  reviewedAt: string | null
+  note: string | null
+  createdAt: string
+  /** Assumed display helpers. */
+  userName?: string | null
+  driverId?: string | null
+  reviewedByName?: string | null
+  ratingCount?: number | null
+  rating?: { stars: number; comment: string | null; tags: string[]; tripNumber?: string | null; tripId?: string | null } | null
+}
+
+export type PromotionType = 'percent' | 'fixed' | 'free_booking_fee'
+export type PromotionListStatus = 'active' | 'scheduled' | 'expired' | 'inactive'
+export type RedemptionStatus = 'reserved' | 'applied' | 'released'
+export type RedemptionReleaseReason = 'trip_cancelled' | 'no_drivers' | 'not_stacked' | 'payment_failed' | 'not_eligible_at_completion' | 'admin'
+
+/** Row of `GET /admin/promotions` (§F15.6). */
+export interface PromotionListItem {
+  id: string
+  code: string
+  nameAr: string
+  nameEn?: string | null
+  type: PromotionType
+  value: number
+  validFrom: string
+  validTo: string
+  usageCount: number
+  totalUsageLimit: number | null
+  spentAmount: number
+  budgetAmount: number | null
+  isActive: boolean
+}
+
+/** Body of `POST/PUT /admin/promotions` — every `promotions` column except the counters. */
+export interface PromotionInput {
+  code: string
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  descriptionEn: string | null
+  type: PromotionType
+  value: number
+  maxDiscount: number | null
+  minFare: number | null
+  validFrom: string
+  validTo: string
+  totalUsageLimit: number | null
+  perUserLimit: number
+  budgetAmount: number | null
+  firstTripOnly: boolean
+  newUsersOnly: boolean
+  newUserDays: number
+  cityId: string | null
+  rideCategoryIds: string[] | null
+  zoneIds: string[] | null
+  paymentMethods: PaymentMethod[] | null
+  bookingTypes: BookingType[] | null
+  isStackable: boolean
+  isPublic: boolean
+  isActive: boolean
+}
+
+/** `GET /admin/promotions/{id}`. */
+export interface Promotion extends PromotionInput {
+  id: string
+  usageCount: number
+  spentAmount: number
+  createdAt?: string | null
+  updatedAt?: string | null
+  createdByName?: string | null
+}
+
+/** Row of `GET /admin/promotions/{id}/redemptions`. */
+export interface PromotionRedemption {
+  id: string
+  passengerName: string | null
+  phoneMasked: string | null
+  tripNumber: string
+  status: RedemptionStatus
+  reservedAmount: number | null
+  discountAmount: number | null
+  reservedAt: string
+  appliedAt: string | null
+  releaseReason: RedemptionReleaseReason | null
+  /** Assumed. */
+  tripId?: string | null
+  releasedAt?: string | null
+  promotionCode?: string | null
+}
+
+/** `GET /admin/promotions/{id}/stats`. */
+export interface PromotionStats {
+  reserved: number
+  applied: number
+  released: number
+  totalDiscount: number
+  uniqueUsers: number
+  firstTripConversions: number
+}
+
+export type DriverTier = 'bronze' | 'silver' | 'gold' | 'platinum'
+
+/** Row of `GET /admin/driver-tier-rules` (§F15.7). Rates are 0..1. */
+export interface DriverTierRule {
+  id: string
+  tier: DriverTier
+  minCompletedTrips: number
+  minRatingAvg: number
+  minAcceptanceRate: number
+  maxCancellationRate: number
+  commissionDiscountPercent: number
+  matchingNorm: number
+  benefitsAr: string | null
+  benefitsEn: string | null
+  sortOrder: number
+  updatedAt?: string | null
+  /** Assumed: current number of drivers on the tier (for the distribution bar). */
+  driversCount?: number | null
+}
+
+export type DriverTierRuleInput = Omit<DriverTierRule, 'id' | 'tier' | 'updatedAt' | 'driversCount'>
+
+export interface TierMetrics {
+  completedTrips: number
+  ratingAvg: number
+  acceptanceRate: number
+  cancellationRate: number
+}
+
+/** Row of `GET /admin/drivers/{id}/tier-history`. */
+export interface DriverTierHistoryEntry {
+  id: string
+  fromTier: DriverTier | null
+  toTier: DriverTier
+  metrics: TierMetrics | null
+  reason: 'weekly_recalc' | 'admin' | string
+  computedAt: string
+  /** Assumed: the admin reason / actor of a manual change. */
+  note?: string | null
+  actorName?: string | null
+}
+
+export type IncentiveType = 'daily' | 'weekly' | 'zone_quest' | 'one_time'
+export type IncentiveProgressStatus = 'in_progress' | 'achieved' | 'paid' | 'expired' | 'voided'
+/** Derived client-side from `isActive` and the window. */
+export type IncentiveListStatus = 'active' | 'upcoming' | 'ended' | 'inactive'
+
+/** Body of `POST/PUT /admin/incentives` — every `driver_incentives` column except counters (§F15.8). */
+export interface IncentiveInput {
+  nameAr: string
+  nameEn: string
+  descriptionAr: string | null
+  descriptionEn: string | null
+  type: IncentiveType
+  cityId: string | null
+  zoneIds: string[] | null
+  rideCategoryIds: string[] | null
+  targetTrips: number
+  rewardAmount: number
+  minTripFare: number | null
+  startsAt: string
+  endsAt: string
+  /** 0 = Sunday … 6 = Saturday. */
+  daysOfWeek: number[] | null
+  /** `HH:mm`, Riyadh time. */
+  dailyFrom: string | null
+  dailyTo: string | null
+  minTier: DriverTier | null
+  minRating: number | null
+  requiresOptIn: boolean
+  maxParticipants: number | null
+  budgetAmount: number | null
+  notifyOnPublish: boolean
+  isActive: boolean
+}
+
+export interface Incentive extends IncentiveInput {
+  id: string
+  spentAmount: number
+  createdAt?: string | null
+  updatedAt?: string | null
+  /** Assumed counters. */
+  participantsCount?: number | null
+  achievedCount?: number | null
+  paidCount?: number | null
+}
+
+/** Row of `GET /admin/incentives/{id}/progress`. */
+export interface IncentiveProgress {
+  id: string
+  driverName: string | null
+  periodStart: string
+  completedTrips: number
+  status: IncentiveProgressStatus
+  rewardAmount: number | null
+  incentiveMultiplier: number | null
+  paidAt: string | null
+  /** Assumed. */
+  driverId?: string | null
+  periodEnd?: string | null
+  achievedAt?: string | null
+  voidedReason?: string | null
+}
+
+/** Assumed `GET /admin/drivers/{id}/incentives` row (not in the contract; hidden on 404). */
+export interface DriverIncentiveProgress {
+  id: string
+  incentiveId: string
+  name?: string | null
+  incentiveName?: string | null
+  type?: IncentiveType | null
+  targetTrips: number
+  completedTrips: number
+  periodStart: string
+  periodEnd?: string | null
+  status: IncentiveProgressStatus
+  rewardAmount: number | null
+  incentiveMultiplier?: number | null
+  paidAt?: string | null
+}
+
+/** `breakdown.discounts[]` (docs/08 §F11.6). */
+export interface TripDiscountLine {
+  /** `promotion` in F15; other sources may be added by later features. */
+  source: string
+  reference: string | null
+  label: string | null
+  amount: number
+}
+
+export interface TripPromotionInfo {
+  code: string
+  status: RedemptionStatus
+  discountAmount: number | null
+  /** Assumed. */
+  promotionId?: string | null
+}
+
+/** Assumed admin `Trip.ratings[]` (the contract only adds `myRating` for the app). */
+export interface TripRatingInfo {
+  id?: string | null
+  raterRole: RaterRole
+  stars: number
+  tags: string[]
+  comment?: string | null
+  status?: RatingStatus | null
+  createdAt?: string | null
+}
+
+/** `GET /catalog/cities`. */
+export interface City {
+  id: string
+  code: string
+  name: string
 }

@@ -52,7 +52,16 @@ const CancellationEventsPage = lazy(() => import('./pages/CancellationEventsPage
 const ReliabilityPage = lazy(() => import('./pages/ReliabilityPage').then((module) => ({ default: module.ReliabilityPage })))
 const ReliabilityProfilePage = lazy(() => import('./pages/ReliabilityProfilePage').then((module) => ({ default: module.ReliabilityProfilePage })))
 
-/** Lazy routes of the finance (F11), notifications (F13), safety (F12) and cancellation (F14) sections. */
+// F15 ratings, promotions, driver tiers, incentives
+const RatingsPage = lazy(() => import('./pages/RatingsPage').then((module) => ({ default: module.RatingsPage })))
+const RatingFlagsPage = lazy(() => import('./pages/RatingFlagsPage').then((module) => ({ default: module.RatingFlagsPage })))
+const PromotionsPage = lazy(() => import('./pages/PromotionsPage').then((module) => ({ default: module.PromotionsPage })))
+const PromotionDetailPage = lazy(() => import('./pages/PromotionDetailPage').then((module) => ({ default: module.PromotionDetailPage })))
+const DriverTiersPage = lazy(() => import('./pages/DriverTiersPage').then((module) => ({ default: module.DriverTiersPage })))
+const IncentivesPage = lazy(() => import('./pages/IncentivesPage').then((module) => ({ default: module.IncentivesPage })))
+const IncentiveDetailPage = lazy(() => import('./pages/IncentiveDetailPage').then((module) => ({ default: module.IncentiveDetailPage })))
+
+/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14) and ratings/marketing (F15) sections. */
 const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'payments', Page: PaymentsPage },
   { path: 'payments/:id', Page: PaymentDetailPage },
@@ -79,6 +88,13 @@ const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'cancellation/events', Page: CancellationEventsPage },
   { path: 'reliability', Page: ReliabilityPage },
   { path: 'reliability/:userId', Page: ReliabilityProfilePage },
+  { path: 'ratings', Page: RatingsPage },
+  { path: 'ratings/flags', Page: RatingFlagsPage },
+  { path: 'promotions', Page: PromotionsPage },
+  { path: 'promotions/:id', Page: PromotionDetailPage },
+  { path: 'driver-tiers', Page: DriverTiersPage },
+  { path: 'incentives', Page: IncentivesPage },
+  { path: 'incentives/:id', Page: IncentiveDetailPage },
 ]
 
 /** Short aliases that redirect to the canonical routes from docs/08 §F13.10 and docs/09 "لوحة الإدارة". */
@@ -92,6 +108,9 @@ const ALIASES: { from: string; to: string }[] = [
   { from: 'cancellation', to: '/cancellation/events' },
   { from: 'cancellations', to: '/cancellation/events' },
   { from: 'reliability-thresholds', to: '/reliability?tab=thresholds' },
+  { from: 'rating-flags', to: '/ratings/flags' },
+  { from: 'promo-codes', to: '/promotions' },
+  { from: 'tiers', to: '/driver-tiers' },
 ]
 
 function Lazy({ children }: { children: ReactNode }) {
