@@ -11,21 +11,23 @@ namespace ATA.Tests.Infrastructure;
 public static class RewardsFlow
 {
     public static object Request((decimal Lat, decimal Lng) area, string? promoCode = null, string paymentMethod = "cash", string? quoteId = null, string pricingMode = "fixed",
-        decimal? offeredPrice = null, Guid? rideCategoryId = null, string bookingType = "now") => new
+        decimal? offeredPrice = null, Guid? rideCategoryId = null, string bookingType = "now", Guid? favoriteDriverId = null, DateTime? scheduledAt = null) => new
     {
         pickup = new { name = "المنزل", address = "شارع الملك فهد", lat = area.Lat, lng = area.Lng },
         dropoff = new { name = "العمل", address = "طريق الملك عبدالله", lat = area.Lat + 0.05m, lng = area.Lng + 0.05m },
         stops = Array.Empty<object>(),
         rideCategoryId = rideCategoryId ?? SeedIds.RideCategories.Economy,
         bookingType,
+        scheduledAt,
         paymentMethod,
         pricingMode,
         offeredPrice,
         quoteId,
         promoCode,
+        favoriteDriverId,
     };
 
-    public static object Quote((decimal Lat, decimal Lng) area, string? promoCode = null, Guid? rideCategoryId = null) => new
+    public static object Quote((decimal Lat, decimal Lng) area, string? promoCode = null, Guid? rideCategoryId = null, Guid? favoriteDriverId = null) => new
     {
         pickup = new { name = "المنزل", address = "شارع الملك فهد", lat = area.Lat, lng = area.Lng },
         dropoff = new { name = "العمل", address = "طريق الملك عبدالله", lat = area.Lat + 0.05m, lng = area.Lng + 0.05m },
@@ -33,6 +35,7 @@ public static class RewardsFlow
         rideCategoryId = rideCategoryId ?? SeedIds.RideCategories.Economy,
         bookingType = "now",
         promoCode,
+        favoriteDriverId,
     };
 
     /// <summary>Creates a promotion through the admin API (valid from yesterday for 30 days unless overridden) and returns its JSON.</summary>

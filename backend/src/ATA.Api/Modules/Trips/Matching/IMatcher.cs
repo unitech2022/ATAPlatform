@@ -14,6 +14,7 @@ namespace ATA.Api.Modules.Trips.Matching;
 /// <summary>
 /// What to search for. <paramref name="RadiusMeters"/> overrides the settings radius (used by the expanding rounds); <paramref name="TripId"/>
 /// excludes drivers already offered the trip and <paramref name="PassengerId"/> enables the favourite-driver bonus.
+/// <paramref name="OnlyDriverIds"/> (F16) restricts the search to those drivers: the exclusive favourite round and the "available favourites" list.
 /// </summary>
 public sealed record MatchCriteria(
     decimal PickupLat,
@@ -23,7 +24,8 @@ public sealed record MatchCriteria(
     IReadOnlyCollection<Guid> ExcludedDriverIds,
     int? RadiusMeters = null,
     Guid? PassengerId = null,
-    Guid? TripId = null);
+    Guid? TripId = null,
+    IReadOnlyCollection<Guid>? OnlyDriverIds = null);
 
 public sealed record DriverCandidate(Guid DriverId, Guid UserId, Guid VehicleId, int DistanceMeters, int EtaSeconds, decimal Score);
 
@@ -33,15 +35,10 @@ public interface IMatcher
     Task<IReadOnlyList<DriverCandidate>> FindCandidatesAsync(MatchCriteria criteria, CancellationToken ct);
 }
 
-/// <summary>F16 hook: the passenger's favourite drivers get the <c>favorite</c> score bonus. No favourites exist before F16.</summary>
+/// <summary>The passenger's favourite drivers get the <c>favorite</c> score bonus (F16: <c>Favorites.DbFavoriteDriverProvider</c> reads <c>favorite_drivers</c>).</summary>
 public interface IFavoriteDriverProvider
 {
     Task<IReadOnlySet<Guid>> FavoriteDriverIdsAsync(Guid passengerId, CancellationToken ct);
-}
-
-public sealed class NoFavoriteDrivers : IFavoriteDriverProvider
-{
-    public Task<IReadOnlySet<Guid>> FavoriteDriverIdsAsync(Guid passengerId, CancellationToken ct) => Task.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>());
 }
 
 /// <summary><paramref name="MatchingFactor"/> multiplies the final score (F14 <c>deprioritize_factor</c>; 1 when not deprioritised).</summary>
@@ -211,6 +208,12 @@ public sealed class ScoringMatcher(
         if (criteria.PreferFemaleDriver)
         {
             query = query.Where(x => x.Gender == Gender.Female);
+        }
+
+        if (criteria.OnlyDriverIds is { } only)
+        {
+            var onlyIds = only.ToList();
+            query = query.Where(x => onlyIds.Contains(x.Id));
         }
 
         var rows = await query.ToListAsync(ct);

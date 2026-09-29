@@ -21,6 +21,9 @@ public enum PricingMode { Fixed, Saver, Offer }
 
 public enum OfferStatus { Sent, Accepted, Rejected, Expired }
 
+/// <summary>F16 <c>trips.favorite_status</c>: how the passenger's favourite-driver request went (null = no favourite requested).</summary>
+public enum FavoriteStatus { Requested, Accepted, Unavailable, Rejected, Expired }
+
 public enum TripActor { Passenger, Driver, System, Admin }
 
 public enum CancelledBy { Passenger, Driver, System, Admin }
@@ -51,6 +54,9 @@ public static class TripEventTypes
     public const string PaymentCapturePending = "payment_capture_pending";
     public const string Cancelled = "cancelled";
     public const string NoDrivers = "no_drivers";
+    public const string FavoriteAccepted = "favorite_accepted";
+    public const string FavoriteUnavailable = "favorite_unavailable";
+    public const string FavoriteFallback = "favorite_fallback";
     public const string PassengerNoShow = "passenger_no_show";
     public const string CancellationFeeCharged = "cancellation_fee_charged";
 }

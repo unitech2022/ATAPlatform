@@ -3,6 +3,7 @@ using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
+using ATA.Domain.Favorites;
 using ATA.Domain.Files;
 using ATA.Domain.Identity;
 using ATA.Domain.Incentives;
@@ -111,6 +112,8 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<DriverIncentive> DriverIncentives => Set<DriverIncentive>();
     public DbSet<DriverIncentiveProgress> DriverIncentiveProgress => Set<DriverIncentiveProgress>();
     public DbSet<DriverIncentiveTrip> DriverIncentiveTrips => Set<DriverIncentiveTrip>();
+    public DbSet<FavoriteDriver> FavoriteDrivers => Set<FavoriteDriver>();
+    public DbSet<FavoriteDriverDiscountRule> FavoriteDriverDiscountRules => Set<FavoriteDriverDiscountRule>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

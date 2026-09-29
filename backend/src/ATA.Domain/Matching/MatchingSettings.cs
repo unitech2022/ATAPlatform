@@ -49,6 +49,9 @@ public enum MatchingOutcome { Assigned, Exhausted, Timeout, Cancelled }
 
 public enum CandidateResponse { Accepted, Rejected, Expired }
 
+/// <summary>F16 <c>matching_attempts.mode</c>: the exclusive favourite-driver round (round 0) or a normal round.</summary>
+public enum MatchingMode { Normal, Favorite }
+
 /// <summary>One search round for a trip (<c>matching_attempts</c>).</summary>
 public class MatchingAttempt
 {
@@ -60,6 +63,7 @@ public class MatchingAttempt
     public DateTime StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
     public MatchingOutcome? Outcome { get; set; }
+    public MatchingMode Mode { get; set; } = MatchingMode.Normal;
 
     public ICollection<MatchingCandidate> Candidates { get; set; } = [];
 

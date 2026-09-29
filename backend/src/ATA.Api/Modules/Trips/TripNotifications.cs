@@ -52,6 +52,10 @@ public static class TripNotifications
             NotificationPlaceholders.Of().Localized("categoryName", category?.NameAr ?? string.Empty, category?.NameEn ?? string.Empty),
             EntityType, trip.Id, Extra(trip));
 
+    /// <summary><c>trip.favorite_fallback</c> (F16): sent when the replacement driver of a favourite request that was rejected / expired is assigned.</summary>
+    public static NotificationRequest FavoriteFallback(Trip trip, Guid passengerUserId, string? driverName) =>
+        new(NotificationTypes.TripFavoriteFallback, passengerUserId, NotificationPlaceholders.Of(("driverName", driverName ?? string.Empty)), EntityType, trip.Id, Extra(trip));
+
     public static NotificationRequest PaymentActionRequired(Trip trip, Guid passengerUserId, decimal amount, Guid paymentId) =>
         new(NotificationTypes.TripPaymentActionRequired, passengerUserId, NotificationPlaceholders.Of().Money("amount", amount),
             EntityType, trip.Id, Extra(trip, ("paymentId", paymentId)));

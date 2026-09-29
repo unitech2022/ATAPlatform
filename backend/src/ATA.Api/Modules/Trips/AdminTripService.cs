@@ -163,7 +163,7 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Aud
             passenger, driver, dto.Vehicle, dto.WaitingSeconds, dto.CancelledBy, dto.CancellationReason, trip.RiderNote, dto.Timeline,
             events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)),
             dto.Promotion, trip.DiscountTotal, stored?.Discounts.Select(d => d with { Label = Promotions.DiscountEngine.Label(d.Source, d.Reference, lang) }).ToList(),
-            trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent);
+            trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent, dto.Favorite);
     }
 
     private async Task<Dictionary<Guid, string?>> DriverNamesAsync(IEnumerable<Guid> driverIds, CancellationToken ct)

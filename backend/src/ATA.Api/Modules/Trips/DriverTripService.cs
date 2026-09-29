@@ -41,6 +41,7 @@ public sealed class DriverTripService(
     Promotions.IDiscountEngine discounts,
     Incentives.TierRuleProvider tierRules,
     Incentives.IncentiveService incentives,
+    Favorites.FavoriteDiscountService favoriteDiscounts,
     ILogger<DriverTripService> logger)
 {
     private readonly TripOptions _options = options.Value;
@@ -141,11 +142,23 @@ public sealed class DriverTripService(
         await matching.RecordResponseAsync(trip.Id, driver.Id, CandidateResponse.Accepted, ct);
         await matching.CloseOpenAttemptAsync(trip.Id, MatchingOutcome.Assigned, now, ct);
         events.Add(trip.Id, TripEventTypes.OfferAccepted, TripActor.Driver, driver.UserId, data: new { offerId = offer.Id });
+        // F16: the requested favourite took the trip (also when it was matched normally after being unavailable) → the discount rule is pinned; after a rejected /
+        // expired exclusive round the passenger is told a replacement is on the way.
+        var favoriteFallback = trip.FavoriteStatus is FavoriteStatus.Rejected or FavoriteStatus.Expired;
+        if (trip.FavoriteDriverId == driver.Id && trip.FavoriteStatus is FavoriteStatus.Requested or FavoriteStatus.Unavailable)
+        {
+            var rule = await favoriteDiscounts.AcceptAsync(trip, ct);
+            events.Add(trip.Id, TripEventTypes.FavoriteAccepted, TripActor.System, data: new { driverId = driver.Id, discountRuleId = rule?.Id, estimatedFare = trip.EstimatedFare });
+        }
         events.Add(trip.Id, TripEventTypes.DriverAssigned, TripActor.System, data: new { driverId = driver.Id, vehicleId = vehicle?.Id, etaSeconds = offer.EtaSeconds });
 
         var participants = await reads.ParticipantsAsync(trip, ct);
         var driverName = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
         await notifications.DispatchAsync(TripNotifications.DriverAssigned(trip, participants.PassengerUserId, driverName, vehicle, offer.EtaSeconds), ct);
+        if (favoriteFallback)
+        {
+            await notifications.DispatchAsync(TripNotifications.FavoriteFallback(trip, participants.PassengerUserId, driverName), ct);
+        }
         // F12: automatic sharing with the passenger's trusted contacts (auto_share).
         await shares.AutoShareOnAssignAsync(trip, participants.PassengerUserId, ct);
         await db.SaveChangesAsync(ct);
@@ -278,6 +291,7 @@ public sealed class DriverTripService(
         // F15: the tier's commission discount raises the driver share; promo discounts are borne by the platform (the driver share is computed before them).
         var tierDiscount = await tierRules.CommissionDiscountPercentAsync(driver.Tier, ct);
         var promo = await promotions.ForCompletionAsync(trip, calculation, ct);
+        var favorite = await favoriteDiscounts.ForCompletionAsync(trip, calculation, ct);
         Promotions.DiscountOutcome? discount = null;
         decimal fare, driverEarnings;
         if (trip.PricingMode == PricingMode.Offer && trip.OfferedPrice is { } offered)
@@ -288,9 +302,10 @@ public sealed class DriverTripService(
         }
         else
         {
-            if (promo?.Candidate is { } candidate)
+            // F15 promo code + F16 favourite-driver discount: both when stackable, else the larger one (doc 10 §1).
+            if (promo?.Candidate is not null || favorite is not null)
             {
-                discount = discounts.Combine(calculation.Base, candidate);
+                discount = discounts.Combine(calculation.Base, promo?.Candidate, favorite?.Candidate);
             }
 
             fare = discount?.Total ?? calculation.Total;
@@ -325,7 +340,7 @@ public sealed class DriverTripService(
                 // trip_discount: discount_promotion | discount_favorite_driver → trip_revenue (cash_collected for cash trips).
                 var account = applied.Source == Promotions.DiscountSources.FavoriteDriver ? LedgerAccounts.DiscountFavoriteDriver : LedgerAccounts.DiscountPromotion;
                 await ledger.JournalAsync(JournalType.TripDiscount, account, trip.PaymentMethod == PaymentMethodKind.Cash ? LedgerAccounts.CashCollected : LedgerAccounts.TripRevenue,
-                    applied.Amount, TripPaymentService.ReferenceType, trip.Id, $"trip:{trip.Id}:discount:{applied.Source}", $"Trip {trip.TripNumber} {applied.Source} discount {applied.Reference}", ct);
+                    applied.Amount, TripPaymentService.ReferenceType, trip.Id, $"trip:{trip.Id}:discount:{applied.Source}", $"Trip {trip.TripNumber} {applied.Source} discount {applied.Reference}".TrimEnd(), ct);
             }
 
             driver.CurrentTripId = null;
@@ -335,7 +350,7 @@ public sealed class DriverTripService(
                 {
                     finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod,
                     breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source, discountTotal, tierCommissionDiscountPercent = tierDiscount,
-                    promoCode = promo?.Promotion.Code,
+                    promoCode = promo?.Promotion.Code, favoriteDiscountRuleId = discount?.AmountOf(Promotions.DiscountSources.FavoriteDriver) > 0 ? favorite?.Rule.Id : null,
                 });
             await notifications.DispatchAsync(TripNotifications.Completed(trip, participants.PassengerUserId, fare), ct);
             await shares.ExpireForTripAsync(trip.Id, now, ct);

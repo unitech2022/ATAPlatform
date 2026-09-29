@@ -68,6 +68,9 @@ public static class ErrorCatalog
         [ErrorCodes.PromoNotEligible] = new(StatusCodes.Status422UnprocessableEntity, "كود الخصم لا ينطبق على هذه الرحلة", "The promo code does not apply to this trip"),
         [ErrorCodes.PromoUsageLimitReached] = new(StatusCodes.Status422UnprocessableEntity, "تم استنفاد كود الخصم", "The promo code has been used up"),
         [ErrorCodes.IncentiveOptInClosed] = new(StatusCodes.Status409Conflict, "الاشتراك في هذا الحافز غير متاح", "Joining this incentive is not available"),
+        [ErrorCodes.FavoriteNotEligible] = new(StatusCodes.Status422UnprocessableEntity, "يمكنك إضافة الكابتن بعد إكمال رحلة معه", "You can add a driver after completing a trip with them"),
+        [ErrorCodes.FavoriteExists] = new(StatusCodes.Status409Conflict, "الكابتن موجود في مفضلتك بالفعل", "This driver is already in your favourites"),
+        [ErrorCodes.FavoritesLimit] = new(StatusCodes.Status422UnprocessableEntity, "وصلت إلى الحد الأقصى للكباتن المفضلين", "You have reached the maximum number of favourite drivers"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

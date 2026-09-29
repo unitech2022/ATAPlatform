@@ -44,6 +44,9 @@ public sealed class MatchingRecorder(AtaDbContext db)
 /// One matching pass over every <c>searching</c> trip: expires timed-out offers, offers the trip to the next ranked candidate of the
 /// open round, opens wider rounds (<c>radius_step</c> up to <c>max_radius</c>) when a round is exhausted, and marks trips
 /// <c>no_drivers</c> once <c>search_timeout_seconds</c> elapsed. Every round and candidate is recorded for the admin "matching" view.
+/// F16: a trip requested with a favourite driver first gets round 0 (<c>mode = favorite</c>) with an exclusive offer to that driver
+/// (<c>Favorites:ExclusiveOfferTimeoutSeconds</c>); a rejection or expiry falls back to normal round 1 without re-offering the driver, and the total search timeout only
+/// starts when the exclusive round ended.
 /// </summary>
 public sealed class MatchingService(
     AtaDbContext db,
@@ -60,7 +63,8 @@ public sealed class MatchingService(
     IOptions<TripOptions> tripOptions,
     IClock clock,
     ILogger<MatchingService> logger,
-    Incentives.TierRuleProvider tierRules)
+    Incentives.TierRuleProvider tierRules,
+    Favorites.FavoriteMatchingService favoriteMatching)
 {
     private readonly TripOptions _trips = tripOptions.Value;
 
@@ -111,16 +115,36 @@ public sealed class MatchingService(
             await notifier.OfferExpiredAsync(expiredDriverUserId, open.Id, ct);
         }
 
+        // F16: the exclusive favourite round is over (the driver rejected, or the offer expired above) → normal matching.
+        var attempt = await recorder.LatestAttemptAsync(trip.Id, ct);
+        if (attempt is { Mode: MatchingMode.Favorite, IsOpen: true })
+        {
+            await EndFavoriteRoundAsync(trip, attempt, now, ct);
+        }
+
         var searchStartedAt = trip.ScheduledAt is { } scheduledAt
             ? Max(trip.RequestedAt, scheduledAt.AddMinutes(-_trips.ScheduledLeadMinutes))
             : trip.RequestedAt;
+        if (trip.FavoriteDriverId is not null
+            && await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id && a.Mode == MatchingMode.Favorite).Select(a => a.FinishedAt).FirstOrDefaultAsync(ct) is { } favoriteEndedAt)
+        {
+            searchStartedAt = Max(searchStartedAt, favoriteEndedAt);
+        }
+
         if ((now - searchStartedAt).TotalSeconds >= settings.SearchTimeoutSeconds)
         {
             await MarkNoDriversAsync(trip, now, ct);
             return;
         }
 
-        var attempt = await recorder.LatestAttemptAsync(trip.Id, ct);
+        // F16 hook for scheduled trips (F17): the exclusive round runs when the search starts (T − ScheduledLeadMinutes); F17's `favorite_exclusive_minutes` window
+        // (reservation before the marketplace opens) plugs in here without changing the round.
+        if (attempt is null && trip.FavoriteDriverId is { } favoriteId && trip.FavoriteStatus == FavoriteStatus.Requested
+            && await TryStartFavoriteRoundAsync(trip, favoriteId, settings, now, ct))
+        {
+            return;
+        }
+
         if (attempt is { IsOpen: true })
         {
             while (attempt.Candidates.Where(c => !c.Offered).OrderBy(c => c.Rank).FirstOrDefault() is { } next)
@@ -135,7 +159,7 @@ public sealed class MatchingService(
                     continue;
                 }
 
-                await SendOfferAsync(trip, attempt, next.DriverId, driver.UserId, next.DistanceM, next.EtaS, settings, now, ct);
+                await SendOfferAsync(trip, attempt, next.DriverId, driver.UserId, next.DistanceM, next.EtaS, settings.OfferTimeoutSeconds, now, ct);
                 return;
             }
 
@@ -143,7 +167,7 @@ public sealed class MatchingService(
         }
 
         var round = (attempt?.Round ?? 0) + 1;
-        var radius = attempt is null ? settings.RadiusMeters : Math.Min(attempt.RadiusMeters + settings.RadiusStepMeters, settings.MaxRadiusMeters);
+        var radius = attempt is null or { Mode: MatchingMode.Favorite } ? settings.RadiusMeters : Math.Min(attempt.RadiusMeters + settings.RadiusStepMeters, settings.MaxRadiusMeters);
         if (attempt is { IsOpen: false, CandidatesCount: 0 } && attempt.RadiusMeters >= settings.MaxRadiusMeters
             && attempt.FinishedAt is { } finishedAt && finishedAt.AddSeconds(settings.OfferTimeoutSeconds) > now)
         {
@@ -171,7 +195,7 @@ public sealed class MatchingService(
             {
                 var best = ranked[0];
                 next.Candidates.First().Offered = true;
-                await SendOfferAsync(trip, next, best.DriverId, best.UserId, best.DistanceMeters, best.EtaSeconds, settings, now, ct);
+                await SendOfferAsync(trip, next, best.DriverId, best.UserId, best.DistanceMeters, best.EtaSeconds, settings.OfferTimeoutSeconds, now, ct);
                 return;
             }
 
@@ -187,8 +211,48 @@ public sealed class MatchingService(
         }
     }
 
-    private async Task SendOfferAsync(Trip trip, MatchingAttempt attempt, Guid driverId, Guid driverUserId, int distanceMeters, int etaSeconds, ResolvedMatchingSettings settings, DateTime now, CancellationToken ct)
+    /// <summary>
+    /// Round 0: an exclusive offer to the favourite driver when the zone/category prefers favourites and the driver is eligible now. Otherwise the request becomes
+    /// <c>unavailable</c> and the caller goes on with normal round 1 in the same pass.
+    /// </summary>
+    private async Task<bool> TryStartFavoriteRoundAsync(Trip trip, Guid favoriteDriverId, ResolvedMatchingSettings settings, DateTime now, CancellationToken ct)
     {
+        var radius = favoriteMatching.RadiusFor(settings);
+        var candidate = settings.PreferFavoriteDriver ? await favoriteMatching.FindExclusiveAsync(trip, favoriteDriverId, radius, ct) : null;
+        if (candidate is null)
+        {
+            trip.FavoriteStatus = FavoriteStatus.Unavailable;
+            events.Add(trip.Id, TripEventTypes.FavoriteUnavailable, TripActor.System,
+                data: new { driverId = favoriteDriverId, reason = settings.PreferFavoriteDriver ? "not_eligible" : "prefer_favorite_driver_disabled" });
+            await db.SaveChangesAsync(ct);
+            await reads.PublishAsync(trip, TripViewer.Admin, Language.Ar, ct);
+            return false;
+        }
+
+        var round = new MatchingAttempt { TripId = trip.Id, Round = 0, Mode = MatchingMode.Favorite, RadiusMeters = radius, CandidatesCount = 1, StartedAt = now };
+        round.Candidates.Add(new MatchingCandidate
+        {
+            AttemptId = round.Id, DriverId = candidate.DriverId, DistanceM = candidate.DistanceMeters, EtaS = candidate.EtaSeconds, Score = candidate.Score, Rank = 1, Offered = true,
+        });
+        db.MatchingAttempts.Add(round);
+        await SendOfferAsync(trip, round, candidate.DriverId, candidate.UserId, candidate.DistanceMeters, candidate.EtaSeconds, favoriteMatching.ExclusiveTimeoutSeconds, now, ct);
+        return true;
+    }
+
+    /// <summary>The favourite did not take the exclusive offer: <c>rejected</c> / <c>expired</c>, the round is closed and <c>TripUpdated</c> tells the passenger we search on.</summary>
+    private async Task EndFavoriteRoundAsync(Trip trip, MatchingAttempt round, DateTime now, CancellationToken ct)
+    {
+        var rejected = round.Candidates.Any(c => c.Response == CandidateResponse.Rejected);
+        trip.FavoriteStatus = rejected ? FavoriteStatus.Rejected : FavoriteStatus.Expired;
+        round.Finish(MatchingOutcome.Exhausted, now);
+        events.Add(trip.Id, TripEventTypes.FavoriteFallback, TripActor.System, data: new { driverId = trip.FavoriteDriverId, status = trip.FavoriteStatus });
+        await db.SaveChangesAsync(ct);
+        await reads.PublishAsync(trip, TripViewer.Admin, Language.Ar, ct);
+    }
+
+    private async Task SendOfferAsync(Trip trip, MatchingAttempt attempt, Guid driverId, Guid driverUserId, int distanceMeters, int etaSeconds, int timeoutSeconds, DateTime now, CancellationToken ct)
+    {
+        var isFavorite = trip.FavoriteDriverId == driverId;
         var driverNet = await DriverNetAsync(trip, driverId, ct);
         var offer = new TripOffer
         {
@@ -198,17 +262,17 @@ public sealed class MatchingService(
             DistanceToPickupM = distanceMeters,
             EtaSeconds = etaSeconds,
             SentAt = now,
-            ExpiresAt = now.AddSeconds(settings.OfferTimeoutSeconds),
+            ExpiresAt = now.AddSeconds(timeoutSeconds),
         };
         db.TripOffers.Add(offer);
         events.Add(trip.Id, TripEventTypes.OfferSent, TripActor.System,
-            data: new { offerId = offer.Id, driverId, round = attempt.Round, distanceMeters, etaSeconds, expiresAt = offer.ExpiresAt });
+            data: new { offerId = offer.Id, driverId, round = attempt.Round, distanceMeters, etaSeconds, expiresAt = offer.ExpiresAt, favorite = isFavorite, exclusive = attempt.Mode == MatchingMode.Favorite });
         // offer.received: push only (no inbox row), TTL = offer timeout, collapsed per offer.
         await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.OfferReceived, driverUserId,
             NotificationPlaceholders.Of(("pickupName", trip.PickupName), ("etaMinutes", Math.Max(1, (int)Math.Ceiling(etaSeconds / 60d)))).Money("driverNet", driverNet),
             "trip", trip.Id, new Dictionary<string, object?>
             {
-                ["offerId"] = offer.Id, ["tripId"] = trip.Id, ["ttlSeconds"] = settings.OfferTimeoutSeconds, ["collapseId"] = offer.Id.ToString(),
+                ["offerId"] = offer.Id, ["tripId"] = trip.Id, ["ttlSeconds"] = timeoutSeconds, ["collapseId"] = offer.Id.ToString(), ["isFavoriteRequest"] = isFavorite,
             }), ct);
         await db.SaveChangesAsync(ct);
         await notifier.OfferReceivedAsync(driverUserId, await reads.BuildOfferAsync(offer, trip, ct), ct);

@@ -7,6 +7,7 @@ using ATA.Domain.Incentives;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Pricing;
+using ATA.Domain.Favorites;
 using ATA.Domain.Promotions;
 using ATA.Domain.Ratings;
 using ATA.Infrastructure.Security;
@@ -38,6 +39,7 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedRatingTagsAsync(cancellationToken);
         await SeedDriverTierRulesAsync(cancellationToken);
         await SeedPromotionsAsync(cancellationToken);
+        await SeedFavoriteDiscountRulesAsync(cancellationToken);
         await SeedIncentivesAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -118,6 +120,24 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
                 Type = PromotionType.Fixed, Value = 10m, MinFare = 30m, ValidFrom = from, ValidTo = to, PerUserLimit = 3, IsStackable = false, IsPublic = true, IsActive = true,
             });
         }
+    }
+
+    /// <summary>
+    /// The default favourite-driver discount (10%, up to SAR 10, not stackable, every category), seeded once while the table is empty (doc 10 seed data); once an admin
+    /// created or deleted a rule (audited) the default is never re-created.
+    /// </summary>
+    private async Task SeedFavoriteDiscountRulesAsync(CancellationToken ct)
+    {
+        if (await db.FavoriteDriverDiscountRules.AnyAsync(ct) || await db.AuditLogs.AnyAsync(a => a.EntityType == "favorite_discount_rule", ct))
+        {
+            return;
+        }
+
+        db.FavoriteDriverDiscountRules.Add(new FavoriteDriverDiscountRule
+        {
+            Name = "خصم الكابتن المفضل", DiscountPercent = 10m, MaxDiscountAmount = 10m, StackableWithPromotions = false,
+            ValidFrom = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), Priority = 0, IsActive = true,
+        });
     }
 
     /// <summary>The sample weekly incentive (Thursday/Friday evenings, 10 trips → 75 SAR), seeded once while the table is empty.</summary>

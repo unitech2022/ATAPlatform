@@ -35,6 +35,7 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasIndex(x => new { x.PassengerId, x.CreatedAt });
         b.HasIndex(x => new { x.DriverId, x.CreatedAt });
         b.HasIndex(x => x.Status);
+        b.HasIndex(x => new { x.FavoriteDriverId, x.FavoriteStatus });
         b.Ignore(x => x.IsTerminal);
         b.Ignore(x => x.HasDriver);
         b.Ignore(x => x.CanBeCancelled);
@@ -42,6 +43,8 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.DriverId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Vehicle>().WithMany().HasForeignKey(x => x.VehicleId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<RideCategory>().WithMany().HasForeignKey(x => x.RideCategoryId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.FavoriteDriverId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ATA.Domain.Favorites.FavoriteDriverDiscountRule>().WithMany().HasForeignKey(x => x.FavoriteDiscountRuleId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PaymentMethod>().WithMany().HasForeignKey(x => x.PaymentMethodId).OnDelete(DeleteBehavior.Restrict);
         b.HasMany(x => x.Stops).WithOne().HasForeignKey(s => s.TripId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(x => x.Events).WithOne().HasForeignKey(e => e.TripId).OnDelete(DeleteBehavior.Cascade);

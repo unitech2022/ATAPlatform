@@ -22,7 +22,7 @@ public sealed record MatchingSettingsUpsertRequest(
 
 public sealed record MatchingCandidateDto(Guid DriverId, string? DriverName, decimal RatingAvg, int DistanceMeters, int EtaSeconds, decimal Score, int Rank, bool Offered, CandidateResponse? Response);
 
-public sealed record MatchingAttemptDto(Guid Id, int Round, int RadiusMeters, int CandidatesCount, DateTime StartedAt, DateTime? FinishedAt, MatchingOutcome? Outcome, IReadOnlyList<MatchingCandidateDto> Candidates);
+public sealed record MatchingAttemptDto(Guid Id, int Round, int RadiusMeters, int CandidatesCount, DateTime StartedAt, DateTime? FinishedAt, MatchingOutcome? Outcome, IReadOnlyList<MatchingCandidateDto> Candidates, MatchingMode Mode = MatchingMode.Normal);
 
 /// <summary>"Why was no driver assigned": every round with its scored candidates and their answers.</summary>
 public sealed record TripMatchingDto(Guid TripId, string TripNumber, TripStatus Status, DateTime RequestedAt, DateTime? AssignedAt, int? AssignmentSeconds, IReadOnlyList<MatchingAttemptDto> Attempts);
@@ -105,7 +105,7 @@ public sealed class MatchingAdminService(AtaDbContext db, MatchingSettingsCache 
             {
                 var driver = drivers.GetValueOrDefault(c.DriverId);
                 return new MatchingCandidateDto(c.DriverId, driver?.FullName, driver?.RatingAvg ?? 0m, c.DistanceM, c.EtaS, c.Score, c.Rank, c.Offered, c.Response);
-            }).ToList())).ToList();
+            }).ToList(), a.Mode)).ToList();
         int? assignmentSeconds = trip.AssignedAt is { } assignedAt ? (int)(assignedAt - trip.RequestedAt).TotalSeconds : null;
         return new TripMatchingDto(trip.Id, trip.TripNumber, trip.Status, trip.RequestedAt, trip.AssignedAt, assignmentSeconds, dto);
     }

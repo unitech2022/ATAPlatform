@@ -201,6 +201,21 @@ public sealed class PromotionService(AtaDbContext db, IClock clock, ICurrentUser
         return new PromotionCompletion(redemption, promotion, eligible, eligible ? promotion.AmountFor(calculation.Base, calculation.Breakdown.BookingFee) : 0m);
     }
 
+    /// <summary>The discount of the trip's still-reserved code on <paramref name="baseFare"/> (F16 uses it to price a trip once the favourite driver accepted); <c>null</c> without a reservation.</summary>
+    public async Task<DiscountCandidate?> ReservedCandidateAsync(Guid tripId, decimal baseFare, decimal bookingFee, CancellationToken ct)
+    {
+        var promotionId = await db.PromotionRedemptions.AsNoTracking().Where(r => r.TripId == tripId && r.Status == RedemptionStatus.Reserved)
+            .Select(r => (Guid?)r.PromotionId).FirstOrDefaultAsync(ct);
+        if (promotionId is not { } id)
+        {
+            return null;
+        }
+
+        var promotion = await db.Promotions.AsNoTracking().FirstAsync(p => p.Id == id, ct);
+        var amount = promotion.AmountFor(baseFare, bookingFee);
+        return amount > 0 ? new DiscountCandidate(DiscountSources.Promotion, promotion.Code, amount, promotion.IsStackable) : null;
+    }
+
     /// <summary>Inside the completion transaction: <c>applied</c> + <c>spent_amount += discount</c>, or released (not eligible / not stacked).</summary>
     public async Task CommitCompletionAsync(PromotionCompletion completion, DiscountOutcome? outcome, CancellationToken ct)
     {

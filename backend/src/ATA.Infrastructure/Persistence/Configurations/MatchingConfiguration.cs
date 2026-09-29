@@ -28,6 +28,7 @@ public sealed class MatchingAttemptConfiguration : IEntityTypeConfiguration<Matc
         b.ToTable("matching_attempts");
         b.HasKey(x => x.Id);
         b.HasIndex(x => new { x.TripId, x.Round });
+        b.Property(x => x.Mode).HasDefaultValue(MatchingMode.Normal);
         b.Ignore(x => x.IsOpen);
         b.HasOne<Trip>().WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(x => x.Candidates).WithOne().HasForeignKey(c => c.AttemptId).OnDelete(DeleteBehavior.Cascade);

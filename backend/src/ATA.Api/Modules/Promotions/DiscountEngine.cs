@@ -12,7 +12,7 @@ public static class DiscountSources
     public const string FavoriteDriver = "favorite_driver";
 }
 
-/// <summary>One discount offered for a fare: a promo code (F15) or the favourite-driver rule (F16, not wired yet).</summary>
+/// <summary>One discount offered for a fare: a promo code (F15) or the favourite-driver rule (F16, <c>Favorites.FavoriteDiscountService</c>).</summary>
 public sealed record DiscountCandidate(string Source, string? Reference, decimal Amount, bool Stackable);
 
 public sealed record AppliedDiscount(string Source, string? Reference, decimal Amount);

@@ -34,7 +34,9 @@ public sealed class PassengerTripService(
     IOptions<PaymentsOptions> paymentOptions,
     Cancellation.CancellationEngine cancellations,
     Cancellation.ReliabilityService reliability,
-    Promotions.PromotionService promotions)
+    Promotions.PromotionService promotions,
+    Favorites.FavoriteService favorites,
+    Favorites.FavoriteMatchingService favoriteMatching)
 {
     private const int TripNumberRetries = 3;
 
@@ -89,6 +91,12 @@ public sealed class PassengerTripService(
             }
         }
 
+        // F16: the requested driver must be one of the passenger's favourites.
+        if (request.FavoriteDriverId is { } requestedFavorite && !await favorites.IsFavoriteAsync(passenger.Id, requestedFavorite, ct))
+        {
+            new Validator().Fail(nameof(request.FavoriteDriverId), "not_favorite").ThrowIfInvalid();
+        }
+
         var pickup = request.Pickup!.Point();
         var stops = request.Stops ?? [];
         var route = pricing.EstimateRoute(pickup, stops.Select(s => s.Point()).ToList(), request.Dropoff!.Point());
@@ -109,12 +117,17 @@ public sealed class PassengerTripService(
             promo = await promotions.PrepareReservationAsync(request.PromoCode, passenger.Id, promoContext, ct);
         }
 
+        var preferFemale = request.PreferFemaleDriver ?? passenger.PreferFemaleDriver;
+        var bookingType = request.BookingType ?? BookingType.Now;
+        (FavoriteStatus Status, string? Reason)? favorite = request.FavoriteDriverId is { } favoriteId
+            ? await favoriteMatching.InitialStatusAsync(favoriteId, pickup.Lat, pickup.Lng, category!.Id, preferFemale, bookingType, ct)
+            : null;
         var trip = new Trip
         {
             TripNumber = string.Empty,
             PassengerId = passenger.Id,
             RideCategoryId = category!.Id,
-            BookingType = request.BookingType ?? BookingType.Now,
+            BookingType = bookingType,
             ScheduledAt = request.BookingType == BookingType.Scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : null,
             PickupName = request.Pickup!.Name!.Trim(),
             PickupAddress = request.Pickup.Address!.Trim(),
@@ -124,7 +137,9 @@ public sealed class PassengerTripService(
             DropoffAddress = request.Dropoff.Address!.Trim(),
             DropoffLat = request.Dropoff.Lat!.Value,
             DropoffLng = request.Dropoff.Lng!.Value,
-            PreferFemaleDriver = request.PreferFemaleDriver ?? passenger.PreferFemaleDriver,
+            PreferFemaleDriver = preferFemale,
+            FavoriteDriverId = request.FavoriteDriverId,
+            FavoriteStatus = favorite?.Status,
             PaymentMethod = request.PaymentMethod ?? passenger.DefaultPaymentMethod,
             PricingMode = pricingMode,
             OfferedPrice = offered,
@@ -157,7 +172,12 @@ public sealed class PassengerTripService(
         quote.UsedTripId = trip.Id;
         events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
             new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id,
-                promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount });
+                promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount, favoriteDriverId = request.FavoriteDriverId, favoriteStatus = favorite?.Status });
+        if (favorite is { Status: FavoriteStatus.Unavailable })
+        {
+            events.Add(trip.Id, TripEventTypes.FavoriteUnavailable, TripActor.System, data: new { driverId = request.FavoriteDriverId, reason = favorite.Value.Reason });
+        }
+
         if (payment is { Status: PaymentStatus.Initiated })
         {
             // 3-D Secure: the trip stays `requested` (out of matching) until the payment is authorized or the action expires.

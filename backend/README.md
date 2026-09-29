@@ -21,8 +21,9 @@ excuse reviews, rolling reliability profiles with a restriction ladder that feed
 F15 adds `Modules/Ratings` (two-way trip ratings with tags, a rolling weighted average, flags for ops), `Modules/Promotions` (promo codes with
 restrictions, the unified discount engine, reservation at request / application at completion / release on cancellation, discounts in the fare
 breakdown, receipt and ledger) and `Modules/Incentives` (weekly driver tiers with commission discounts and matcher weights, driver incentives /
-quests with progress, payouts to the driver wallet reduced by the F14 reliability multiplier). F16 (favourite drivers) is not implemented yet: the
-`IFavoriteDriverProvider` hook and the favourite slot of the discount engine stay empty.
+quests with progress, payouts to the driver wallet reduced by the F14 reliability multiplier).
+F16 adds `Modules/Favorites` (favourite drivers saved after a completed trip, the "available favourites" list, a trip request with `favoriteDriverId` that first offers the
+trip exclusively to that driver, the favourite-driver discount rules that fill the favourite slot of the discount engine, admin rules CRUD and KPIs).
 
 ## Layout
 
@@ -126,6 +127,8 @@ dotnet test
 | `Promotions:MinPayableFare` | Discounts never take the fare below this (0) |
 | `Tiers:PeriodDays`, `Tiers:RecalcDayOfWeek`, `Tiers:RecalcHourLocal` | Completed trips counted over 28 days; weekly recalculation on Sunday (0) at 03:00 Riyadh |
 | `Incentives:PayoutDelayHours`, `Incentives:JobsEnabled` | Achieved periods are paid 2 h after they end; runs the period / payout / tier jobs (`false` in tests) |
+| `Favorites:MaxPerPassenger`, `Favorites:ExclusiveOfferTimeoutSeconds` | Favourite drivers per passenger (20 → `422 favorites_limit`); seconds the favourite has to answer the exclusive first offer (30) |
+| `Favorites:AvailabilityRadiusMeters` | Radius of `/passenger/favorite-drivers/available` and of the exclusive round; `null` (default) = the zone/category `matching_settings.radius_meters` (5000 by default) |
 
 ### Development OTP behaviour
 
@@ -169,6 +172,8 @@ dotnet test
   gold 150 / 4.80 / 0.85 / ≤ 0.05, 10 %, .75; platinum 250 / 4.90 / 0.90 / ≤ 0.03, 15 %, 1.00.
 - Promo codes (added by code when missing, valid 2026-01-01 → 2027-12-31): `WELCOME` (20 %, max 15 SAR, first trip only, once per user, public) and
   `ATA10` (10 SAR, min fare 30, 3 per user, not stackable, public).
+- Favourite-driver discount rule "خصم الكابتن المفضل" (seeded once while the table is empty and no rule was ever created / deleted by an admin): 10 %, max 10 SAR,
+  not stackable, every category / zone / booking type, valid from 2026-01-01, priority 0.
 - Incentive (seeded once while the table is empty): "10 رحلات مساء الخميس والجمعة" — weekly, Riyadh, Thursday/Friday 16:00–23:59, 10 trips → 75 SAR.
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
@@ -180,13 +185,13 @@ dotnet test
 | Catalog | `GET /catalog/ride-categories`, `GET /catalog/document-types`, `GET /catalog/cities` |
 | Passenger | `GET /passenger/saved-places`, `PUT/DELETE /passenger/saved-places/{label}`, `PATCH /passenger/preferences` |
 | Pricing | `POST /pricing/quote` (passenger; stores `fare_quotes`, 5-minute expiry), `GET /pricing/demand?lat=&lng=` (any authenticated user: current zone + demand level) |
-| Passenger trips | `POST /passenger/trips/estimate` (alias of `POST /pricing/quote`), `POST /passenger/trips` (optional `quoteId`; 409 `trip_active_exists`, 422 `quote_expired`, 422 `offer_out_of_range` with `details.offerMin/offerMax`), `GET /passenger/trips/active` (`Trip` or `null`), `GET /passenger/trips/{id}` (PIN once a driver is assigned), `POST /passenger/trips/{id}/cancel`, `GET /passenger/trips?status=all|active|completed|cancelled` |
+| Passenger trips | `POST /passenger/trips/estimate` (alias of `POST /pricing/quote`), `POST /passenger/trips` (optional `quoteId`, `promoCode`, `favoriteDriverId` (F16: must be one of the rider's favourites, else `422 validation_failed { favoriteDriverId: "not_favorite" }`); 409 `trip_active_exists`, 422 `quote_expired`, 422 `offer_out_of_range` with `details.offerMin/offerMax`), `GET /passenger/trips/active` (`Trip` or `null`), `GET /passenger/trips/{id}` (PIN once a driver is assigned), `POST /passenger/trips/{id}/cancel`, `GET /passenger/trips?status=all|active|completed|cancelled` |
 | Wallet | `GET /wallet` (cards in `paymentMethods`; driver wallets add `cashDebt`, `cashDebtLimit`), `GET /wallet/transactions`, `POST /wallet/topups?kind=` (`Idempotency-Key` ≤ 60 chars; `method: sandbox\|card\|apple_pay` + `paymentMethodId`/`applePayToken`; `201` captured or `202 { paymentId, status: "initiated", action }`) |
 | Payments | `GET /payments/config`, `GET /payments/{id}` (owner), `POST /payments/webhooks/{provider}` (anonymous, signature checked: `401 webhook_signature_invalid`, dedupe on `(provider, event_id)`), `GET /payments/return/{provider}?id=` (302), `GET/POST /payments/sandbox/challenge/{id}` (sandbox only; payment or pending card) |
 | Passenger payments | `GET/POST /passenger/payment-methods` (`201` active / `202 { paymentMethod, action }` for 3-D Secure; `409 conflict` same card; `422 payment_failed`), `POST /passenger/payment-methods/{id}/default`, `DELETE /passenger/payment-methods/{id}` (`409 payment_method_in_use`), `GET /passenger/trips/{id}/receipt`. `POST /passenger/trips` accepts `paymentMethodId` (`422 payment_failed`, `422 payment_method_expired`, `422 outstanding_balance`); `Trip` adds `payment`, `collectCashAmount` (driver only), `discountTotal`; `Offer` adds `paymentMethod` |
 | Driver money | `GET /driver/earnings/statement?from=&to=` (≤ 92 local days), `GET /driver/trips/{id}/earnings`, `GET /driver/payouts/summary`, `POST /driver/payouts` (`Idempotency-Key`; `payout_below_minimum`, `insufficient_balance`, `iban_missing`, `payout_pending_exists`, `account_suspended`), `GET /driver/payouts`, `POST /driver/payouts/{id}/cancel`, `GET /driver/settlements`, `GET /driver/settlements/{id}`. Going online with a cash debt above the limit → `403 cash_debt_limit_exceeded { cashDebt, limit }` |
 | Driver | `GET /driver/application`, `PUT /driver/application/profile`, `PUT /driver/application/vehicle`, `POST /driver/documents` (multipart), `DELETE /driver/documents/{id}`, `POST /driver/application/submit`, `GET/PUT /driver/status`, `GET /driver/earnings/summary` (completed trips + online hours) |
-| Driver trips | `PUT /driver/location` (204; broadcasts `DriverLocation` to the passenger during a trip), `GET /driver/offers/active` (`Offer` or `null`; includes `round` and `passengerOffered`), `POST /driver/offers/{id}/accept` (409 `offer_expired`), `POST /driver/offers/{id}/reject`, `GET /driver/trips/active`, `POST /driver/trips/{id}/en-route`, `/arrived`, `/verify-pin` (400 `pin_invalid` with `attemptsLeft`, 429 `pin_locked`), `/start`, `/complete`, `/cancel`, `GET /driver/trips?status=` |
+| Driver trips | `PUT /driver/location` (204; broadcasts `DriverLocation` to the passenger during a trip), `GET /driver/offers/active` (`Offer` or `null`; includes `round`, `passengerOffered`, and since F16 `isFavoriteRequest` / `exclusive`), `POST /driver/offers/{id}/accept` (409 `offer_expired`), `POST /driver/offers/{id}/reject`, `GET /driver/trips/active`, `POST /driver/trips/{id}/en-route`, `/arrived`, `/verify-pin` (400 `pin_invalid` with `attemptsLeft`, 429 `pin_locked`), `/start`, `/complete`, `/cancel`, `GET /driver/trips?status=` |
 | Notifications | `GET /notifications?category=` (`type` = event code, legacy types normalised; `category`; `data.deepLink`), `GET /notifications/unread-count`, `POST /notifications/read`, `POST /notifications/{id}/opened` (204) |
 | Files | `GET /files/{id}` (owner or admin, inline) |
 | Admin | `GET /admin/dashboard/summary`, `GET /admin/drivers`, `GET /admin/drivers/{id}`, `POST /admin/drivers/{id}/{review,approve,reject,suspend,reinstate}`, `POST /admin/documents/{id}/verify`, `GET /admin/passengers`, `POST /admin/users/{userId}/{suspend,reinstate}`, `GET/POST /admin/ride-categories`, `PUT/DELETE /admin/ride-categories/{id}` (`fallbackPricing` = flat-pricing columns, `pricingSource`), `GET /admin/audit-logs` |
@@ -204,6 +209,9 @@ dotnet test
 | Ratings (rider & driver) | `GET /catalog/rating-tags?target=driver\|passenger`, `POST /passenger/trips/{id}/rating` and `/driver/trips/{id}/rating` (`{ stars, tags, comment? }` → `201`; non-party `403`, not completed `409`, `422 rating_window_closed`, `409 rating_exists`, unknown tag `422 { tags: "invalid" }`), `GET /passenger\|driver/ratings/pending`, `GET /passenger\|driver/ratings/summary` (average, distribution, top tags, last 20 comments with the ISO week only). `Trip` adds `myRating`, `canRate`, `rateUntil`, `promotion`; the trip history lists add `driverName` (passenger) / `passengerName` (driver) first names, `myRating`, `canRate`, `rateUntil` |
 | Promotions (rider) | `GET /passenger/promotions?status=available\|used\|expired` (default `available`), `POST /passenger/promotions/validate` (`{ code, quoteId?, rideCategoryId?, paymentMethod?, bookingType? }` → `{ valid, promotion, discountAmount, totalBefore, totalAfter }` or `404 promo_not_found`, `422 promo_expired`, `422 promo_usage_limit_reached { scope: total\|budget\|user }`, `422 promo_not_eligible { reason }`); `POST /pricing/quote` accepts `promoCode` (per category `totalBeforeDiscount`, `breakdown.discount`, `breakdown.discounts[]`; top-level `promotion { code, valid, reason }`); `POST /passenger/trips` accepts `promoCode` (reserved with the trip) |
 | Driver tiers & incentives | `GET /driver/tier`, `GET /driver/incentives?status=active\|upcoming\|completed`, `GET /driver/incentives/{id}` (+ `zonesPolygons`), `POST /driver/incentives/{id}/opt-in` (`409 incentive_opt_in_closed`); items add `rewardMultiplier` and `effectiveRewardAmount` (reward × current F14 multiplier) |
+| Favourite drivers (rider, F16) | `GET /passenger/favorite-drivers` (`[FavoriteDriver]`: `driverId, firstName, photoUrl, ratingAvg, vehicle, rideCategoryCode, tripsTogether, lastTripAt, createdAt`), `POST /passenger/favorite-drivers` (`{ driverId? \| tripId? }` exactly one → `201`; `422 favorite_not_eligible` without a completed trip together, `409 favorite_exists`, `422 favorites_limit`), `DELETE /passenger/favorite-drivers/{driverId}` (204; `404` when not saved), `GET /passenger/favorite-drivers/{driverId}/photo` (only for saved drivers), `GET /passenger/favorite-drivers/available?lat=&lng=&rideCategoryId=` (eligible favourites now: `driverId, firstName, photoUrl, ratingAvg, vehicle, etaMinutes, discount { percent, maxAmount, stackableWithPromotions } \| null, availableNow`; no coordinates) |
+| Favourites (driver, F16) | `GET /driver/favorites/count` → `{ count }` (riders who saved the driver) |
+| Admin favourites (`favorites.manage`) | `GET/POST /admin/favorite-discount-rules`, `GET/PUT/DELETE /admin/favorite-discount-rules/{id}` (audited `favorite_discount_rule.create\|update\|delete`; `discountPercent` 1–50 with ≤ 2 decimals, `maxDiscountAmount` > 0, `priority` ≥ 0; delete deactivates a rule pinned by trips), `GET /admin/favorites/stats?from=&to=&cityId=` |
 | Admin ratings (`ratings.manage`) | `GET /admin/ratings?raterRole=&stars=&flagged=&userId=&tag=&status=visible\|hidden\|flagged&search=&from=&to=`, `POST /admin/ratings/{id}/hide { reason }` / `unhide` (recompute the average), `GET /admin/rating-flags?status=&type=`, `POST /admin/rating-flags/{id}/review { action: dismiss\|warn\|suspension_review, note }` (`409` when already reviewed; `suspension_review` adds `driver.suspension_review` to the driver's history, never suspends). Audited `rating.hide\|unhide`, `rating_flag.review` |
 | Admin promotions (`promotions.manage`) | `GET /admin/promotions?status=active\|scheduled\|expired\|inactive&search=`, `POST /admin/promotions` (`409 conflict` for a taken code), `GET/PUT /admin/promotions/{id}` (`code`/`type` locked after the first reservation → `409`), `POST /admin/promotions/{id}/deactivate\|activate`, `GET /admin/promotions/{id}/redemptions?status=`, `GET /admin/promotions/{id}/stats`, `GET /admin/promotion-redemptions?promotionId=&status=&from=&to=`. Audited `promotion.create\|update\|activate\|deactivate` |
 | Admin tiers & incentives (`incentives.manage`) | `GET /admin/driver-tier-rules` (+ `driversCount`), `PUT /admin/driver-tier-rules/{id}`, `POST /admin/driver-tiers/recalculate` (`202 { evaluated, changed }`, runs now), `GET /admin/drivers/{id}/tier-history`, `POST /admin/drivers/{id}/tier { tier, reason }`, `GET /admin/drivers/{id}/incentives`, `GET/POST /admin/incentives?status=&cityId=`, `GET/PUT /admin/incentives/{id}`, `POST /admin/incentives/{id}/deactivate\|activate`, `GET /admin/incentives/{id}/progress?status=`, `POST /admin/incentive-progress/{id}/void { reason }` (`409` once paid). Audited `driver_tier_rule.update`, `driver.tier_set`, `incentive.create\|update\|activate\|deactivate`, `incentive_progress.void` |
@@ -214,7 +222,7 @@ dotnet test
 Roles: `passenger`, `driver`, `admin`, `operations` (JWT `roles` claim). F11/F13 admin endpoints also check the JWT `perm` claim
 (`payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust`, `notifications.view`,
 `notifications.manage`, `notifications.sms_broadcast`, `safety.manage`, and since F12/F14 `support.manage`, `trips.view`, `trips.cancel`, `cancellation.manage`,
-`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
+`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`, and since F16 `favorites.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
 and driver status changes create a notification row for the driver. Approving a driver requires every required
 document type to be `verified`.
 
@@ -286,7 +294,7 @@ document type to be `verified`.
 - **Score** in [0, 1] with the settings' weights (normalised): `distance = 1 − d/max_radius`, `eta = 1 − eta/900 s`,
   `rating = (rating − 3)/2`, `acceptance = acceptance_count/(acceptance_count + rejection_count)` (1 without history),
   `cancellation = 1 − driver cancellations/assigned trips in 30 days`, `tier` bronze .25 / silver .5 / gold .75 / platinum 1,
-  `favorite` 1 for the passenger's favourite drivers (`IFavoriteDriverProvider`, F16 hook; none before F16).
+  `favorite` 1 for the passenger's favourite drivers (`IFavoriteDriverProvider` → `favorite_drivers`, F16; applies to normal rounds without exclusivity or discount).
 - Tests drive one pass with `AtaWebApplicationFactory.RunMatcherAsync()` / `RunDemandAsync()`; both loops are disabled in the test host.
 
 ### Ledger accounts (doc 08 §F11.3)
@@ -308,7 +316,8 @@ Every posting is balanced: a wallet movement (`wallet_transactions` + 2 `ledger_
 | `cancellation_fees` | F14 cancellation fees (wallet `cancellation_fee` debit or `cancellation_fee_card` journal); driver compensation (`cancellation_compensation`) is paid out of it |
 | `discount_promotion` | F15 promo discounts (`trip_discount` journal → `trip_revenue`, or `cash_collected` for cash trips; key `trip:{id}:discount:promotion`) |
 | `incentives` | F15 incentive rewards (wallet `incentive` credit to the driver, key `incentive:{progressId}`) |
-| `discount_favorite_driver`, `corporate_receivable:{id}` | Reserved for F16/F19 |
+| `discount_favorite_driver` | F16: favourite-driver discounts (`trip_discount` journal → `trip_revenue` / `cash_collected`, like `discount_promotion`) |
+| `corporate_receivable:{id}` | Reserved for F19 |
 
 Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `cancellation_fee_card`, `refund_card`, `payout_paid`,
 `corporate_invoice_payment`, `manual`. Wallet movement types add `cash_collection`, `cancellation_compensation`, `payout_reversal`.
@@ -432,6 +441,38 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
   2)` once `period_end + PayoutDelayHours` passed, or voids with `budget_exhausted`; `IncentivePeriodJob` (15 min) expires missed periods and opens the current
   period for opted-in drivers of recurring incentives. An active incentive with `notify_on_publish` sends `incentive.new` once (`published_at`).
 - Tests drive the jobs with `WithServiceAsync<RatingService, …>`, `WithServiceAsync<IncentiveService, …>` and `POST /admin/driver-tiers/recalculate`.
+
+## Favourite drivers (F16)
+
+- **Saving** (`favorite_drivers`, UNIQUE(passenger, driver)): needs at least one `completed` trip between the two (`driverId` → their latest shared trip becomes `source_trip_id`;
+  `tripId` → that trip, `404` if it is not the rider's, `422 favorite_not_eligible` if it is not completed). Order of checks: eligibility → duplicate (`409`) → `Favorites:MaxPerPassenger`.
+  Removing a favourite never touches a running trip (the trip keeps `favorite_driver_id` and its pinned rule).
+- **Available favourites**: the F9 eligibility of `ScoringMatcher` restricted to the rider's favourites (`MatchCriteria.OnlyDriverIds`): online, approved, free, fresh location, category (or
+  higher when allowed), zone allows it, documents, F14 restrictions, cash debt and the rider's `preferFemaleDriver`, within `Favorites:AvailabilityRadiusMeters`; `etaMinutes` = the F9
+  estimate (distance × 1.3 at 30 km/h, rounded up, at least 1). The `discount` is the rule that would apply to a "now" trip (`min_fare` unknown → not checked).
+- **Request with `favoriteDriverId`** (`trips.favorite_driver_id`, `favorite_status`, `favorite_discount_rule_id`): `favorite_status` starts `requested`, or `unavailable` at once when the
+  zone/category has `prefer_favorite_driver = false` or (for "now" bookings) the driver is not eligible at that moment. When matching starts (for scheduled trips: at `T −
+  Trips:ScheduledLeadMinutes`, the hook where F17's favourite window plugs in) `MatchingService` re-checks: eligible → round 0 (`matching_attempts.mode = favorite`) with an **exclusive**
+  offer (`Offer.isFavoriteRequest = exclusive = true`, `Favorites:ExclusiveOfferTimeoutSeconds`); not eligible → `unavailable` and normal round 1 in the same pass. A rejection or expiry
+  sets `rejected` / `expired`, closes round 0, publishes `TripUpdated` and continues with normal round 1 (radius = the settings radius; the favourite is never offered the trip again).
+  `search_timeout_seconds` counts from the end of the exclusive round. `trip.favorite_fallback` (push) is sent when the replacement driver is assigned (its text names them).
+  An `unavailable` request whose favourite later takes the trip in normal matching becomes `accepted` (the discount is about who is assigned). Offers to a requested favourite carry
+  `isFavoriteRequest` (also outside the exclusive round, then `exclusive = false`).
+- **Discount** (`favorite_driver_discount_rules`): applies only when the assigned driver is the requested favourite. The rule is chosen when the favourite accepts — the active, currently valid
+  rule matching the ride category, the pickup zone (`zone_ids`), the booking type and `min_fare` (checked on the quote's base), with the highest `priority`; **equal priorities are broken by the
+  larger `discount_percent`, then the most recently created rule** — and pinned in `trips.favorite_discount_rule_id` (`estimated_fare` drops to the discounted total). At completion
+  `FavoriteDiscountService` recomputes `min(base × percent / 100, max_discount_amount)` on the final base (`min_fare` re-checked) and `IDiscountEngine` combines it with a promo code:
+  both apply only when the promotion `is_stackable` **and** the rule `stackable_with_promotions`, otherwise the larger wins (a tie goes to the favourite and the code is released
+  `not_stacked`). No discount with `pricingMode = offer`. The result lands in `trips.discount_total`, `fare_breakdown.discounts[]` / the receipt (`source = favorite_driver`, label
+  "خصم الكابتن المفضل" / "Favourite driver discount") and a `trip_discount` journal `discount_favorite_driver` → `trip_revenue` / `cash_collected`; driver earnings are unchanged.
+  `POST /pricing/quote` with `favoriteDriverId` shows the discount "assuming acceptance" (`favoriteDiscountConditional`, `totalBeforeDiscount`); a promotion that loses to the favourite
+  discount is reported as `promotion { valid: true, reason: "not_stacked" }`.
+- **Trip payload**: `favorite { driverId, driverName, status, discountApplied }` (admin detail adds `discountRuleId`, `discountRuleName`; passengers see the driver's first name),
+  `driver.isFavorite` in the rider's and admin's copies. `GET /admin/trips/{id}/matching` shows `mode` per round.
+- **KPIs** (`GET /admin/favorites/stats`, no range = all time, `cityId` = the pickup's zone city): `favoriteRequests` (trips with a favourite), `accepted`, `fallback` (`unavailable` +
+  `rejected` + `expired`), `favoriteBookingRate` (0..1 = favoriteRequests / all trips requested), `discountUsageCount` / `discountTotal` (from the `discount_favorite_driver` postings of completed
+  trips), `topDrivers` (most saved drivers with their completed favourite trips).
+- Tests: `FavoriteDriverTests`, `FavoriteMatchingTests`, `FavoriteDiscountTests`, `FavoriteStatsTests` (`FavoritesFlow` helpers), `FavoriteUnitTests`.
 
 ## Migrations
 

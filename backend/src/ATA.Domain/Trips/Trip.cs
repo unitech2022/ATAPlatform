@@ -47,6 +47,11 @@ public class Trip : AuditableEntity
     public decimal TierCommissionDiscountPercent { get; set; }
     /// <summary>F15: when <c>rating.reminder</c> was sent to the parties that had not rated yet (once per trip).</summary>
     public DateTime? RatingRemindedAt { get; set; }
+    /// <summary>F16: the favourite driver the passenger asked for (exclusive first offer), fixed at request time.</summary>
+    public Guid? FavoriteDriverId { get; set; }
+    public FavoriteStatus? FavoriteStatus { get; set; }
+    /// <summary>F16: the <c>favorite_driver_discount_rules</c> row pinned when the favourite driver accepted (null = no discount).</summary>
+    public Guid? FavoriteDiscountRuleId { get; set; }
     public required string PinCodeHash { get; set; }
     /// <summary>The PIN protected at rest so it can be shown to the passenger; verification uses <see cref="PinCodeHash"/>.</summary>
     public required string PinCodeProtected { get; set; }

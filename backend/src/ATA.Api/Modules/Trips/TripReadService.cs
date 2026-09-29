@@ -19,6 +19,8 @@ public sealed record TripRatingState(Ratings.MyRatingDto? MyRating, bool CanRate
 public static class TripDtoRatings
 {
     public static TripDto WithRating(this TripDto dto, TripRatingState state) => dto with { MyRating = state.MyRating, CanRate = state.CanRate, RateUntil = state.RateUntil };
+
+    public static TripDto WithFavorite(this TripDto dto, Favorites.TripFavoriteDto? favorite) => dto with { Favorite = favorite };
 }
 
 /// <summary>Participants of a trip resolved to user ids (for notifications and real-time fan-out).</summary>
@@ -62,7 +64,9 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
                                      join type in db.DocumentTypes.AsNoTracking() on doc.DocumentTypeId equals type.Id
                                      where doc.DriverId == driverId && type.Code == "profile_photo" && doc.Status != Domain.Drivers.DocumentStatus.Rejected
                                      select (Guid?)doc.FileId).FirstOrDefaultAsync(ct);
-            driver = new TripDriverDto(row.Id, row.FullName, row.RatingAvg, photoFileId, PhoneMasking.Mask(row.PhoneNumber), row.Gender);
+            // F16: `isFavorite` is the passenger's knowledge (never in the driver's copy).
+            var isFavorite = viewer != TripViewer.Driver && await db.FavoriteDrivers.AsNoTracking().AnyAsync(f => f.PassengerId == trip.PassengerId && f.DriverId == driverId, ct);
+            driver = new TripDriverDto(row.Id, row.FullName, row.RatingAvg, photoFileId, PhoneMasking.Mask(row.PhoneNumber), row.Gender, isFavorite);
 
             if (trip.VehicleId is { } vehicleId)
             {
@@ -102,7 +106,40 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             trip.DiscountTotal,
             await CancellationForAsync(trip, viewer, lang, ct),
             await PromotionForAsync(trip.Id, ct))
-            .WithRating(await RatingForAsync(trip, viewer, ct));
+            .WithRating(await RatingForAsync(trip, viewer, ct))
+            .WithFavorite(await FavoriteForAsync(trip, viewer, ct));
+    }
+
+    /// <summary>
+    /// <c>Trip.favorite</c> (F16): the favourite driver the passenger asked for (first name), how the request went and whether the favourite-driver discount was applied
+    /// at completion (read from the stored breakdown); the pinned rule id is only sent to admins. <c>null</c> for trips without a favourite request.
+    /// </summary>
+    public async Task<Favorites.TripFavoriteDto?> FavoriteForAsync(Trip trip, TripViewer viewer, CancellationToken ct)
+    {
+        if (trip.FavoriteDriverId is not { } driverId || trip.FavoriteStatus is not { } status)
+        {
+            return null;
+        }
+
+        var fullName = await (from d in db.Drivers.AsNoTracking() join u in db.Users.AsNoTracking() on d.UserId equals u.Id where d.Id == driverId select u.FullName).FirstOrDefaultAsync(ct);
+        var applied = false;
+        if (trip.Status == TripStatus.Completed && trip.FareBreakdown is { } json)
+        {
+            try
+            {
+                applied = System.Text.Json.JsonSerializer.Deserialize<StoredFareBreakdown>(json, JsonDefaults.Options)?.Discounts.Any(d => d.Source == Promotions.DiscountSources.FavoriteDriver) == true;
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // Rows written before the discounts list existed have no favourite line.
+            }
+        }
+
+        var admin = viewer == TripViewer.Admin;
+        var ruleName = admin && trip.FavoriteDiscountRuleId is { } ruleId
+            ? await db.FavoriteDriverDiscountRules.AsNoTracking().Where(r => r.Id == ruleId).Select(r => r.Name).FirstOrDefaultAsync(ct)
+            : null;
+        return new Favorites.TripFavoriteDto(driverId, admin ? fullName : Ratings.RatingService.FirstName(fullName), status, applied, admin ? trip.FavoriteDiscountRuleId : null, ruleName);
     }
 
     /// <summary><c>Trip.promotion</c> (F15): the code reserved / applied / released for the trip.</summary>
@@ -205,9 +242,11 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
     {
         var participants = await ParticipantsAsync(trip, ct);
         var dto = await BuildAsync(trip, TripViewer.Driver, lang, ct);
+        var isFavoriteDriver = dto.Driver is { } assigned && await db.FavoriteDrivers.AsNoTracking().AnyAsync(f => f.PassengerId == trip.PassengerId && f.DriverId == assigned.Id, ct);
         var passengerDto = (dto with
         {
             Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null,
+            Driver = dto.Driver is null ? null : dto.Driver with { IsFavorite = isFavoriteDriver },
             Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Passenger, lang, ct),
         }).WithRating(await RatingForAsync(trip, TripViewer.Passenger, ct));
         await notifier.TripUpdatedAsync(participants.PassengerUserId, passengerDto, ct);
@@ -235,7 +274,9 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
                                select new { u.FullName, p.RatingAvg }).FirstAsync(ct);
         var stops = trip.Stops.Count > 0 ? trip.Stops.ToList() : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct);
         var firstName = passenger.FullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        var round = await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id).OrderByDescending(a => a.Round).Select(a => (int?)a.Round).FirstOrDefaultAsync(ct) ?? 1;
+        var latest = await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id).OrderByDescending(a => a.Round).Select(a => new { a.Round, a.Mode }).FirstOrDefaultAsync(ct);
+        // F16: an offer to the requested favourite driver; `exclusive` while it belongs to the favourite round (round 0, only that driver is asked).
+        var isFavorite = trip.FavoriteDriverId == offer.DriverId;
         return new OfferDto(
             offer.Id,
             trip.Id,
@@ -249,9 +290,11 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             offer.DriverNetEarnings,
             offer.ExpiresAt,
             new OfferPassengerDto(firstName, passenger.RatingAvg),
-            round,
+            latest?.Round ?? 1,
             trip.PricingMode == PricingMode.Offer,
-            trip.PaymentMethod);
+            trip.PaymentMethod,
+            isFavorite,
+            isFavorite && latest?.Mode == MatchingMode.Favorite);
     }
 
     /// <summary>

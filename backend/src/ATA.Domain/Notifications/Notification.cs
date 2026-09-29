@@ -19,6 +19,7 @@ public static class NotificationTypes
     public const string TripCompleted = "trip.completed";
     public const string TripCancelled = "trip.cancelled";
     public const string TripNoDrivers = "trip.no_drivers";
+    public const string TripFavoriteFallback = "trip.favorite_fallback";
     public const string TripPaymentActionRequired = "trip.payment_action_required";
     public const string OfferReceived = "offer.received";
     public const string PaymentSucceeded = "payment.succeeded";

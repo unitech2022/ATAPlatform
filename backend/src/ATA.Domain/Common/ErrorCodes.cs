@@ -57,5 +57,8 @@ public static class ErrorCodes
     public const string PromoNotEligible = "promo_not_eligible";
     public const string PromoUsageLimitReached = "promo_usage_limit_reached";
     public const string IncentiveOptInClosed = "incentive_opt_in_closed";
+    public const string FavoriteNotEligible = "favorite_not_eligible";
+    public const string FavoriteExists = "favorite_exists";
+    public const string FavoritesLimit = "favorites_limit";
     public const string InternalError = "internal_error";
 }

@@ -18,7 +18,7 @@ namespace ATA.Api.Modules.Pricing;
 /// </summary>
 public sealed class QuoteService(
     AtaDbContext db, IPricingService pricing, IMatcher matcher, IClock clock, IOptions<PricingOptions> options,
-    Promotions.PromotionService promotions, Promotions.IDiscountEngine discounts)
+    Promotions.PromotionService promotions, Promotions.IDiscountEngine discounts, Favorites.FavoriteDiscountService favoriteDiscounts, Favorites.FavoriteService favorites)
 {
     private readonly PricingOptions _options = options.Value;
 
@@ -110,6 +110,18 @@ public sealed class QuoteService(
         var promotion = promoCode is null ? null : await promotions.FindAsync(promoCode, ct);
         var promoState = promotion is { IsActive: true } && passengerId is { } promoPassenger ? await promotions.StateAsync(promotion, promoPassenger, ct) : null;
         var promoChecks = new Dictionary<Guid, Promotions.PromoCheck>();
+        // F16: the favourite-driver discount is shown assuming the favourite accepts (`favoriteDiscountConditional`); the driver must be one of the passenger's favourites.
+        if (request.FavoriteDriverId is { } favoriteId && passengerId is { } favoritePassenger)
+        {
+            new Validator().Rule(nameof(request.FavoriteDriverId), await favorites.IsFavoriteAsync(favoritePassenger, favoriteId, ct), "not_favorite").ThrowIfInvalid();
+        }
+        else
+        {
+            request = request with { FavoriteDriverId = null };
+        }
+
+        var favoriteByCategory = new HashSet<Guid>();
+        var promotionDropped = new HashSet<Guid>();
         var quotes = new List<FareQuote>(categories.Count);
         var items = new List<QuoteCategoryDto>(categories.Count);
         FareCalculation? first = null;
@@ -130,6 +142,7 @@ public sealed class QuoteService(
             var total = calculation.Total;
             var breakdown = ToDto(calculation.Breakdown);
             decimal? totalBefore = null;
+            Promotions.DiscountCandidate? promoCandidate = null;
             if (promoCode is not null)
             {
                 var ctx = new Promotions.PromoTripContext(calculation.PickupZone?.CityId, category.Id, calculation.PickupZone?.Id, null, request.BookingType ?? BookingType.Now, null,
@@ -138,10 +151,27 @@ public sealed class QuoteService(
                 promoChecks[category.Id] = check;
                 if (check is { IsValid: true, Amount: > 0 })
                 {
-                    var outcome = discounts.Combine(calculation.Base, new Promotions.DiscountCandidate(Promotions.DiscountSources.Promotion, promotion!.Code, check.Amount.Value, promotion.IsStackable));
-                    totalBefore = total;
-                    total = outcome.Total;
-                    breakdown = breakdown with { Discount = outcome.Discount, Discounts = Promotions.DiscountEngine.Lines(outcome, lang) };
+                    promoCandidate = new Promotions.DiscountCandidate(Promotions.DiscountSources.Promotion, promotion!.Code, check.Amount.Value, promotion.IsStackable);
+                }
+            }
+
+            var favoriteCandidate = request.FavoriteDriverId is null
+                ? null
+                : await favoriteDiscounts.QuoteCandidateAsync(category.Id, calculation.PickupZone?.Id, request.BookingType ?? BookingType.Now, calculation.Base, ct);
+            if (promoCandidate is not null || favoriteCandidate is not null)
+            {
+                var outcome = discounts.Combine(calculation.Base, promoCandidate, favoriteCandidate);
+                totalBefore = total;
+                total = outcome.Total;
+                breakdown = breakdown with { Discount = outcome.Discount, Discounts = Promotions.DiscountEngine.Lines(outcome, lang) };
+                if (outcome.AmountOf(Promotions.DiscountSources.FavoriteDriver) > 0)
+                {
+                    favoriteByCategory.Add(category.Id);
+                }
+
+                if (outcome.PromotionDropped)
+                {
+                    promotionDropped.Add(category.Id);
                 }
             }
 
@@ -160,10 +190,12 @@ public sealed class QuoteService(
             ToDto(first?.DropoffZone, lang),
             primary?.Demand ?? ToDto(DemandReading.Neutral(), lang),
             items,
-            promoCode is null ? null : PromotionOf(promoCode, primary is null ? null : promoChecks.GetValueOrDefault(primary.RideCategoryId)));
+            promoCode is null ? null : PromotionOf(promoCode, primary is null ? null : promoChecks.GetValueOrDefault(primary.RideCategoryId), primary is not null && promotionDropped.Contains(primary.RideCategoryId)),
+            primary is not null && favoriteByCategory.Contains(primary.RideCategoryId));
         return (response, quotes);
     }
 
-    private static Promotions.QuotePromotionDto PromotionOf(string code, Promotions.PromoCheck? check) =>
-        check is null ? new(code, false, ErrorCodes.PromoNotFound) : new(check.Promotion?.Code ?? code, check.IsValid, check.IsValid ? null : check.Reason);
+    /// <summary><paramref name="notStacked"/>: the code is valid but the larger, non-combinable favourite-driver discount wins (<c>reason = not_stacked</c>, F16).</summary>
+    private static Promotions.QuotePromotionDto PromotionOf(string code, Promotions.PromoCheck? check, bool notStacked) =>
+        check is null ? new(code, false, ErrorCodes.PromoNotFound) : new(check.Promotion?.Code ?? code, check.IsValid, check.IsValid ? (notStacked ? "not_stacked" : null) : check.Reason);
 }
