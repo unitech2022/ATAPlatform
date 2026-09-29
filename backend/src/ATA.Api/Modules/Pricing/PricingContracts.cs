@@ -10,16 +10,17 @@ public sealed record DemandDto(string Code, string Name, decimal Multiplier, str
 
 public sealed record FareBreakdownDto(
     decimal BaseFare, decimal DistanceFare, decimal TimeFare, decimal WaitingFare, bool MinFareApplied,
-    decimal TimeMultiplier, string? TimeMultiplierLabel, decimal DemandMultiplier, decimal BookingFee, decimal ServiceFee, decimal Discount);
+    decimal TimeMultiplier, string? TimeMultiplierLabel, decimal DemandMultiplier, decimal BookingFee, decimal ServiceFee, decimal Discount,
+    IReadOnlyList<ATA.Api.Modules.Payments.DiscountDto>? Discounts = null);
 
 public sealed record QuoteCategoryDto(
     Guid RideCategoryId, string Code, string Name, int? EtaMinutes, decimal Total, decimal DriverNetEarnings, decimal OfferMin, decimal OfferMax,
-    FareBreakdownDto Breakdown, DemandDto Demand, Guid? QuoteId, string PricingSource);
+    FareBreakdownDto Breakdown, DemandDto Demand, Guid? QuoteId, string PricingSource, decimal? TotalBeforeDiscount = null);
 
 /// <summary>Response of <c>POST /pricing/quote</c> (and its alias <c>POST /passenger/trips/estimate</c>) and <c>POST /admin/pricing/simulate</c>.</summary>
 public sealed record QuoteResponse(
     Guid? QuoteId, DateTime? ExpiresAt, int DistanceMeters, int DurationSeconds, ZoneRefDto? PickupZone, ZoneRefDto? DropoffZone, DemandDto Demand,
-    IReadOnlyList<QuoteCategoryDto> Categories);
+    IReadOnlyList<QuoteCategoryDto> Categories, ATA.Api.Modules.Promotions.QuotePromotionDto? Promotion = null);
 
 public sealed record SimulateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt, DateTime? At);
 

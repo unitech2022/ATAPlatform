@@ -43,7 +43,8 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
         var tripCounts = await db.Trips.AsNoTracking().Where(t => passengerIds.Contains(t.PassengerId) && t.Status == TripStatus.Completed)
             .GroupBy(t => t.PassengerId).Select(g => new { PassengerId = g.Key, Count = g.Count() }).ToDictionaryAsync(x => x.PassengerId, x => x.Count, ct);
         var items = rows.Select(x => new AdminPassengerListItemDto(
-            x.Passenger.Id, x.User.FullName, x.User.PhoneNumber, x.User.Status, x.User.CreatedAt, tripCounts.GetValueOrDefault(x.Passenger.Id))).ToList();
+            x.Passenger.Id, x.User.FullName, x.User.PhoneNumber, x.User.Status, x.User.CreatedAt, tripCounts.GetValueOrDefault(x.Passenger.Id),
+            x.Passenger.RatingAvg, x.Passenger.RatingCount)).ToList();
         return paging.Result(items, total);
     }
 

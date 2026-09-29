@@ -7,6 +7,8 @@ using ATA.Api.Modules.Trips.Matching;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
+using ATA.Domain.Incentives;
+using ATA.Domain.Wallet;
 using ATA.Domain.Matching;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
@@ -33,7 +35,13 @@ public sealed class DriverTripService(
     IOptions<TripOptions> options,
     Cancellation.CancellationEngine cancellations,
     Cancellation.ReliabilityService reliability,
-    Safety.TripShareService shares)
+    Safety.TripShareService shares,
+    LedgerService ledger,
+    Promotions.PromotionService promotions,
+    Promotions.IDiscountEngine discounts,
+    Incentives.TierRuleProvider tierRules,
+    Incentives.IncentiveService incentives,
+    ILogger<DriverTripService> logger)
 {
     private readonly TripOptions _options = options.Value;
 
@@ -267,38 +275,79 @@ public sealed class DriverTripService(
         var pickupAt = trip.ScheduledAt ?? trip.RequestedAt;
         var calculation = await pricing.CalculateAsync(new FareRequest(category, new GeoPoint(trip.PickupLat, trip.PickupLng), new GeoPoint(trip.DropoffLat, trip.DropoffLng),
             distance, duration, pickupAt, trip.WaitingSeconds, quote is null ? null : QuoteService.LockedDemandOf(quote)), ct);
+        // F15: the tier's commission discount raises the driver share; promo discounts are borne by the platform (the driver share is computed before them).
+        var tierDiscount = await tierRules.CommissionDiscountPercentAsync(driver.Tier, ct);
+        var promo = await promotions.ForCompletionAsync(trip, calculation, ct);
+        Promotions.DiscountOutcome? discount = null;
         decimal fare, driverEarnings;
         if (trip.PricingMode == PricingMode.Offer && trip.OfferedPrice is { } offered)
         {
             fare = offered;
-            driverEarnings = PricingMath.Round2(offered * (quote?.DriverSharePercent ?? calculation.DriverSharePercent) / 100m);
+            var share = TierMath.EffectiveSharePercent(quote?.DriverSharePercent ?? calculation.DriverSharePercent, tierDiscount);
+            driverEarnings = PricingMath.Round2(offered * share / 100m);
         }
         else
         {
-            fare = calculation.Total;
-            driverEarnings = calculation.DriverNetEarnings;
+            if (promo?.Candidate is { } candidate)
+            {
+                discount = discounts.Combine(calculation.Base, candidate);
+            }
+
+            fare = discount?.Total ?? calculation.Total;
+            driverEarnings = tierDiscount > 0
+                ? PricingMath.Round2(calculation.ShareBase * TierMath.EffectiveSharePercent(calculation.DriverSharePercent, tierDiscount) / 100m)
+                : calculation.DriverNetEarnings;
         }
 
+        var discountTotal = discount?.Discount ?? 0m;
         var participants = await reads.ParticipantsAsync(trip, ct);
-        var breakdown = await ReceiptService.StoredBreakdownAsync(db, calculation, category, trip.DiscountTotal, ct);
+        var breakdown = await ReceiptService.StoredBreakdownAsync(db, calculation, category, discountTotal, ct,
+            discount is null ? null : Promotions.DiscountEngine.Lines(discount, Language.Ar));
 
-        // Card trips are charged before the transaction (gateway calls never run inside one).
-        var card = trip.PaymentMethod == PaymentMethodKind.Card ? await cardPayments.CaptureForCompletionAsync(trip, fare, ct) : null;
+        // Card trips are charged before the transaction (gateway calls never run inside one); a fully discounted fare is not charged.
+        var card = trip.PaymentMethod == PaymentMethodKind.Card && fare > 0 ? await cardPayments.CaptureForCompletionAsync(trip, fare, ct) : null;
+        var releaseCard = trip.PaymentMethod == PaymentMethodKind.Card && fare <= 0;
 
         await db.InTransactionAsync(async () =>
         {
             trip.Complete(distance, duration, fare, driverEarnings, now);
+            trip.DiscountTotal = discountTotal;
+            trip.TierCommissionDiscountPercent = tierDiscount;
             trip.FareBreakdown = System.Text.Json.JsonSerializer.Serialize(breakdown, JsonDefaults.Options);
             await payments.SettleAsync(trip, participants, fare, driverEarnings, card, ct);
+            if (promo is not null)
+            {
+                await promotions.CommitCompletionAsync(promo, discount, ct);
+            }
+
+            foreach (var applied in discount?.Applied ?? [])
+            {
+                // trip_discount: discount_promotion | discount_favorite_driver → trip_revenue (cash_collected for cash trips).
+                var account = applied.Source == Promotions.DiscountSources.FavoriteDriver ? LedgerAccounts.DiscountFavoriteDriver : LedgerAccounts.DiscountPromotion;
+                await ledger.JournalAsync(JournalType.TripDiscount, account, trip.PaymentMethod == PaymentMethodKind.Cash ? LedgerAccounts.CashCollected : LedgerAccounts.TripRevenue,
+                    applied.Amount, TripPaymentService.ReferenceType, trip.Id, $"trip:{trip.Id}:discount:{applied.Source}", $"Trip {trip.TripNumber} {applied.Source} discount {applied.Reference}", ct);
+            }
+
             driver.CurrentTripId = null;
             await reads.ReleaseDriverAsync(trip, now, ct);
             events.Add(trip.Id, TripEventTypes.Completed, TripActor.Driver, driver.UserId, request?.FinalLat, request?.FinalLng,
-                new { finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod, breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source });
+                new
+                {
+                    finalDistanceMeters = distance, finalDurationSeconds = duration, waitingSeconds = trip.WaitingSeconds, finalFare = fare, driverEarnings, paymentMethod = trip.PaymentMethod,
+                    breakdown = QuoteService.ToDto(calculation.Breakdown), pricingSource = calculation.Source, discountTotal, tierCommissionDiscountPercent = tierDiscount,
+                    promoCode = promo?.Promotion.Code,
+                });
             await notifications.DispatchAsync(TripNotifications.Completed(trip, participants.PassengerUserId, fare), ct);
             await shares.ExpireForTripAsync(trip.Id, now, ct);
             await db.SaveChangesAsync(ct);
         }, ct);
 
+        if (releaseCard)
+        {
+            await cardPayments.ReleaseAsync(trip.Id, ct);
+        }
+
+        await RecordIncentivesAsync(trip.Id, ct);
         await paymentService.PublishPendingAsync(ct);
         await RefreshReliabilityAsync(participants.PassengerUserId, Role.Passenger, ct);
         await RefreshReliabilityAsync(driver.UserId, Role.Driver, ct);
@@ -318,6 +367,19 @@ public sealed class DriverTripService(
         await cancellations.CancelAsync(trip, new Cancellation.CancelCommand(TripActor.Driver, driver.UserId, request.ReasonCode!.Trim(), request.Note,
             ExpectedPenaltyPoints: request.ExpectedPenaltyPoints), ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
+    }
+
+    /// <summary>F15: counts the completed trip towards the driver's incentives; a failure never breaks the trip flow.</summary>
+    private async Task RecordIncentivesAsync(Guid tripId, CancellationToken ct)
+    {
+        try
+        {
+            await incentives.RecordTripAsync(tripId, ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogWarning(ex, "Incentive progress for trip {TripId} failed", tripId);
+        }
     }
 
     /// <summary>Incremental reliability refresh (F14); a failure never breaks the trip flow.</summary>
@@ -340,9 +402,18 @@ public sealed class DriverTripService(
         var query = db.Trips.AsNoTracking().Where(t => t.DriverId == driver.Id && statuses.Contains(t.Status));
         var total = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(t => t.RequestedAt).Skip(paging.Skip).Take(paging.PageSize).ToListAsync(ct);
-        var items = rows.Select(t => new DriverTripDto(
-            t.Id, t.PickupName, t.DropoffName, t.CompletedAt, System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(t.Status.ToString()),
-            t.FinalFare ?? t.EstimatedFare, t.DriverEarnings ?? 0m)).ToList();
+        var ratings = await reads.RatingStatesAsync(rows, TripViewer.Driver, ct);
+        var passengerIds = rows.Select(t => t.PassengerId).Distinct().ToList();
+        var passengerNames = await (from p in db.Passengers.AsNoTracking() join u in db.Users.AsNoTracking() on p.UserId equals u.Id
+                                    where passengerIds.Contains(p.Id) select new { p.Id, u.FullName }).ToDictionaryAsync(x => x.Id, x => x.FullName, ct);
+        var items = rows.Select(t =>
+        {
+            var rating = ratings[t.Id];
+            return new DriverTripDto(
+                t.Id, t.PickupName, t.DropoffName, t.CompletedAt, System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(t.Status.ToString()),
+                t.FinalFare ?? t.EstimatedFare, t.DriverEarnings ?? 0m, Ratings.RatingService.FirstName(passengerNames.GetValueOrDefault(t.PassengerId)),
+                rating.MyRating, rating.CanRate, rating.RateUntil);
+        }).ToList();
         return paging.Result(items, total);
     }
 

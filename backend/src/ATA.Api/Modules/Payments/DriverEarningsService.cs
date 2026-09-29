@@ -73,7 +73,7 @@ public sealed class DriverEarningsService(AtaDbContext db, ICurrentUser currentU
         var gross = fare + trip.DiscountTotal;
         var earnings = trip.DriverEarnings ?? 0m;
         var commission = gross - earnings;
-        return new TripEarningsDto(trip.Id, fare, trip.DiscountTotal, gross, commission, gross == 0 ? 0 : decimal.Round(commission / gross * 100m, 1), 0m, earnings,
+        return new TripEarningsDto(trip.Id, fare, trip.DiscountTotal, gross, commission, gross == 0 ? 0 : decimal.Round(commission / gross * 100m, 1), trip.TierCommissionDiscountPercent, earnings,
             System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(trip.PaymentMethod.ToString()),
             trip.PaymentMethod == PaymentMethodKind.Cash && trip.Status == TripStatus.Completed ? fare : 0m);
     }

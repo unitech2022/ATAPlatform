@@ -88,6 +88,12 @@ public sealed record FareCalculation(
 {
     public const string SourceRule = "pricing_rule";
     public const string SourceFallback = "flat_pricing";
+
+    /// <summary>F15: the fare before discounts and rounding (the discount engine's <c>base</c>).</summary>
+    public decimal Base { get; init; }
+
+    /// <summary>F15: the amount the driver share applies to (the F10 core <c>subtotal × timeMult × demand</c>; the whole fare for the flat fallback).</summary>
+    public decimal ShareBase { get; init; }
 }
 
 public static class PricingMath

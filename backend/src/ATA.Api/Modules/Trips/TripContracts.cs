@@ -44,7 +44,9 @@ public sealed record PlaceDto(string Name, string Address, decimal Lat, decimal 
 
 public sealed record PlaceRequest(string? Name, string? Address, decimal? Lat, decimal? Lng);
 
-public sealed record EstimateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt);
+/// <summary><c>promoCode</c> (F15) is optional: an invalid code never fails the quote (see <c>QuoteResponse.promotion</c>).</summary>
+public sealed record EstimateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt,
+    string? PromoCode = null);
 
 public sealed record CreateTripRequest(
     PlaceRequest? Pickup,
@@ -59,7 +61,8 @@ public sealed record CreateTripRequest(
     decimal? OfferedPrice,
     string? RiderNote,
     Guid? QuoteId,
-    Guid? PaymentMethodId = null);
+    Guid? PaymentMethodId = null,
+    string? PromoCode = null);
 
 public sealed record CancelTripRequest(string? ReasonCode, string? Note, decimal? ExpectedFee = null, int? ExpectedPenaltyPoints = null);
 
@@ -113,7 +116,11 @@ public sealed record TripDto(
     ATA.Api.Modules.Payments.TripPaymentDto? Payment = null,
     decimal? CollectCashAmount = null,
     decimal DiscountTotal = 0m,
-    ATA.Api.Modules.Cancellation.TripCancellationDto? Cancellation = null);
+    ATA.Api.Modules.Cancellation.TripCancellationDto? Cancellation = null,
+    ATA.Api.Modules.Promotions.TripPromotionDto? Promotion = null,
+    ATA.Api.Modules.Ratings.MyRatingDto? MyRating = null,
+    bool CanRate = false,
+    DateTime? RateUntil = null);
 
 public sealed record OfferPassengerDto(string? FirstName, decimal RatingAvg);
 
@@ -194,7 +201,13 @@ public sealed record AdminTripDetailDto(
     IReadOnlyList<AdminTripOfferDto> Offers,
     IReadOnlyList<RoutePointDto> Route,
     ATA.Api.Modules.Cancellation.TripCancellationDto? Cancellation = null,
-    IReadOnlyList<decimal[]>? PlannedRoute = null);
+    IReadOnlyList<decimal[]>? PlannedRoute = null,
+    ATA.Api.Modules.Promotions.TripPromotionDto? Promotion = null,
+    decimal DiscountTotal = 0m,
+    IReadOnlyList<ATA.Api.Modules.Payments.DiscountDto>? Discounts = null,
+    System.Text.Json.JsonElement? FareBreakdown = null,
+    IReadOnlyList<ATA.Api.Modules.Ratings.TripRatingDto>? Ratings = null,
+    decimal TierCommissionDiscountPercent = 0m);
 
 public sealed record LiveDriverDto(Guid DriverId, string? Name, decimal Lat, decimal Lng, bool IsOnline, string Status, string? CategoryCode, Guid? CurrentTripId, decimal? Heading, DateTime UpdatedAt);
 

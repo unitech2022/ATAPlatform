@@ -59,7 +59,8 @@ public sealed class MatchingService(
     CardTripPaymentService cardPayments,
     IOptions<TripOptions> tripOptions,
     IClock clock,
-    ILogger<MatchingService> logger)
+    ILogger<MatchingService> logger,
+    Incentives.TierRuleProvider tierRules)
 {
     private readonly TripOptions _trips = tripOptions.Value;
 
@@ -188,7 +189,7 @@ public sealed class MatchingService(
 
     private async Task SendOfferAsync(Trip trip, MatchingAttempt attempt, Guid driverId, Guid driverUserId, int distanceMeters, int etaSeconds, ResolvedMatchingSettings settings, DateTime now, CancellationToken ct)
     {
-        var driverNet = await DriverNetAsync(trip, ct);
+        var driverNet = await DriverNetAsync(trip, driverId, ct);
         var offer = new TripOffer
         {
             TripId = trip.Id,
@@ -213,25 +214,34 @@ public sealed class MatchingService(
         await notifier.OfferReceivedAsync(driverUserId, await reads.BuildOfferAsync(offer, trip, ct), ct);
     }
 
-    /// <summary>The driver's net from the quote the trip was created with (offer mode: offered price × driver share), else a fresh calculation.</summary>
-    private async Task<decimal> DriverNetAsync(Trip trip, CancellationToken ct)
+    /// <summary>
+    /// The driver's net from the quote the trip was created with (offer mode: offered price × driver share), else a fresh calculation; F15 raises the share
+    /// by the driver's tier commission discount (<c>share + (100 − share) × discount / 100</c>).
+    /// </summary>
+    private async Task<decimal> DriverNetAsync(Trip trip, Guid driverId, CancellationToken ct)
     {
+        var tier = await db.Drivers.AsNoTracking().Where(d => d.Id == driverId).Select(d => d.Tier).FirstOrDefaultAsync(ct);
+        var tierDiscount = await tierRules.CommissionDiscountPercentAsync(tier, ct);
         var quote = await db.FareQuotes.AsNoTracking().Where(q => q.UsedTripId == trip.Id).Select(q => new { q.DriverNetEarnings, q.DriverSharePercent }).FirstOrDefaultAsync(ct);
         if (trip.PricingMode == PricingMode.Offer && trip.OfferedPrice is { } offered)
         {
             var share = quote?.DriverSharePercent ?? await db.RideCategories.AsNoTracking().Where(c => c.Id == trip.RideCategoryId).Select(c => c.DriverSharePercent).FirstAsync(ct);
-            return PricingMath.Round2(offered * share / 100m);
+            return PricingMath.Round2(offered * Domain.Incentives.TierMath.EffectiveSharePercent(share, tierDiscount) / 100m);
         }
 
         if (quote is not null)
         {
-            return quote.DriverNetEarnings;
+            return tierDiscount <= 0 || quote.DriverSharePercent <= 0
+                ? quote.DriverNetEarnings
+                : PricingMath.Round2(quote.DriverNetEarnings * Domain.Incentives.TierMath.EffectiveSharePercent(quote.DriverSharePercent, tierDiscount) / quote.DriverSharePercent);
         }
 
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
         var calculation = await pricing.CalculateAsync(new FareRequest(category, new GeoPoint(trip.PickupLat, trip.PickupLng), new GeoPoint(trip.DropoffLat, trip.DropoffLng),
             trip.EstimatedDistanceM, trip.EstimatedDurationS, trip.RequestedAt), ct);
-        return calculation.DriverNetEarnings;
+        return tierDiscount <= 0
+            ? calculation.DriverNetEarnings
+            : PricingMath.Round2(calculation.ShareBase * Domain.Incentives.TierMath.EffectiveSharePercent(calculation.DriverSharePercent, tierDiscount) / 100m);
     }
 
     private async Task MarkNoDriversAsync(Trip trip, DateTime now, CancellationToken ct)

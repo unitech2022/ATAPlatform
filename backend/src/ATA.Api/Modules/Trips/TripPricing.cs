@@ -87,6 +87,10 @@ public sealed class FlatPricing(IOptions<PricingOptions> pricingOptions, IOption
         return new FareCalculation(
             fare, driverNet, category.DriverSharePercent,
             PricingMath.RoundToHalf(fare * _pricing.OfferMinPercent / 100m), PricingMath.RoundToHalf(fare * _pricing.OfferMaxPercent / 100m),
-            breakdown, request.LockedDemand ?? DemandReading.Neutral(), null, null, null, FareCalculation.SourceFallback);
+            breakdown, request.LockedDemand ?? DemandReading.Neutral(), null, null, null, FareCalculation.SourceFallback)
+        {
+            Base = fare,
+            ShareBase = fare,
+        };
     }
 }

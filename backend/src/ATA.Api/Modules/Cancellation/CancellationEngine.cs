@@ -207,6 +207,8 @@ public sealed class CancellationEngine(
                 _ => CancelledBy.System,
             }, command.ReasonCode, now);
             db.CancellationEvents.Add(cancellation);
+            // F15: a reserved promo code is released with the cancellation.
+            await Promotions.PromotionService.ReleaseAsync(db, trip.Id, Domain.Promotions.RedemptionReleaseReason.TripCancelled, now, ct);
             await reads.ReleaseDriverAsync(trip, now, ct);
             if (command.NoShow)
             {
@@ -463,6 +465,8 @@ public static class SystemCancellation
 {
     public static async Task RecordAsync(AtaDbContext db, Trip trip, string reasonCode, CancellationToken ct)
     {
+        // F15: no drivers / payment failure release the trip's promo reservation.
+        await Promotions.PromotionService.ReleaseAsync(db, trip.Id, Promotions.PromotionService.ReleaseReasonFor(reasonCode), trip.CancelledAt ?? DateTime.UtcNow, ct);
         if (db.CancellationEvents.Local.Any(e => e.TripId == trip.Id) || await db.CancellationEvents.AnyAsync(e => e.TripId == trip.Id, ct))
         {
             return;

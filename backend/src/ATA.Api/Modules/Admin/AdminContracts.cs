@@ -8,7 +8,8 @@ namespace ATA.Api.Modules.Admin;
 
 public sealed record DashboardSummaryDto(int PendingDriverApplications, int ApprovedDrivers, int OnlineDrivers, int Passengers, int TripsToday, int UsersToday);
 
-public sealed record AdminDriverListItemDto(Guid Id, string ApplicationNumber, string? FullName, string PhoneNumber, ApplicationStatus Status, string? CityName, string? Vehicle, DateTime? SubmittedAt, int DocumentsPending);
+public sealed record AdminDriverListItemDto(Guid Id, string ApplicationNumber, string? FullName, string PhoneNumber, ApplicationStatus Status, string? CityName, string? Vehicle, DateTime? SubmittedAt, int DocumentsPending,
+    DriverTier Tier = DriverTier.Bronze, decimal RatingAvg = 5m, int RatingCount = 0);
 
 public sealed record StatusHistoryEntryDto(Guid Id, string Action, ApplicationStatus? FromStatus, ApplicationStatus? ToStatus, string? ActorName, string? Reason, DateTime CreatedAt);
 
@@ -25,7 +26,10 @@ public sealed record AdminDriverDetailDto(
     IReadOnlyList<RequiredDocumentDto> RequiredDocuments,
     ApplicationStepsDto Steps,
     UserDto User,
-    IReadOnlyList<StatusHistoryEntryDto> StatusHistory);
+    IReadOnlyList<StatusHistoryEntryDto> StatusHistory,
+    DriverTier Tier = DriverTier.Bronze,
+    decimal RatingAvg = 5m,
+    int RatingCount = 0);
 
 public sealed record ReviewRequest(string? Action);
 
@@ -35,7 +39,7 @@ public sealed record DriverStatusChangeDto(Guid Id, ApplicationStatus Status);
 
 public sealed record VerifyDocumentRequest(DocumentStatus? Status, string? Note);
 
-public sealed record AdminPassengerListItemDto(Guid Id, string? FullName, string PhoneNumber, UserStatus Status, DateTime CreatedAt, int TripsCount);
+public sealed record AdminPassengerListItemDto(Guid Id, string? FullName, string PhoneNumber, UserStatus Status, DateTime CreatedAt, int TripsCount, decimal RatingAvg = 5m, int RatingCount = 0);
 
 public sealed record UserStatusChangeDto(Guid UserId, UserStatus Status);
 

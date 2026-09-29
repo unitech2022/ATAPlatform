@@ -53,8 +53,8 @@ public sealed class RulePricingService(AtaDbContext db, ZoneResolver zones, Dema
         var fare = core + rule.BookingFee;
         var serviceFee = PricingMath.Round2(fare * rule.ServiceFeePercent / 100m);
         fare += serviceFee;
-        const decimal discount = 0m; // F15/F16 promotions and loyalty
-        fare -= discount;
+        // Discounts (F15 promo codes) are applied on top of this calculation by the discount engine; the driver share is computed before them.
+        const decimal discount = 0m;
 
         var total = PricingMath.RoundToHalf(fare);
         var driverNet = PricingMath.Round2(core * rule.DriverSharePercent / 100m);
@@ -62,7 +62,11 @@ public sealed class RulePricingService(AtaDbContext db, ZoneResolver zones, Dema
         return new FareCalculation(
             total, driverNet, rule.DriverSharePercent,
             PricingMath.RoundToHalf(total * _options.OfferMinPercent / 100m), PricingMath.RoundToHalf(total * _options.OfferMaxPercent / 100m),
-            breakdown, reading, pickupZone, dropoffZone, rule.Id, FareCalculation.SourceRule);
+            breakdown, reading, pickupZone, dropoffZone, rule.Id, FareCalculation.SourceRule)
+        {
+            Base = fare,
+            ShareBase = core,
+        };
     }
 
     public async Task<int> FreeWaitingMinutesAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct)

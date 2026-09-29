@@ -50,7 +50,7 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
             return new AdminDriverListItemDto(
                 r.Driver.Id, r.Driver.ApplicationNumber, r.User.FullName, r.User.PhoneNumber, r.Driver.ApplicationStatus, city,
                 vehicle is null ? null : $"{vehicle.Make} {vehicle.Model} {vehicle.Year} · {vehicle.PlateNumber}",
-                r.Driver.SubmittedAt, pending.GetValueOrDefault(r.Driver.Id));
+                r.Driver.SubmittedAt, pending.GetValueOrDefault(r.Driver.Id), r.Driver.Tier, r.Driver.RatingAvg, r.Driver.RatingCount);
         }).ToList();
         return paging.Result(items, total);
     }
@@ -58,7 +58,8 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
     public async Task<AdminDriverDetailDto> GetAsync(Guid driverId, Language lang, CancellationToken ct)
     {
         var application = await applications.BuildApplicationAsync(driverId, lang, ct);
-        var userId = await db.Drivers.AsNoTracking().Where(d => d.Id == driverId).Select(d => d.UserId).FirstAsync(ct);
+        var driverRow = await db.Drivers.AsNoTracking().Where(d => d.Id == driverId).Select(d => new { d.UserId, d.Tier, d.RatingAvg, d.RatingCount }).FirstAsync(ct);
+        var userId = driverRow.UserId;
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         var history = await db.AuditLogs.AsNoTracking()
             .Where(a => a.EntityType == EntityType && a.EntityId == driverId)
@@ -82,7 +83,7 @@ public sealed class AdminDriverService(AtaDbContext db, DriverApplicationService
         return new AdminDriverDetailDto(
             driverId, application.ApplicationNumber, application.Status, application.RejectionReason, application.SubmittedAt, application.ApprovedAt,
             application.Profile, application.Vehicle, application.Documents, application.RequiredDocuments, application.Steps,
-            UserDto.From(user), statusHistory);
+            UserDto.From(user), statusHistory, driverRow.Tier, driverRow.RatingAvg, driverRow.RatingCount);
     }
 
     public async Task<DriverStatusChangeDto> StartReviewAsync(Guid driverId, ReviewRequest request, CancellationToken ct)

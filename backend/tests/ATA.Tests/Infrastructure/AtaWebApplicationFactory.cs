@@ -55,6 +55,8 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Notifications:JobsEnabled", "false");
         builder.UseSetting("Safety:JobsEnabled", "false");
         builder.UseSetting("Reliability:JobsEnabled", "false");
+        builder.UseSetting("Ratings:JobsEnabled", "false");
+        builder.UseSetting("Incentives:JobsEnabled", "false");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);

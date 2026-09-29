@@ -28,7 +28,8 @@ public sealed class RefundService(
     AuditService audit,
     ICurrentUser currentUser,
     IClock clock,
-    IOptions<PaymentsOptions> options)
+    IOptions<PaymentsOptions> options,
+    Incentives.IncentiveService incentives)
 {
     public const string EntityType = "refund";
     private readonly PaymentsOptions _options = options.Value;
@@ -282,6 +283,12 @@ public sealed class RefundService(
                 new Dictionary<string, object?> { ["refundId"] = refund.Id, ["tripId"] = refund.TripId }), ct);
             await db.SaveChangesAsync(ct);
         }, ct);
+
+        // F15: a fully refunded trip no longer counts towards unpaid incentive progress.
+        if (refund.TripId is { } refundedTrip)
+        {
+            await incentives.OnTripRefundedAsync(refundedTrip, ct);
+        }
     }
 
     public async Task<PagedResult<RefundDto>> ListAsync(RefundStatus? status, DateOnly? from, DateOnly? to, Paging paging, CancellationToken ct)

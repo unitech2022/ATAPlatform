@@ -18,6 +18,8 @@ public class FareQuote : Entity
     public required string Breakdown { get; set; }
     public required string DemandLevelCode { get; set; }
     public decimal Total { get; set; }
+    /// <summary>F15: the fare before discounts and rounding (the discount engine's <c>base</c>); 0 on quotes stored before F15.</summary>
+    public decimal BaseAmount { get; set; }
     public decimal DriverNetEarnings { get; set; }
     public decimal DriverSharePercent { get; set; }
     public decimal OfferMin { get; set; }

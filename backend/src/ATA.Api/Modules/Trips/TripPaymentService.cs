@@ -25,6 +25,14 @@ public sealed class TripPaymentService(LedgerService ledger, TripEventRecorder e
     public async Task SettleAsync(Trip trip, TripParticipants participants, decimal fare, decimal driverEarnings, CardCaptureOutcome? card, CancellationToken ct)
     {
         var requested = trip.PaymentMethod;
+        if (fare <= 0 && requested != PaymentMethodKind.Cash)
+        {
+            // F15: a fully discounted fare collects nothing; the driver share is still paid out of trip_revenue (the discount journal funds it).
+            await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.TripRevenue, ct);
+            events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System, data: new { method = requested, amount = 0m, driverEarnings });
+            return;
+        }
+
         if (requested == PaymentMethodKind.Wallet)
         {
             var passengerWallet = await ledger.GetOrCreateWalletAsync(participants.PassengerUserId, WalletKind.Passenger, ct);

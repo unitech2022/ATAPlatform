@@ -42,6 +42,11 @@ public static class NotificationTypes
     public const string ReliabilityWarning = "reliability.warning";
     public const string ReliabilityRestricted = "reliability.restricted";
     public const string CampaignBroadcast = "campaign.broadcast";
+    public const string RatingReminder = "rating.reminder";
+    public const string IncentiveNew = "incentive.new";
+    public const string IncentiveAchieved = "incentive.achieved";
+    public const string DriverTierChanged = "driver.tier_changed";
+    public const string PromoNew = "promo.new";
 }
 
 public class Notification : Entity

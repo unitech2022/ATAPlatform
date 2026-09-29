@@ -16,7 +16,9 @@ namespace ATA.Api.Modules.Pricing;
 /// Prices a route for every active category. <c>POST /pricing/quote</c> stores one <c>fare_quotes</c> row per category (one group,
 /// 5-minute expiry) so the trip request can lock the price; <c>/admin/pricing/simulate</c> runs the same calculation at any time without storing.
 /// </summary>
-public sealed class QuoteService(AtaDbContext db, IPricingService pricing, IMatcher matcher, IClock clock, IOptions<PricingOptions> options)
+public sealed class QuoteService(
+    AtaDbContext db, IPricingService pricing, IMatcher matcher, IClock clock, IOptions<PricingOptions> options,
+    Promotions.PromotionService promotions, Promotions.IDiscountEngine discounts)
 {
     private readonly PricingOptions _options = options.Value;
 
@@ -60,6 +62,7 @@ public sealed class QuoteService(AtaDbContext db, IPricingService pricing, IMatc
         Breakdown = JsonSerializer.Serialize(ToDto(calculation.Breakdown), JsonDefaults.Options),
         DemandLevelCode = calculation.Demand.Code,
         Total = calculation.Total,
+        BaseAmount = PricingMath.Round2(calculation.Base),
         DriverNetEarnings = calculation.DriverNetEarnings,
         DriverSharePercent = calculation.DriverSharePercent,
         OfferMin = calculation.OfferMin,
@@ -101,6 +104,12 @@ public sealed class QuoteService(AtaDbContext db, IPricingService pricing, IMatc
         var dropoff = request.Dropoff!.Point();
         var route = pricing.EstimateRoute(pickup, (request.Stops ?? []).Select(s => s.Point()).ToList(), dropoff);
         var groupId = Guid.CreateVersion7();
+        var now = clock.UtcNow;
+        // F15: a promo code is checked per category (an invalid code never fails the quote); stored quotes keep the undiscounted price.
+        var promoCode = passengerId is null || string.IsNullOrWhiteSpace(request.PromoCode) ? null : Domain.Promotions.Promotion.Normalize(request.PromoCode);
+        var promotion = promoCode is null ? null : await promotions.FindAsync(promoCode, ct);
+        var promoState = promotion is { IsActive: true } && passengerId is { } promoPassenger ? await promotions.StateAsync(promotion, promoPassenger, ct) : null;
+        var promoChecks = new Dictionary<Guid, Promotions.PromoCheck>();
         var quotes = new List<FareQuote>(categories.Count);
         var items = new List<QuoteCategoryDto>(categories.Count);
         FareCalculation? first = null;
@@ -118,8 +127,26 @@ public sealed class QuoteService(AtaDbContext db, IPricingService pricing, IMatc
                 quoteId = quote.Id;
             }
 
-            items.Add(new QuoteCategoryDto(category.Id, category.Code, lang.Pick(category.NameAr, category.NameEn), eta, calculation.Total, calculation.DriverNetEarnings,
-                calculation.OfferMin, calculation.OfferMax, ToDto(calculation.Breakdown), ToDto(calculation.Demand, lang), quoteId, calculation.Source));
+            var total = calculation.Total;
+            var breakdown = ToDto(calculation.Breakdown);
+            decimal? totalBefore = null;
+            if (promoCode is not null)
+            {
+                var ctx = new Promotions.PromoTripContext(calculation.PickupZone?.CityId, category.Id, calculation.PickupZone?.Id, null, request.BookingType ?? BookingType.Now, null,
+                    calculation.Base, calculation.Breakdown.BookingFee);
+                var check = Promotions.PromotionService.Check(promotion, promoState, ctx, now);
+                promoChecks[category.Id] = check;
+                if (check is { IsValid: true, Amount: > 0 })
+                {
+                    var outcome = discounts.Combine(calculation.Base, new Promotions.DiscountCandidate(Promotions.DiscountSources.Promotion, promotion!.Code, check.Amount.Value, promotion.IsStackable));
+                    totalBefore = total;
+                    total = outcome.Total;
+                    breakdown = breakdown with { Discount = outcome.Discount, Discounts = Promotions.DiscountEngine.Lines(outcome, lang) };
+                }
+            }
+
+            items.Add(new QuoteCategoryDto(category.Id, category.Code, lang.Pick(category.NameAr, category.NameEn), eta, total, calculation.DriverNetEarnings,
+                calculation.OfferMin, calculation.OfferMax, breakdown, ToDto(calculation.Demand, lang), quoteId, calculation.Source, totalBefore));
         }
 
         var primaryIndex = request.RideCategoryId is { } id ? Math.Max(0, items.FindIndex(i => i.RideCategoryId == id)) : 0;
@@ -132,7 +159,11 @@ public sealed class QuoteService(AtaDbContext db, IPricingService pricing, IMatc
             ToDto(first?.PickupZone, lang),
             ToDto(first?.DropoffZone, lang),
             primary?.Demand ?? ToDto(DemandReading.Neutral(), lang),
-            items);
+            items,
+            promoCode is null ? null : PromotionOf(promoCode, primary is null ? null : promoChecks.GetValueOrDefault(primary.RideCategoryId)));
         return (response, quotes);
     }
+
+    private static Promotions.QuotePromotionDto PromotionOf(string code, Promotions.PromoCheck? check) =>
+        check is null ? new(code, false, ErrorCodes.PromoNotFound) : new(check.Promotion?.Code ?? code, check.IsValid, check.IsValid ? null : check.Reason);
 }

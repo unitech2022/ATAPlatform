@@ -159,7 +159,8 @@ public sealed class ScoringMatcher(
     IDriverReliabilityProvider reliability,
     IOptions<MatchingOptions> options,
     IOptions<PayoutsOptions> payouts,
-    IClock clock) : IMatcher
+    IClock clock,
+    Incentives.TierRuleProvider tierRules) : IMatcher
 {
     private const double MaxEtaSeconds = 900d;
     private readonly MatchingOptions _options = options.Value;
@@ -238,6 +239,8 @@ public sealed class ScoringMatcher(
             ? await favorites.FavoriteDriverIdsAsync(passengerId, ct)
             : new HashSet<Guid>();
 
+        // F15: norm_tier comes from driver_tier_rules.matching_norm.
+        var tierNorms = await tierRules.MatchingNormsAsync(ct);
         var weights = resolved.Weights;
         var maxRadius = Math.Max(resolved.MaxRadiusMeters, radius);
         var candidates = new List<DriverCandidate>(inRange.Count);
@@ -250,21 +253,26 @@ public sealed class ScoringMatcher(
             }
 
             var eta = pricing.EtaSeconds(distance * FlatPricing.RoadFactor);
-            var score = decimal.Round(Score(weights, distance, maxRadius, eta, row.RatingAvg, stats, row.Tier, favoriteIds.Contains(row.Id)) * Math.Clamp(stats.MatchingFactor, 0m, 1m), 4, MidpointRounding.AwayFromZero);
+            var normTier = tierNorms.TryGetValue(row.Tier, out var norm) ? norm : Domain.Incentives.TierMath.DefaultNorm(row.Tier);
+            var score = decimal.Round(Score(weights, distance, maxRadius, eta, row.RatingAvg, stats, normTier, favoriteIds.Contains(row.Id)) * Math.Clamp(stats.MatchingFactor, 0m, 1m), 4, MidpointRounding.AwayFromZero);
             candidates.Add(new DriverCandidate(row.Id, row.UserId, row.VehicleId, (int)Math.Round(distance), eta, score));
         }
 
         return candidates.OrderByDescending(c => c.Score).ThenBy(c => c.DistanceMeters).ToList();
     }
 
-    public static decimal Score(MatchingWeights w, double distanceMeters, double maxRadiusMeters, int etaSeconds, decimal rating, DriverReliability stats, DriverTier tier, bool favorite)
+    public static decimal Score(MatchingWeights w, double distanceMeters, double maxRadiusMeters, int etaSeconds, decimal rating, DriverReliability stats, DriverTier tier, bool favorite) =>
+        Score(w, distanceMeters, maxRadiusMeters, etaSeconds, rating, stats, Domain.Incentives.TierMath.DefaultNorm(tier), favorite);
+
+    /// <summary><paramref name="normTier"/> is the tier's <c>matching_norm</c> (F15).</summary>
+    public static decimal Score(MatchingWeights w, double distanceMeters, double maxRadiusMeters, int etaSeconds, decimal rating, DriverReliability stats, decimal normTier, bool favorite)
     {
         var normDistance = Clamp(1m - (decimal)(distanceMeters / maxRadiusMeters));
         var normEta = Clamp(1m - (decimal)(etaSeconds / MaxEtaSeconds));
         var normRating = Clamp((rating - 3m) / 2m);
         var normAcceptance = Clamp(stats.AcceptanceRate);
         var normCancellation = Clamp(1m - stats.CancellationRate);
-        var normTier = tier switch { DriverTier.Platinum => 1m, DriverTier.Gold => 0.75m, DriverTier.Silver => 0.5m, _ => 0.25m };
+        normTier = Clamp(normTier);
         var normFavorite = favorite ? 1m : 0m;
         var sum = w.Distance * normDistance + w.Eta * normEta + w.Rating * normRating + w.Acceptance * normAcceptance
                   + w.Cancellation * normCancellation + w.Tier * normTier + w.Favorite * normFavorite;

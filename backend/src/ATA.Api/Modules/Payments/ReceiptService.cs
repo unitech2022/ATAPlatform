@@ -20,7 +20,8 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
     public const decimal VatRate = 15m;
 
     /// <summary>The breakdown stored in <c>trips.fare_breakdown</c> at completion (with the min-fare adjustment the receipt needs).</summary>
-    public static async Task<StoredFareBreakdown> StoredBreakdownAsync(AtaDbContext db, FareCalculation calculation, RideCategory category, decimal discountTotal, CancellationToken ct)
+    public static async Task<StoredFareBreakdown> StoredBreakdownAsync(AtaDbContext db, FareCalculation calculation, RideCategory category, decimal discountTotal, CancellationToken ct,
+        IReadOnlyList<DiscountDto>? discounts = null)
     {
         var b = calculation.Breakdown;
         var raw = b.BaseFare + b.DistanceFare + b.TimeFare + b.WaitingFare;
@@ -39,7 +40,7 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
         }
 
         return new StoredFareBreakdown(b.BaseFare, b.DistanceFare, b.TimeFare, b.WaitingFare, b.MinFareApplied, b.TimeMultiplier, b.TimeMultiplierLabel,
-            b.DemandMultiplier, b.BookingFee, b.ServiceFee, discountTotal, [], minAdjustment, calculation.Source);
+            b.DemandMultiplier, b.BookingFee, b.ServiceFee, discountTotal, discounts ?? [], minAdjustment, calculation.Source);
     }
 
     public async Task<ReceiptDto> ForPassengerAsync(Guid tripId, Language lang, CancellationToken ct)
@@ -76,7 +77,8 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
 
         var breakdown = trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<StoredFareBreakdown>(trip.FareBreakdown, JsonDefaults.Options);
         var lines = new List<ReceiptLineDto>();
-        var discounts = breakdown?.Discounts ?? [];
+        // Discount labels are rendered in the viewer's language from (source, reference).
+        var discounts = (breakdown?.Discounts ?? []).Select(d => d with { Label = Promotions.DiscountEngine.Label(d.Source, d.Reference, lang) }).ToList();
         var distanceMeters = trip.FinalDistanceM ?? trip.EstimatedDistanceM;
         var durationSeconds = trip.FinalDurationS ?? trip.EstimatedDurationS;
         if (breakdown is null)

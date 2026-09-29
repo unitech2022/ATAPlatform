@@ -43,6 +43,10 @@ public class Trip : AuditableEntity
     public string? FareBreakdown { get; set; }
     /// <summary>Sum of discounts borne by the platform (F15/F16); the passenger pays <c>final_fare</c>, the driver share is computed before discounts.</summary>
     public decimal DiscountTotal { get; set; }
+    /// <summary>F15: the driver tier's commission discount applied to <see cref="DriverEarnings"/> at completion (0 for bronze).</summary>
+    public decimal TierCommissionDiscountPercent { get; set; }
+    /// <summary>F15: when <c>rating.reminder</c> was sent to the parties that had not rated yet (once per trip).</summary>
+    public DateTime? RatingRemindedAt { get; set; }
     public required string PinCodeHash { get; set; }
     /// <summary>The PIN protected at rest so it can be shown to the passenger; verification uses <see cref="PinCodeHash"/>.</summary>
     public required string PinCodeProtected { get; set; }

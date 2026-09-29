@@ -148,6 +148,11 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Aud
         var offers = offerRows.Select(o => new AdminTripOfferDto(
             o.Id, o.DriverId, offerDriverNames.GetValueOrDefault(o.DriverId), o.Status, o.DistanceToPickupM, o.EtaSeconds, o.DriverNetEarnings, o.SentAt, o.RespondedAt, o.ExpiresAt)).ToList();
 
+        // F15: both ratings of the trip, the stored discount lines.
+        var ratingRows = await db.Ratings.AsNoTracking().Where(r => r.TripId == trip.Id).OrderBy(r => r.CreatedAt).ToListAsync(ct);
+        var ratings = ratingRows.Select(r => new Ratings.TripRatingDto(r.Id, r.RaterRole, r.Stars, Ratings.RatingService.ParseTags(r.Tags), r.Comment, r.Status, r.CommentHidden, r.CreatedAt)).ToList();
+        var stored = trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<Payments.StoredFareBreakdown>(trip.FareBreakdown, JsonDefaults.Options);
+
         var route = await db.DriverLocationHistory.AsNoTracking().Where(h => h.TripId == trip.Id).OrderBy(h => h.RecordedAt)
             .Select(h => new RoutePointDto(h.Lat, h.Lng, h.RecordedAt)).ToListAsync(ct);
 
@@ -156,7 +161,9 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Aud
             dto.PaymentMethod, dto.PricingMode, dto.OfferedPrice, dto.EstimatedFare, dto.FinalFare, dto.EstimatedDistanceMeters, dto.EstimatedDurationSeconds,
             trip.FinalDistanceM, trip.FinalDurationS, trip.DriverEarnings,
             passenger, driver, dto.Vehicle, dto.WaitingSeconds, dto.CancelledBy, dto.CancellationReason, trip.RiderNote, dto.Timeline,
-            events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)));
+            events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)),
+            dto.Promotion, trip.DiscountTotal, stored?.Discounts.Select(d => d with { Label = Promotions.DiscountEngine.Label(d.Source, d.Reference, lang) }).ToList(),
+            trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent);
     }
 
     private async Task<Dictionary<Guid, string?>> DriverNamesAsync(IEnumerable<Guid> driverIds, CancellationToken ct)

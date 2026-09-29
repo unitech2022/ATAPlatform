@@ -10,11 +10,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ATA.Api.Modules.Trips;
 
+/// <summary>The viewer's rating state of a trip (F15).</summary>
+public sealed record TripRatingState(Ratings.MyRatingDto? MyRating, bool CanRate, DateTime? RateUntil)
+{
+    public static readonly TripRatingState None = new(null, false, null);
+}
+
+public static class TripDtoRatings
+{
+    public static TripDto WithRating(this TripDto dto, TripRatingState state) => dto with { MyRating = state.MyRating, CanRate = state.CanRate, RateUntil = state.RateUntil };
+}
+
 /// <summary>Participants of a trip resolved to user ids (for notifications and real-time fan-out).</summary>
 public sealed record TripParticipants(Guid PassengerUserId, Guid? DriverUserId);
 
 /// <summary>Builds the <see cref="TripDto"/>/<see cref="OfferDto"/> read models and publishes <c>TripUpdated</c> to both parties.</summary>
-public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripNotifier notifier)
+public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripNotifier notifier, IClock clock, Microsoft.Extensions.Options.IOptions<Ratings.RatingsOptions> ratingOptions)
 {
     public async Task<Trip?> FindAsync(Guid tripId, CancellationToken ct) =>
         await db.Trips.Include(t => t.Stops).FirstOrDefaultAsync(t => t.Id == tripId, ct);
@@ -89,7 +100,56 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             // Only the driver sees the cash to collect once the trip is completed (including a card that fell back to cash).
             viewer == TripViewer.Driver && trip.Status == TripStatus.Completed && trip.PaymentMethod == PaymentMethodKind.Cash ? trip.FinalFare : null,
             trip.DiscountTotal,
-            await CancellationForAsync(trip, viewer, lang, ct));
+            await CancellationForAsync(trip, viewer, lang, ct),
+            await PromotionForAsync(trip.Id, ct))
+            .WithRating(await RatingForAsync(trip, viewer, ct));
+    }
+
+    /// <summary><c>Trip.promotion</c> (F15): the code reserved / applied / released for the trip.</summary>
+    public async Task<Promotions.TripPromotionDto?> PromotionForAsync(Guid tripId, CancellationToken ct) =>
+        await (from r in db.PromotionRedemptions.AsNoTracking()
+               join p in db.Promotions.AsNoTracking() on r.PromotionId equals p.Id
+               where r.TripId == tripId
+               select new Promotions.TripPromotionDto(p.Code, r.Status, r.DiscountAmount, p.Id, r.ReservedAmount)).FirstOrDefaultAsync(ct);
+
+    /// <summary>Rating state of many trips at once for the trip history lists (F15).</summary>
+    public async Task<IReadOnlyDictionary<Guid, TripRatingState>> RatingStatesAsync(IReadOnlyCollection<Trip> trips, TripViewer viewer, CancellationToken ct)
+    {
+        var role = Ratings.RatingService.RoleOf(viewer);
+        var ids = trips.Where(t => t.Status == TripStatus.Completed).Select(t => t.Id).ToList();
+        var mine = ids.Count == 0
+            ? []
+            : await db.Ratings.AsNoTracking().Where(r => ids.Contains(r.TripId) && r.RaterRole == role).ToDictionaryAsync(r => r.TripId, r => new { r.Stars, r.Tags }, ct);
+        var now = clock.UtcNow;
+        return trips.ToDictionary(t => t.Id, t =>
+        {
+            if (viewer == TripViewer.Admin || t.Status != TripStatus.Completed || t.CompletedAt is not { } completedAt)
+            {
+                return TripRatingState.None;
+            }
+
+            var rateUntil = completedAt.AddHours(ratingOptions.Value.WindowHours);
+            var rating = mine.GetValueOrDefault(t.Id);
+            return new TripRatingState(rating is null ? null : new Ratings.MyRatingDto(rating.Stars, Ratings.RatingService.ParseTags(rating.Tags)),
+                rating is null && t.DriverId is not null && now <= rateUntil, rateUntil);
+        });
+    }
+
+    /// <summary><c>Trip.myRating</c>, <c>canRate</c>, <c>rateUntil</c> for the passenger / driver viewer (F15).</summary>
+    public async Task<TripRatingState> RatingForAsync(Trip trip, TripViewer viewer, CancellationToken ct)
+    {
+        if (viewer == TripViewer.Admin || trip.Status != TripStatus.Completed || trip.CompletedAt is not { } completedAt)
+        {
+            return TripRatingState.None;
+        }
+
+        var role = Ratings.RatingService.RoleOf(viewer);
+        var mine = await db.Ratings.AsNoTracking().Where(r => r.TripId == trip.Id && r.RaterRole == role).Select(r => new { r.Stars, r.Tags }).FirstOrDefaultAsync(ct);
+        var rateUntil = completedAt.AddHours(ratingOptions.Value.WindowHours);
+        return new TripRatingState(
+            mine is null ? null : new Ratings.MyRatingDto(mine.Stars, Ratings.RatingService.ParseTags(mine.Tags)),
+            mine is null && trip.DriverId is not null && clock.UtcNow <= rateUntil,
+            rateUntil);
     }
 
     /// <summary>
@@ -145,18 +205,19 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
     {
         var participants = await ParticipantsAsync(trip, ct);
         var dto = await BuildAsync(trip, TripViewer.Driver, lang, ct);
-        var passengerDto = dto with
+        var passengerDto = (dto with
         {
             Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null,
             Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Passenger, lang, ct),
-        };
+        }).WithRating(await RatingForAsync(trip, TripViewer.Passenger, ct));
         await notifier.TripUpdatedAsync(participants.PassengerUserId, passengerDto, ct);
         if (participants.DriverUserId is { } driverUserId)
         {
             await notifier.TripUpdatedAsync(driverUserId, dto, ct);
         }
 
-        var adminDto = passengerDto with { Pin = null, Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Admin, lang, ct) };
+        var adminDto = (passengerDto with { Pin = null, Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Admin, lang, ct) })
+            .WithRating(TripRatingState.None);
         await notifier.TripUpdatedForAdminsAsync(adminDto, ct);
         return responder switch
         {

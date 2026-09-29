@@ -45,4 +45,5 @@ public sealed record EarningsWeekDto(decimal Earnings, decimal Target);
 
 public sealed record EarningsSummaryDto(EarningsTodayDto Today, EarningsWeekDto Week, decimal RatingAvg);
 
-public sealed record DriverTripDto(Guid Id, string PickupName, string DestinationName, DateTime? CompletedAt, string Status, decimal Fare, decimal Earning);
+public sealed record DriverTripDto(Guid Id, string PickupName, string DestinationName, DateTime? CompletedAt, string Status, decimal Fare, decimal Earning,
+    string? PassengerName = null, ATA.Api.Modules.Ratings.MyRatingDto? MyRating = null, bool CanRate = false, DateTime? RateUntil = null);

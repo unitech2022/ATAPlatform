@@ -5,11 +5,14 @@ using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Files;
 using ATA.Domain.Identity;
+using ATA.Domain.Incentives;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Passengers;
 using ATA.Domain.Payments;
 using ATA.Domain.Pricing;
+using ATA.Domain.Promotions;
+using ATA.Domain.Ratings;
 using ATA.Domain.Safety;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
@@ -97,6 +100,17 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<ReliabilityProfile> ReliabilityProfiles => Set<ReliabilityProfile>();
     public DbSet<ReliabilityThreshold> ReliabilityThresholds => Set<ReliabilityThreshold>();
     public DbSet<ReliabilityAdjustment> ReliabilityAdjustments => Set<ReliabilityAdjustment>();
+
+    public DbSet<Rating> Ratings => Set<Rating>();
+    public DbSet<RatingTag> RatingTags => Set<RatingTag>();
+    public DbSet<RatingFlag> RatingFlags => Set<RatingFlag>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
+    public DbSet<PromotionRedemption> PromotionRedemptions => Set<PromotionRedemption>();
+    public DbSet<DriverTierRule> DriverTierRules => Set<DriverTierRule>();
+    public DbSet<DriverTierHistory> DriverTierHistory => Set<DriverTierHistory>();
+    public DbSet<DriverIncentive> DriverIncentives => Set<DriverIncentive>();
+    public DbSet<DriverIncentiveProgress> DriverIncentiveProgress => Set<DriverIncentiveProgress>();
+    public DbSet<DriverIncentiveTrip> DriverIncentiveTrips => Set<DriverIncentiveTrip>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

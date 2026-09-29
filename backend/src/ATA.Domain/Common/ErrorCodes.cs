@@ -50,5 +50,12 @@ public static class ErrorCodes
     public const string CancellationFeeChanged = "cancellation_fee_changed";
     public const string NoShowTooEarly = "no_show_too_early";
     public const string AccountRestricted = "account_restricted";
+    public const string RatingWindowClosed = "rating_window_closed";
+    public const string RatingExists = "rating_exists";
+    public const string PromoNotFound = "promo_not_found";
+    public const string PromoExpired = "promo_expired";
+    public const string PromoNotEligible = "promo_not_eligible";
+    public const string PromoUsageLimitReached = "promo_usage_limit_reached";
+    public const string IncentiveOptInClosed = "incentive_opt_in_closed";
     public const string InternalError = "internal_error";
 }

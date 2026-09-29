@@ -1580,6 +1580,405 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("user_roles", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentive", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<decimal?>("BudgetAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("budget_amount");
+
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<TimeOnly?>("DailyFrom")
+                        .HasColumnType("time(6)")
+                        .HasColumnName("daily_from");
+
+                    b.Property<TimeOnly?>("DailyTo")
+                        .HasColumnType("time(6)")
+                        .HasColumnName("daily_to");
+
+                    b.Property<string>("DaysOfWeek")
+                        .HasColumnType("json")
+                        .HasColumnName("days_of_week");
+
+                    b.Property<string>("DescriptionAr")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("description_ar");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("description_en");
+
+                    b.Property<DateTime>("EndsAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("ends_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<int?>("MaxParticipants")
+                        .HasColumnType("int")
+                        .HasColumnName("max_participants");
+
+                    b.Property<decimal?>("MinRating")
+                        .HasPrecision(3, 2)
+                        .HasColumnType("decimal(3,2)")
+                        .HasColumnName("min_rating");
+
+                    b.Property<string>("MinTier")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("min_tier");
+
+                    b.Property<decimal?>("MinTripFare")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("min_trip_fare");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_en");
+
+                    b.Property<bool>("NotifyOnPublish")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("notify_on_publish");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("published_at");
+
+                    b.Property<bool>("RequiresOptIn")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("requires_opt_in");
+
+                    b.Property<decimal>("RewardAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("reward_amount");
+
+                    b.Property<string>("RideCategoryIds")
+                        .HasColumnType("json")
+                        .HasColumnName("ride_category_ids");
+
+                    b.Property<decimal>("SpentAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("spent_amount");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("starts_at");
+
+                    b.Property<int>("TargetTrips")
+                        .HasColumnType("int")
+                        .HasColumnName("target_trips");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("ZoneIds")
+                        .HasColumnType("json")
+                        .HasColumnName("zone_ids");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_incentives");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_driver_incentives_created_by");
+
+                    b.HasIndex("CityId", "IsActive", "StartsAt", "EndsAt")
+                        .HasDatabaseName("ix_driver_incentives_city_id_is_active_starts_at_ends_at");
+
+                    b.ToTable("driver_incentives", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentiveProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AchievedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("achieved_at");
+
+                    b.Property<int>("CompletedTrips")
+                        .HasColumnType("int")
+                        .HasColumnName("completed_trips");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<Guid>("IncentiveId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("incentive_id");
+
+                    b.Property<decimal?>("IncentiveMultiplier")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)")
+                        .HasColumnName("incentive_multiplier");
+
+                    b.Property<DateTime?>("OptedInAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("opted_in_at");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<DateTime>("PeriodEnd")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateTime>("PeriodStart")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("period_start");
+
+                    b.Property<decimal?>("RewardAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("reward_amount");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("voided_reason");
+
+                    b.Property<Guid?>("WalletTransactionId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("wallet_transaction_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_incentive_progress");
+
+                    b.HasIndex("DriverId", "Status")
+                        .HasDatabaseName("ix_driver_incentive_progress_driver_id_status");
+
+                    b.HasIndex("Status", "PeriodEnd")
+                        .HasDatabaseName("ix_driver_incentive_progress_status_period_end");
+
+                    b.HasIndex("IncentiveId", "DriverId", "PeriodStart")
+                        .IsUnique()
+                        .HasDatabaseName("ux_driver_incentive_progress_incentive_id_driver_id_period_start");
+
+                    b.ToTable("driver_incentive_progress", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentiveTrip", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CountedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("counted_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ProgressId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("progress_id");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_incentive_trips");
+
+                    b.HasIndex("TripId")
+                        .HasDatabaseName("ix_driver_incentive_trips_trip_id");
+
+                    b.HasIndex("ProgressId", "TripId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_driver_incentive_trips_progress_id_trip_id");
+
+                    b.ToTable("driver_incentive_trips", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverTierHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("changed_by");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("computed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<string>("FromTier")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("from_tier");
+
+                    b.Property<string>("Metrics")
+                        .HasColumnType("json")
+                        .HasColumnName("metrics");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ToTier")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("to_tier");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_tier_history");
+
+                    b.HasIndex("ChangedBy")
+                        .HasDatabaseName("ix_driver_tier_history_changed_by");
+
+                    b.HasIndex("DriverId", "ComputedAt")
+                        .HasDatabaseName("ix_driver_tier_history_driver_id_computed_at");
+
+                    b.ToTable("driver_tier_history", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverTierRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BenefitsAr")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("benefits_ar");
+
+                    b.Property<string>("BenefitsEn")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("benefits_en");
+
+                    b.Property<decimal>("CommissionDiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("commission_discount_percent");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("MatchingNorm")
+                        .HasPrecision(3, 2)
+                        .HasColumnType("decimal(3,2)")
+                        .HasColumnName("matching_norm");
+
+                    b.Property<decimal>("MaxCancellationRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)")
+                        .HasColumnName("max_cancellation_rate");
+
+                    b.Property<decimal>("MinAcceptanceRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)")
+                        .HasColumnName("min_acceptance_rate");
+
+                    b.Property<int>("MinCompletedTrips")
+                        .HasColumnType("int")
+                        .HasColumnName("min_completed_trips");
+
+                    b.Property<decimal>("MinRatingAvg")
+                        .HasPrecision(3, 2)
+                        .HasColumnType("decimal(3,2)")
+                        .HasColumnName("min_rating_avg");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Tier")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("tier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_driver_tier_rules");
+
+                    b.HasIndex("Tier")
+                        .IsUnique()
+                        .HasDatabaseName("ux_driver_tier_rules_tier");
+
+                    b.ToTable("driver_tier_rules", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Matching.MatchingAttempt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3466,6 +3865,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("char(36)")
                         .HasColumnName("id");
 
+                    b.Property<decimal>("BaseAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("base_amount");
+
                     b.Property<string>("Breakdown")
                         .IsRequired()
                         .HasColumnType("json")
@@ -3835,6 +4239,464 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_zone_category_settings_zone_id_ride_category_id");
 
                     b.ToTable("zone_category_settings", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Promotions.Promotion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BookingTypes")
+                        .HasColumnType("json")
+                        .HasColumnName("booking_types");
+
+                    b.Property<decimal?>("BudgetAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("budget_amount");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DescriptionAr")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("description_ar");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("description_en");
+
+                    b.Property<bool>("FirstTripOnly")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("first_trip_only");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_public");
+
+                    b.Property<bool>("IsStackable")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_stackable");
+
+                    b.Property<decimal?>("MaxDiscount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("max_discount");
+
+                    b.Property<decimal?>("MinFare")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("min_fare");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_en");
+
+                    b.Property<int>("NewUserDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(30)
+                        .HasColumnName("new_user_days");
+
+                    b.Property<bool>("NewUsersOnly")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("new_users_only");
+
+                    b.Property<string>("PaymentMethods")
+                        .HasColumnType("json")
+                        .HasColumnName("payment_methods");
+
+                    b.Property<int>("PerUserLimit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasColumnName("per_user_limit");
+
+                    b.Property<string>("RideCategoryIds")
+                        .HasColumnType("json")
+                        .HasColumnName("ride_category_ids");
+
+                    b.Property<decimal>("SpentAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("spent_amount");
+
+                    b.Property<int?>("TotalUsageLimit")
+                        .HasColumnType("int")
+                        .HasColumnName("total_usage_limit");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int")
+                        .HasColumnName("usage_count");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("valid_from");
+
+                    b.Property<DateTime>("ValidTo")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("valid_to");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("value");
+
+                    b.Property<string>("ZoneIds")
+                        .HasColumnType("json")
+                        .HasColumnName("zone_ids");
+
+                    b.HasKey("Id")
+                        .HasName("pk_promotions");
+
+                    b.HasIndex("CityId")
+                        .HasDatabaseName("ix_promotions_city_id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_promotions_code");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_promotions_created_by");
+
+                    b.HasIndex("IsActive", "ValidFrom", "ValidTo")
+                        .HasDatabaseName("ix_promotions_is_active_valid_from_valid_to");
+
+                    b.ToTable("promotions", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Promotions.PromotionRedemption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AppliedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("applied_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal?>("DiscountAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("discount_amount");
+
+                    b.Property<Guid>("PassengerId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("passenger_id");
+
+                    b.Property<Guid>("PromotionId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("promotion_id");
+
+                    b.Property<string>("ReleaseReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("release_reason");
+
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("released_at");
+
+                    b.Property<decimal?>("ReservedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("reserved_amount");
+
+                    b.Property<DateTime>("ReservedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("reserved_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_promotion_redemptions");
+
+                    b.HasIndex("TripId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_promotion_redemptions_trip_id");
+
+                    b.HasIndex("PassengerId", "PromotionId")
+                        .HasDatabaseName("ix_promotion_redemptions_passenger_id_promotion_id");
+
+                    b.HasIndex("PromotionId", "Status")
+                        .HasDatabaseName("ix_promotion_redemptions_promotion_id_status");
+
+                    b.ToTable("promotion_redemptions", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Ratings.Rating", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("comment");
+
+                    b.Property<bool>("CommentHidden")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("comment_hidden");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("HiddenAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("hidden_at");
+
+                    b.Property<Guid?>("HiddenBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("hidden_by");
+
+                    b.Property<string>("HiddenReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("hidden_reason");
+
+                    b.Property<string>("RateeRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("ratee_role");
+
+                    b.Property<Guid>("RateeUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("ratee_user_id");
+
+                    b.Property<string>("RaterRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("rater_role");
+
+                    b.Property<Guid>("RaterUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("rater_user_id");
+
+                    b.Property<byte>("Stars")
+                        .HasColumnType("tinyint unsigned")
+                        .HasColumnName("stars");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("tags");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ratings");
+
+                    b.HasIndex("HiddenBy")
+                        .HasDatabaseName("ix_ratings_hidden_by");
+
+                    b.HasIndex("RaterUserId", "CreatedAt")
+                        .HasDatabaseName("ix_ratings_rater_user_id_created_at");
+
+                    b.HasIndex("TripId", "RaterRole")
+                        .IsUnique()
+                        .HasDatabaseName("ux_ratings_trip_id_rater_role");
+
+                    b.HasIndex("RateeUserId", "RateeRole", "CreatedAt")
+                        .HasDatabaseName("ix_ratings_ratee_user_id_ratee_role_created_at");
+
+                    b.ToTable("ratings", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Ratings.RatingFlag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("RatingId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("rating_id");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("type");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.Property<decimal?>("Value")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)")
+                        .HasColumnName("value");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rating_flags");
+
+                    b.HasIndex("RatingId")
+                        .HasDatabaseName("ix_rating_flags_rating_id");
+
+                    b.HasIndex("ReviewedBy")
+                        .HasDatabaseName("ix_rating_flags_reviewed_by");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_rating_flags_status_created_at");
+
+                    b.HasIndex("UserId", "Type", "Status")
+                        .HasDatabaseName("ix_rating_flags_user_id_type_status");
+
+                    b.ToTable("rating_flags", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Ratings.RatingTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("name_en");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("TargetRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("target_role");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rating_tags");
+
+                    b.HasIndex("TargetRole", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_rating_tags_target_role_code");
+
+                    b.ToTable("rating_tags", (string)null);
                 });
 
             modelBuilder.Entity("ATA.Domain.Safety.LostItemReport", b =>
@@ -4744,6 +5606,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(32)")
                         .HasColumnName("pricing_mode");
 
+                    b.Property<DateTime?>("RatingRemindedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("rating_reminded_at");
+
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("requested_at");
@@ -4770,6 +5636,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("TierCommissionDiscountPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("tier_commission_discount_percent");
 
                     b.Property<string>("TripNumber")
                         .IsRequired()
@@ -5409,6 +6280,72 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_user_roles_user_id");
                 });
 
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentive", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_incentives_city_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_driver_incentives_created_by");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentiveProgress", b =>
+                {
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_incentive_progress_driver_id");
+
+                    b.HasOne("ATA.Domain.Incentives.DriverIncentive", null)
+                        .WithMany()
+                        .HasForeignKey("IncentiveId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_incentive_progress_incentive_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverIncentiveTrip", b =>
+                {
+                    b.HasOne("ATA.Domain.Incentives.DriverIncentiveProgress", null)
+                        .WithMany()
+                        .HasForeignKey("ProgressId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_incentive_trips_progress_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_incentive_trips_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Incentives.DriverTierHistory", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_driver_tier_history_changed_by");
+
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_driver_tier_history_driver_id");
+                });
+
             modelBuilder.Entity("ATA.Domain.Matching.MatchingAttempt", b =>
                 {
                     b.HasOne("ATA.Domain.Trips.Trip", null)
@@ -5780,6 +6717,97 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_zone_category_settings_zone_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Promotions.Promotion", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_promotions_city_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_promotions_created_by");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Promotions.PromotionRedemption", b =>
+                {
+                    b.HasOne("ATA.Domain.Passengers.PassengerProfile", null)
+                        .WithMany()
+                        .HasForeignKey("PassengerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_promotion_redemptions_passenger_id");
+
+                    b.HasOne("ATA.Domain.Promotions.Promotion", null)
+                        .WithMany()
+                        .HasForeignKey("PromotionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_promotion_redemptions_promotion_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_promotion_redemptions_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Ratings.Rating", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("HiddenBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_ratings_hidden_by");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RateeUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ratings_ratee_user_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RaterUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ratings_rater_user_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ratings_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Ratings.RatingFlag", b =>
+                {
+                    b.HasOne("ATA.Domain.Ratings.Rating", null)
+                        .WithMany()
+                        .HasForeignKey("RatingId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_rating_flags_rating_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_rating_flags_reviewed_by");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_rating_flags_user_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Safety.LostItemReport", b =>

@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ATA.Api.Modules.Passengers;
 
-public sealed record TripSummaryDto(Guid Id, string DestinationName, string PickupName, DateTime? ScheduledAt, DateTime? CompletedAt, string Status, decimal Fare, string CategoryName);
+public sealed record TripSummaryDto(Guid Id, string DestinationName, string PickupName, DateTime? ScheduledAt, DateTime? CompletedAt, string Status, decimal Fare, string CategoryName,
+    string? DriverName = null, ATA.Api.Modules.Ratings.MyRatingDto? MyRating = null, bool CanRate = false, DateTime? RateUntil = null);
 
 public sealed record SavedPlaceDto(Guid Id, SavedPlaceLabel Label, string Name, string Address, decimal Latitude, decimal Longitude);
 

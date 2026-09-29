@@ -1,10 +1,14 @@
 using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
+using ATA.Domain.Drivers;
 using ATA.Domain.Identity;
+using ATA.Domain.Incentives;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
 using ATA.Domain.Pricing;
+using ATA.Domain.Promotions;
+using ATA.Domain.Ratings;
 using ATA.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,7 +35,108 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedCancellationReasonsAsync(cancellationToken);
         await SeedCancellationRulesAsync(cancellationToken);
         await SeedReliabilityThresholdsAsync(cancellationToken);
+        await SeedRatingTagsAsync(cancellationToken);
+        await SeedDriverTierRulesAsync(cancellationToken);
+        await SeedPromotionsAsync(cancellationToken);
+        await SeedIncentivesAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>F15 rating tags (doc 10 "البيانات الأولية"), added by (target role, code) when missing.</summary>
+    private async Task SeedRatingTagsAsync(CancellationToken ct)
+    {
+        (RatingRole Target, string Code, string Ar, string En)[] tags =
+        [
+            (RatingRole.Driver, "driving", "القيادة", "Driving"),
+            (RatingRole.Driver, "cleanliness", "النظافة", "Cleanliness"),
+            (RatingRole.Driver, "behaviour", "التعامل", "Behaviour"),
+            (RatingRole.Driver, "navigation", "معرفة الطريق", "Navigation"),
+            (RatingRole.Driver, "vehicle_condition", "حالة المركبة", "Vehicle condition"),
+            (RatingRole.Passenger, "punctuality", "الالتزام بالوقت", "Punctuality"),
+            (RatingRole.Passenger, "behaviour", "التعامل", "Behaviour"),
+            (RatingRole.Passenger, "cleanliness", "النظافة", "Cleanliness"),
+        ];
+        var existing = (await db.RatingTags.Select(t => new { t.TargetRole, t.Code }).ToListAsync(ct)).Select(t => (t.TargetRole, t.Code)).ToHashSet();
+        var order = 0;
+        foreach (var t in tags)
+        {
+            order++;
+            if (!existing.Contains((t.Target, t.Code)))
+            {
+                db.RatingTags.Add(new RatingTag { Code = t.Code, TargetRole = t.Target, NameAr = t.Ar, NameEn = t.En, SortOrder = order, IsActive = true });
+            }
+        }
+    }
+
+    /// <summary>The four tiers of doc 10 §F15.7, added by tier when missing (admin edits are kept).</summary>
+    private async Task SeedDriverTierRulesAsync(CancellationToken ct)
+    {
+        (DriverTier Tier, int Trips, decimal Rating, decimal Acceptance, decimal Cancellation, decimal Discount, decimal Norm, string Ar, string En)[] rules =
+        [
+            (DriverTier.Bronze, 0, 0m, 0m, 1m, 0m, 0.25m, "المستوى الأساسي", "Base tier"),
+            (DriverTier.Silver, 60, 4.70m, 0.80m, 0.08m, 5m, 0.50m, "خصم 5% من العمولة وأولوية أعلى في الطلبات", "5% off the commission and higher matching priority"),
+            (DriverTier.Gold, 150, 4.80m, 0.85m, 0.05m, 10m, 0.75m, "خصم 10% من العمولة وأولوية عالية في الطلبات", "10% off the commission and high matching priority"),
+            (DriverTier.Platinum, 250, 4.90m, 0.90m, 0.03m, 15m, 1.00m, "خصم 15% من العمولة وأعلى أولوية في الطلبات", "15% off the commission and top matching priority"),
+        ];
+        var existing = (await db.DriverTierRules.Select(r => r.Tier).ToListAsync(ct)).ToHashSet();
+        var order = 0;
+        foreach (var r in rules)
+        {
+            order++;
+            if (!existing.Contains(r.Tier))
+            {
+                db.DriverTierRules.Add(new DriverTierRule
+                {
+                    Tier = r.Tier, MinCompletedTrips = r.Trips, MinRatingAvg = r.Rating, MinAcceptanceRate = r.Acceptance, MaxCancellationRate = r.Cancellation,
+                    CommissionDiscountPercent = r.Discount, MatchingNorm = r.Norm, BenefitsAr = r.Ar, BenefitsEn = r.En, SortOrder = order,
+                });
+            }
+        }
+    }
+
+    /// <summary>Sample codes <c>WELCOME</c> and <c>ATA10</c>, added by code when missing (a deactivated code is never re-created).</summary>
+    private async Task SeedPromotionsAsync(CancellationToken ct)
+    {
+        var existing = (await db.Promotions.Select(p => p.Code).ToListAsync(ct)).ToHashSet(StringComparer.Ordinal);
+        var from = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(2027, 12, 31, 20, 59, 59, DateTimeKind.Utc);
+        if (!existing.Contains("WELCOME"))
+        {
+            db.Promotions.Add(new Promotion
+            {
+                Code = "WELCOME", NameAr = "خصم الترحيب", NameEn = "Welcome discount", DescriptionAr = "20% على رحلتك الأولى حتى 15 ر.س",
+                DescriptionEn = "20% off your first trip, up to SAR 15", Type = PromotionType.Percent, Value = 20m, MaxDiscount = 15m, ValidFrom = from, ValidTo = to,
+                PerUserLimit = 1, FirstTripOnly = true, IsPublic = true, IsActive = true,
+            });
+        }
+
+        if (!existing.Contains("ATA10"))
+        {
+            db.Promotions.Add(new Promotion
+            {
+                Code = "ATA10", NameAr = "خصم 10 ريال", NameEn = "SAR 10 off", DescriptionAr = "10 ر.س على الرحلات من 30 ر.س", DescriptionEn = "SAR 10 off trips from SAR 30",
+                Type = PromotionType.Fixed, Value = 10m, MinFare = 30m, ValidFrom = from, ValidTo = to, PerUserLimit = 3, IsStackable = false, IsPublic = true, IsActive = true,
+            });
+        }
+    }
+
+    /// <summary>The sample weekly incentive (Thursday/Friday evenings, 10 trips → 75 SAR), seeded once while the table is empty.</summary>
+    private async Task SeedIncentivesAsync(CancellationToken ct)
+    {
+        if (await db.DriverIncentives.AnyAsync(ct) || !await db.Cities.AnyAsync(c => c.Id == SeedIds.CityRiyadh, ct))
+        {
+            return;
+        }
+
+        db.DriverIncentives.Add(new DriverIncentive
+        {
+            NameAr = "10 رحلات مساء الخميس والجمعة", NameEn = "10 trips on Thursday and Friday evenings",
+            DescriptionAr = "أكمل 10 رحلات بين 16:00 و23:59 يومي الخميس والجمعة واربح 75 ر.س", DescriptionEn = "Complete 10 trips between 16:00 and 23:59 on Thursday and Friday to earn SAR 75",
+            Type = IncentiveType.Weekly, CityId = SeedIds.CityRiyadh, TargetTrips = 10, RewardAmount = 75m, DaysOfWeek = "[4,5]",
+            DailyFrom = new TimeOnly(16, 0), DailyTo = new TimeOnly(23, 59),
+            StartsAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), EndsAt = new DateTime(2027, 12, 31, 21, 0, 0, DateTimeKind.Utc),
+            IsActive = true, NotifyOnPublish = false,
+        });
     }
 
     /// <summary>

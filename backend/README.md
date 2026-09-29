@@ -18,6 +18,11 @@ F12/F14 add `Modules/Safety` (trip sharing with a public tracking page, trusted 
 masked in-trip chat, anomaly detection jobs with the "are you OK?" cycle, safety reports, lost items, the admin safety centre) and
 `Modules/Cancellation` (reason catalogue, stage rules with free windows, fees and driver compensation through the F11 ledger, no-show,
 excuse reviews, rolling reliability profiles with a restriction ladder that feeds the matcher and blocks requests / going online, KPIs).
+F15 adds `Modules/Ratings` (two-way trip ratings with tags, a rolling weighted average, flags for ops), `Modules/Promotions` (promo codes with
+restrictions, the unified discount engine, reservation at request / application at completion / release on cancellation, discounts in the fare
+breakdown, receipt and ledger) and `Modules/Incentives` (weekly driver tiers with commission discounts and matcher weights, driver incentives /
+quests with progress, payouts to the driver wallet reduced by the F14 reliability multiplier). F16 (favourite drivers) is not implemented yet: the
+`IFavoriteDriverProvider` hook and the favourite slot of the discount engine stay empty.
 
 ## Layout
 
@@ -115,6 +120,12 @@ dotnet test
 | `Cancellation:NoShowWaitMinutes`, `Cancellation:ExcuseReviewSlaHours` | Wait at the pickup before a no-show (5 min, never below the free waiting time); excuse queue SLA (48 h) |
 | `Reliability:WindowDays`, `Reliability:PointsExpiryDays`, `Reliability:RecalcHourLocal`, `Reliability:JobsEnabled` | Rolling window (30 days), penalty point lifetime (30 days), nightly recalculation at 02:00 Riyadh, jobs switch (`false` in tests) |
 | `Retention:TripMessagesDays` | Chat messages older than this are purged by the share-expiry job (180) |
+| `Ratings:WindowHours`, `Ratings:WindowSize`, `Ratings:MinWeight` | Rating window after completion (72 h); weighted average over the last 500 visible ratings, the oldest weighing 0.5 |
+| `Ratings:LowRatingThreshold`, `Ratings:DriverMinAverage`, `Ratings:MinCountForAverageFlag` | `low_rating` flag at ≤ 2 stars; `low_average` flag for drivers under 4.30 with ≥ 50 ratings |
+| `Ratings:ReminderAfterMinutes`, `Ratings:AbusiveWords`, `Ratings:JobsEnabled`, `Ratings:LowAverageHourLocal` | `rating.reminder` 30 min after completion; words that hide a comment and raise `abusive_comment` (`[]`); jobs switch (`false` in tests); daily flag job at 04:00 Riyadh |
+| `Promotions:MinPayableFare` | Discounts never take the fare below this (0) |
+| `Tiers:PeriodDays`, `Tiers:RecalcDayOfWeek`, `Tiers:RecalcHourLocal` | Completed trips counted over 28 days; weekly recalculation on Sunday (0) at 03:00 Riyadh |
+| `Incentives:PayoutDelayHours`, `Incentives:JobsEnabled` | Achieved periods are paid 2 h after they end; runs the period / payout / tier jobs (`false` in tests) |
 
 ### Development OTP behaviour
 
@@ -153,6 +164,12 @@ dotnet test
 - Reliability thresholds: driver warning 4 pts / 10 %, matching_deprioritized 8 / 15 % (×0.70), incentives_reduced 12 / 20 % (×0.60, −50 %),
   temporarily_restricted 18 / 30 % (24 h), suspended 30 / 45 %; passenger warning 4 / 15 %, temporarily_restricted 12 / 35 % (24 h), suspended 25 / 50 %
   (rates need ≥ 10 accepted trips).
+- Rating tags (unique per rated role): driver `driving`, `cleanliness`, `behaviour`, `navigation`, `vehicle_condition`; passenger `punctuality`, `behaviour`, `cleanliness`.
+- Driver tier rules (added per tier when missing): bronze 0 trips / 0 / 0 / ≤ 1.00, 0 %, norm .25; silver 60 / 4.70 / 0.80 / ≤ 0.08, 5 %, .50;
+  gold 150 / 4.80 / 0.85 / ≤ 0.05, 10 %, .75; platinum 250 / 4.90 / 0.90 / ≤ 0.03, 15 %, 1.00.
+- Promo codes (added by code when missing, valid 2026-01-01 → 2027-12-31): `WELCOME` (20 %, max 15 SAR, first trip only, once per user, public) and
+  `ATA10` (10 SAR, min fare 30, 3 per user, not stackable, public).
+- Incentive (seeded once while the table is empty): "10 رحلات مساء الخميس والجمعة" — weekly, Riyadh, Thursday/Friday 16:00–23:59, 10 trips → 75 SAR.
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
 
@@ -184,6 +201,12 @@ dotnet test
 | Lost items | `POST /passenger/trips/{id}/lost-items` (`contactPhone` defaults to the rider's phone; `422 lost_item_window_closed`), `GET /passenger/lost-items`, `GET /driver/lost-items?status=` (no rider phone), `POST /driver/lost-items/{id}/respond { found, note? }` (`409` when already answered) |
 | Cancellation (rider & driver) | `GET /catalog/cancellation-reasons?actor=&stage=`, `POST /passenger/trips/{id}/cancel/preview`, `POST /passenger/trips/{id}/cancel` (`reasonCode` from the catalogue: `422 cancellation_reason_invalid`, note required → `422 { note: "required" }`, `expectedFee` → `409 cancellation_fee_changed { fee }`), `GET /passenger/reliability`, `POST /driver/trips/{id}/cancel/preview`, `POST /driver/trips/{id}/cancel` (`expectedPenaltyPoints`), `POST /driver/trips/{id}/no-show` (`422 no_show_too_early { secondsRemaining }`), `GET /driver/reliability` (+ `effects { matchingFactor, incentiveMultiplier }`). `Trip` adds `cancellation` (the driver sees `compensation`, not the fee). Restricted users: `POST /passenger/trips` / `PUT /driver/status` → `403 account_restricted { level, restrictedUntil }`; `GET /driver/status` returns `reason: "account_restricted"` + `restrictedUntil` |
 | Admin safety (`safety.manage`) | `GET /admin/safety/summary`, `GET /admin/safety/cases?status=&priority=&type=&assignedTo=me\|unassigned\|{userId}&from=&to=&search=`, `POST /admin/safety/cases`, `GET /admin/safety/cases/{id}`, `POST /admin/safety/cases/{id}/assign\|status\|notes\|resolve`, `GET /admin/safety/alerts?status=&type=&tripId=&from=&to=&search=`, `POST /admin/safety/alerts/{id}/dismiss`, `GET /admin/trips/{id}/messages` (audited `trip_messages.view`), `GET /admin/trips/{id}/shares`, `GET /admin/users/{userId}/trusted-contacts` (only while the user is party to an open case; audited `trusted_contacts.view`), `GET /admin/lost-items`, `PATCH /admin/lost-items/{id}` (`safety.manage` or `support.manage`). Audited: `safety_case.assign\|status\|note\|resolve\|create`, `safety_alert.dismiss`, `lost_item.update` |
+| Ratings (rider & driver) | `GET /catalog/rating-tags?target=driver\|passenger`, `POST /passenger/trips/{id}/rating` and `/driver/trips/{id}/rating` (`{ stars, tags, comment? }` → `201`; non-party `403`, not completed `409`, `422 rating_window_closed`, `409 rating_exists`, unknown tag `422 { tags: "invalid" }`), `GET /passenger\|driver/ratings/pending`, `GET /passenger\|driver/ratings/summary` (average, distribution, top tags, last 20 comments with the ISO week only). `Trip` adds `myRating`, `canRate`, `rateUntil`, `promotion`; the trip history lists add `driverName` (passenger) / `passengerName` (driver) first names, `myRating`, `canRate`, `rateUntil` |
+| Promotions (rider) | `GET /passenger/promotions?status=available\|used\|expired` (default `available`), `POST /passenger/promotions/validate` (`{ code, quoteId?, rideCategoryId?, paymentMethod?, bookingType? }` → `{ valid, promotion, discountAmount, totalBefore, totalAfter }` or `404 promo_not_found`, `422 promo_expired`, `422 promo_usage_limit_reached { scope: total\|budget\|user }`, `422 promo_not_eligible { reason }`); `POST /pricing/quote` accepts `promoCode` (per category `totalBeforeDiscount`, `breakdown.discount`, `breakdown.discounts[]`; top-level `promotion { code, valid, reason }`); `POST /passenger/trips` accepts `promoCode` (reserved with the trip) |
+| Driver tiers & incentives | `GET /driver/tier`, `GET /driver/incentives?status=active\|upcoming\|completed`, `GET /driver/incentives/{id}` (+ `zonesPolygons`), `POST /driver/incentives/{id}/opt-in` (`409 incentive_opt_in_closed`); items add `rewardMultiplier` and `effectiveRewardAmount` (reward × current F14 multiplier) |
+| Admin ratings (`ratings.manage`) | `GET /admin/ratings?raterRole=&stars=&flagged=&userId=&tag=&status=visible\|hidden\|flagged&search=&from=&to=`, `POST /admin/ratings/{id}/hide { reason }` / `unhide` (recompute the average), `GET /admin/rating-flags?status=&type=`, `POST /admin/rating-flags/{id}/review { action: dismiss\|warn\|suspension_review, note }` (`409` when already reviewed; `suspension_review` adds `driver.suspension_review` to the driver's history, never suspends). Audited `rating.hide\|unhide`, `rating_flag.review` |
+| Admin promotions (`promotions.manage`) | `GET /admin/promotions?status=active\|scheduled\|expired\|inactive&search=`, `POST /admin/promotions` (`409 conflict` for a taken code), `GET/PUT /admin/promotions/{id}` (`code`/`type` locked after the first reservation → `409`), `POST /admin/promotions/{id}/deactivate\|activate`, `GET /admin/promotions/{id}/redemptions?status=`, `GET /admin/promotions/{id}/stats`, `GET /admin/promotion-redemptions?promotionId=&status=&from=&to=`. Audited `promotion.create\|update\|activate\|deactivate` |
+| Admin tiers & incentives (`incentives.manage`) | `GET /admin/driver-tier-rules` (+ `driversCount`), `PUT /admin/driver-tier-rules/{id}`, `POST /admin/driver-tiers/recalculate` (`202 { evaluated, changed }`, runs now), `GET /admin/drivers/{id}/tier-history`, `POST /admin/drivers/{id}/tier { tier, reason }`, `GET /admin/drivers/{id}/incentives`, `GET/POST /admin/incentives?status=&cityId=`, `GET/PUT /admin/incentives/{id}`, `POST /admin/incentives/{id}/deactivate\|activate`, `GET /admin/incentives/{id}/progress?status=`, `POST /admin/incentive-progress/{id}/void { reason }` (`409` once paid). Audited `driver_tier_rule.update`, `driver.tier_set`, `incentive.create\|update\|activate\|deactivate`, `incentive_progress.void` |
 | Admin cancellation | `GET/POST /admin/cancellation-reasons`, `PUT/DELETE /admin/cancellation-reasons/{id}` (delete deactivates a used reason), `GET/POST /admin/cancellation-rules`, `PUT/DELETE /admin/cancellation-rules/{id}`, `POST /admin/cancellation-rules/simulate`, `GET /admin/reliability-thresholds?role=`, `PUT /admin/reliability-thresholds/{id}` (`cancellation.manage`); `GET /admin/cancellations?actor=&stage=&atFault=&feeStatus=&excuseStatus=&from=&to=&search=` (`trips.view`); `GET /admin/cancellations/excuses?status=` (+ `ageHours`, `slaBreached`, `pendingPenaltyPoints`), `POST /admin/cancellations/{eventId}/review { decision, note }` (`cancellation.review`); `GET /admin/reliability-profiles?role=&level=&search=`, `GET /admin/reliability-profiles/{userId}?role=`, `POST /admin/reliability-profiles/{userId}/adjust` (`reliability.manage`); `GET /admin/cancellations/stats?from=&to=&cityId=&zoneId=&rideCategoryId=` (`reports.view`); `POST /admin/trips/{id}/cancel { reason, atFault?, chargeFee? }` (`trips.cancel`). Audited: `cancellation_reason.*`, `cancellation_rule.*`, `reliability_threshold.update`, `cancellation.review`, `reliability.adjust`, `reliability.level_change` (system) |
 | Realtime | SignalR hub `/hubs/trips` (JWT via `?access_token=`): `TripUpdated`, `DriverLocation` (passenger), `OfferReceived`, `OfferExpired`, `TripUpdated` (driver), `LiveSnapshot` every 5 s + `TripUpdated` + `DemandChanged` + `PayoutRequested` (`admins` group), `PaymentUpdated`, `NotificationCreated` (user); F12: `TripMessage`, `TripMessagesRead` (trip parties), `SafetyCheck` (passenger), `SafetyCaseOpened`, `SafetyCaseUpdated`, `SafetyAlertRaised` (`admins`) |
 | System | `GET /health` (MySQL check), `GET /openapi/v1.json`, `GET /docs` (Development) |
@@ -191,7 +214,7 @@ dotnet test
 Roles: `passenger`, `driver`, `admin`, `operations` (JWT `roles` claim). F11/F13 admin endpoints also check the JWT `perm` claim
 (`payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust`, `notifications.view`,
 `notifications.manage`, `notifications.sms_broadcast`, `safety.manage`, and since F12/F14 `support.manage`, `trips.view`, `trips.cancel`, `cancellation.manage`,
-`cancellation.review`, `reliability.manage`, `reports.view`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
+`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
 and driver status changes create a notification row for the driver. Approving a driver requires every required
 document type to be `verified`.
 
@@ -228,7 +251,7 @@ document type to be `verified`.
 - **Rules** (`pricing_rules`, `pricing_time_multipliers`): `RulePricingService` (`IPricingService`) picks the active rule effective at
   the pickup time with the highest priority for the category and pickup zone, then the city-wide rule (`zone_id` null):
   `subtotal = max(base_fare + per_km × km + per_minute × min + waiting_per_minute × billable waiting min, min_fare)`,
-  `fare = subtotal × timeMult × demand + booking_fee`, `fare += fare × service_fee_percent / 100`, `fare −= discount` (0 until F15/F16),
+  `fare = subtotal × timeMult × demand + booking_fee`, `fare += fare × service_fee_percent / 100`, `fare −= discount` (the F15 discount engine, below),
   `total = round(fare, 0.5 SAR)`, `driverNet = subtotal × timeMult × demand × driver_share_percent / 100`. `timeMult` is the highest
   multiplier whose window (local time, `Pricing:UtcOffsetMinutes`) contains the pickup time; windows may span midnight.
   The rule's `free_waiting_minutes` drives the free-waiting timer at the pickup (`Trips:FreeWaitingMinutes` is the fallback).
@@ -283,7 +306,9 @@ Every posting is balanced: a wallet movement (`wallet_transactions` + 2 `ledger_
 | `refunds` | Refunds to passengers (`refund_card` journal or wallet `refund`) |
 | `adjustments` | Manual wallet adjustments by admins |
 | `cancellation_fees` | F14 cancellation fees (wallet `cancellation_fee` debit or `cancellation_fee_card` journal); driver compensation (`cancellation_compensation`) is paid out of it |
-| `discount_promotion`, `discount_favorite_driver`, `incentives`, `corporate_receivable:{id}` | Reserved for F15/F16/F19 |
+| `discount_promotion` | F15 promo discounts (`trip_discount` journal → `trip_revenue`, or `cash_collected` for cash trips; key `trip:{id}:discount:promotion`) |
+| `incentives` | F15 incentive rewards (wallet `incentive` credit to the driver, key `incentive:{progressId}`) |
+| `discount_favorite_driver`, `corporate_receivable:{id}` | Reserved for F16/F19 |
 
 Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `cancellation_fee_card`, `refund_card`, `payout_paid`,
 `corporate_invoice_payment`, `manual`. Wallet movement types add `cash_collection`, `cancellation_compensation`, `payout_reversal`.
@@ -376,6 +401,37 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
 - **Matching**: `ProfileDriverReliability` (the F9 `IDriverReliabilityProvider`) feeds `1 − cancellation_rate`, blocks restricted drivers and multiplies the score by
   `deprioritize_factor` (`matching_deprioritized` 0.70, `incentives_reduced` 0.60); drivers without a profile keep the F9 counters.
 - Tests drive the jobs with `RunSafetyMonitorAsync()`, `RunSafetyCheckTimeoutsAsync()`, `RunRestrictionExpiryAsync()` and `WithServiceAsync<SafetyMonitor, …>`.
+
+## Ratings, promotions, tiers and incentives (F15)
+
+- **Ratings** (`ratings`, `rating_tags`, `rating_flags`): one rating per (trip, rater role) within `Ratings:WindowHours` of `completed_at`; tags must belong to the
+  rated role. The ratee's `rating_avg` = `round(Σ w_i × stars_i / Σ w_i, 2)` over the last `WindowSize` visible ratings, newest first, `w_i = 1 − (i/N)(1 − MinWeight)`
+  (5.00 without ratings), `rating_count` = all visible ratings; both are updated in the rating's transaction and when a rating is hidden / unhidden. Flags:
+  `low_rating` (≤ threshold), `low_average` (one open per driver; also the daily `LowAverageFlagJob`), `abusive_comment` (the comment is hidden with
+  `comment_hidden`, the stars stay visible). `RatingReminderJob` sends `rating.reminder` once per trip (`trips.rating_reminded_at`).
+- **Discount engine** (`IDiscountEngine`): `base` = the F10 fare before discount and rounding (`FareCalculation.Base`); promo amount = percent (capped by
+  `max_discount`) / fixed (`min(value, base)`) / free booking fee; with a favourite discount (F16) both apply only when both are stackable, otherwise the larger
+  wins (a tie goes to the favourite and the promotion is released `not_stacked`); `discount = min(Σ, base − MinPayableFare)`, `total = round(base − discount, 0.5)`.
+  The driver share is always computed before discounts. No discounts with `pricingMode=offer` (`422 promo_not_eligible { reason: "pricing_mode" }`).
+- **Promo lifecycle** (`promotions`, `promotion_redemptions`): validation order not found/inactive → validity → total usage & budget → per user → eligibility
+  (`first_trip_only`, `new_users_only`, `city`, `category`, `zone` (resolved pickup zone), `payment_method`, `booking_type`, `min_fare`, `pricing_mode`). The request
+  reserves inside the trip-creation transaction (`UPDATE … usage_count = usage_count + 1 WHERE usage_count < total_usage_limit` + a `reserved` row; a card
+  authorization is voided if the code ran out meanwhile). Completion recomputes on the final fare: `applied` (+ `spent_amount`) or `released
+  (not_eligible_at_completion)`; the discount goes to `trips.discount_total`, `fare_breakdown.discounts[]`, the receipt `discount` line and a `trip_discount`
+  journal. Cancellation (`trip_cancelled`), `no_drivers` and `payment_failed` release the reservation (`usage_count − 1`). Quotes store the undiscounted price
+  (`fare_quotes.base_amount` keeps the base) and show the discounted total per category.
+- **Tiers** (`driver_tier_rules`, `driver_tier_history`): `DriverTierRecalcJob` (Sunday 03:00 Riyadh, or `POST /admin/driver-tiers/recalculate`) picks the highest
+  tier whose inclusive thresholds hold on completed trips (28 days), `drivers.rating_avg` and the F14 profile rates (acceptance 1 / cancellation 0 without a
+  profile), writes history and `driver.tier_changed`. Benefits: `effective share = share + (100 − share) × commission_discount_percent / 100` in the offer's
+  `driverNetEarnings` and at completion (`trips.tier_commission_discount_percent`, shown by `/driver/trips/{id}/earnings`); the matcher's `norm_tier` is the
+  rule's `matching_norm` (`TierRuleProvider`, cached and invalidated by the admin endpoint).
+- **Incentives** (`driver_incentives`, `driver_incentive_progress`, `driver_incentive_trips`): periods are Riyadh days (daily), Sunday–Saturday weeks (weekly) or
+  the whole campaign (zone quest / one time), clipped to `[starts_at, ends_at)`; a completed trip counts once per progress row when the driver's city, the day
+  of week and `daily_from..daily_to` window, the pickup (inside one of `zone_ids`), the category, `min_trip_fare`, `min_tier`, `min_rating`, the opt-in and
+  `max_participants` match. A fully refunded trip leaves unpaid progress. `IncentivePayoutJob` (hourly) pays `round(reward × IReliabilityService.IncentiveMultiplier,
+  2)` once `period_end + PayoutDelayHours` passed, or voids with `budget_exhausted`; `IncentivePeriodJob` (15 min) expires missed periods and opens the current
+  period for opted-in drivers of recurring incentives. An active incentive with `notify_on_publish` sends `incentive.new` once (`published_at`).
+- Tests drive the jobs with `WithServiceAsync<RatingService, …>`, `WithServiceAsync<IncentiveService, …>` and `POST /admin/driver-tiers/recalculate`.
 
 ## Migrations
 

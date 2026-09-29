@@ -33,7 +33,8 @@ public sealed class PassengerTripService(
     PaymentService paymentService,
     IOptions<PaymentsOptions> paymentOptions,
     Cancellation.CancellationEngine cancellations,
-    Cancellation.ReliabilityService reliability)
+    Cancellation.ReliabilityService reliability,
+    Promotions.PromotionService promotions)
 {
     private const int TripNumberRetries = 3;
 
@@ -55,7 +56,8 @@ public sealed class PassengerTripService(
             .Rule(nameof(request.OfferedPrice), request.PricingMode != PricingMode.Offer || request.OfferedPrice is > 0, "required and positive for pricingMode=offer")
             .Rule(nameof(request.OfferedPrice), request.OfferedPrice is null || decimal.Round(request.OfferedPrice.Value, 2) == request.OfferedPrice.Value, "at most 2 decimal places")
             .Rule(nameof(request.RiderNote), request.RiderNote is null || request.RiderNote.Length <= 500, "max_length:500")
-            .Rule(nameof(request.PaymentMethodId), request.PaymentMethodId is null || (request.PaymentMethod ?? PaymentMethodKind.Card) == PaymentMethodKind.Card, "only for paymentMethod=card");
+            .Rule(nameof(request.PaymentMethodId), request.PaymentMethodId is null || (request.PaymentMethod ?? PaymentMethodKind.Card) == PaymentMethodKind.Card, "only for paymentMethod=card")
+            .Rule(nameof(request.PromoCode), request.PromoCode is null || request.PromoCode.Length <= 40, "max_length:40");
         v.ThrowIfInvalid();
 
         var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == request.RideCategoryId && c.IsActive, ct);
@@ -99,6 +101,14 @@ public sealed class PassengerTripService(
             throw new DomainException(ErrorCodes.OfferOutOfRange, new { quote.OfferMin, quote.OfferMax, offeredPrice });
         }
 
+        // F15: a promo code is fully validated before anything is created (no discounts with "offer your price").
+        Promotions.PromotionReservationPlan? promo = null;
+        if (!string.IsNullOrWhiteSpace(request.PromoCode))
+        {
+            var promoContext = await promotions.ContextOfQuoteAsync(quote, request.PaymentMethod ?? passenger.DefaultPaymentMethod, request.BookingType ?? BookingType.Now, pricingMode, ct);
+            promo = await promotions.PrepareReservationAsync(request.PromoCode, passenger.Id, promoContext, ct);
+        }
+
         var trip = new Trip
         {
             TripNumber = string.Empty,
@@ -120,7 +130,7 @@ public sealed class PassengerTripService(
             OfferedPrice = offered,
             EstimatedDistanceM = quote.DistanceM,
             EstimatedDurationS = quote.DurationS,
-            EstimatedFare = offered ?? quote.Total,
+            EstimatedFare = offered ?? promo?.TotalAfter ?? quote.Total,
             RiderNote = string.IsNullOrWhiteSpace(request.RiderNote) ? null : request.RiderNote.Trim(),
             RequestedAt = now,
             PinCodeHash = string.Empty,
@@ -146,7 +156,8 @@ public sealed class PassengerTripService(
         db.Trips.Add(trip);
         quote.UsedTripId = trip.Id;
         events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
-            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id });
+            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id,
+                promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount });
         if (payment is { Status: PaymentStatus.Initiated })
         {
             // 3-D Secure: the trip stays `requested` (out of matching) until the payment is authorized or the action expires.
@@ -164,22 +175,54 @@ public sealed class PassengerTripService(
             events.Add(trip.Id, TripEventTypes.SearchStarted, TripActor.System);
         }
 
+        if (promo is null)
+        {
+            await SaveNewTripAsync(trip, now, ct);
+        }
+        else
+        {
+            try
+            {
+                // The reservation (atomic usage_count increment + redemption row) commits with the trip or not at all.
+                await db.InTransactionAsync(async () =>
+                {
+                    await promotions.ReserveAsync(promo, trip.Id, passenger.Id, ct);
+                    await SaveNewTripAsync(trip, now, ct);
+                }, ct);
+            }
+            catch (DomainException) when (payment is not null)
+            {
+                // The code was used up concurrently: drop the pending trip and release the card authorization.
+                foreach (var entry in db.ChangeTracker.Entries().Where(e => e.State == EntityState.Added && e.Entity is not Payment).ToList())
+                {
+                    entry.State = EntityState.Detached;
+                }
+
+                quote.UsedTripId = null;
+                await cardPayments.ReleaseAsync(trip.Id, ct);
+                throw;
+            }
+        }
+
+        await paymentService.PublishPendingAsync(ct);
+        return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
+    }
+
+    private async Task SaveNewTripAsync(Trip trip, DateTime now, CancellationToken ct)
+    {
         for (var attempt = 0; ; attempt++)
         {
             trip.TripNumber = await numbers.NextAsync(now, attempt, ct);
             try
             {
                 await db.SaveChangesAsync(ct);
-                break;
+                return;
             }
             catch (DbUpdateException) when (attempt < TripNumberRetries)
             {
                 // Another request took the same sequence number: retry with the next one.
             }
         }
-
-        await paymentService.PublishPendingAsync(ct);
-        return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
     }
 
     public async Task<TripDto?> GetActiveAsync(Language lang, CancellationToken ct)
@@ -221,10 +264,20 @@ public sealed class PassengerTripService(
                     select new { Trip = t, Category = c };
         var total = await query.CountAsync(ct);
         var rows = await query.OrderByDescending(x => x.Trip.RequestedAt).Skip(paging.Skip).Take(paging.PageSize).ToListAsync(ct);
-        var items = rows.Select(x => new TripSummaryDto(
-            x.Trip.Id, x.Trip.DropoffName, x.Trip.PickupName, x.Trip.ScheduledAt, x.Trip.CompletedAt,
-            JsonNamingPolicy.SnakeCaseLower.ConvertName(x.Trip.Status.ToString()), x.Trip.FinalFare ?? x.Trip.EstimatedFare,
-            lang.Pick(x.Category.NameAr, x.Category.NameEn))).ToList();
+        var ratings = await reads.RatingStatesAsync(rows.Select(x => x.Trip).ToList(), TripViewer.Passenger, ct);
+        var driverIds = rows.Where(x => x.Trip.DriverId != null).Select(x => x.Trip.DriverId!.Value).Distinct().ToList();
+        var driverNames = driverIds.Count == 0 ? [] : await (from d in db.Drivers.AsNoTracking() join u in db.Users.AsNoTracking() on d.UserId equals u.Id
+                                                             where driverIds.Contains(d.Id) select new { d.Id, u.FullName }).ToDictionaryAsync(x => x.Id, x => x.FullName, ct);
+        var items = rows.Select(x =>
+        {
+            var rating = ratings[x.Trip.Id];
+            return new TripSummaryDto(
+                x.Trip.Id, x.Trip.DropoffName, x.Trip.PickupName, x.Trip.ScheduledAt, x.Trip.CompletedAt,
+                JsonNamingPolicy.SnakeCaseLower.ConvertName(x.Trip.Status.ToString()), x.Trip.FinalFare ?? x.Trip.EstimatedFare,
+                lang.Pick(x.Category.NameAr, x.Category.NameEn),
+                x.Trip.DriverId is { } driverId && x.Trip.HasDriver ? Ratings.RatingService.FirstName(driverNames.GetValueOrDefault(driverId)) : null,
+                rating.MyRating, rating.CanRate, rating.RateUntil);
+        }).ToList();
         return paging.Result(items, total);
     }
 

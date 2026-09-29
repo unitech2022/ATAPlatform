@@ -61,6 +61,13 @@ public static class ErrorCatalog
         [ErrorCodes.CancellationFeeChanged] = new(StatusCodes.Status409Conflict, "تغيّرت رسوم الإلغاء، راجعها وأعد المحاولة", "The cancellation fee changed, review it and try again"),
         [ErrorCodes.NoShowTooEarly] = new(StatusCodes.Status422UnprocessableEntity, "لم تنتهِ مدة الانتظار المطلوبة بعد", "The required waiting time has not elapsed yet"),
         [ErrorCodes.AccountRestricted] = new(StatusCodes.Status403Forbidden, "حسابك مقيّد مؤقتاً بسبب تكرار الإلغاء", "Your account is temporarily restricted because of repeated cancellations"),
+        [ErrorCodes.RatingWindowClosed] = new(StatusCodes.Status422UnprocessableEntity, "انتهت مدة التقييم", "The rating window has closed"),
+        [ErrorCodes.RatingExists] = new(StatusCodes.Status409Conflict, "تم تقييم هذه الرحلة مسبقاً", "This trip has already been rated"),
+        [ErrorCodes.PromoNotFound] = new(StatusCodes.Status404NotFound, "كود الخصم غير صحيح", "The promo code is not valid"),
+        [ErrorCodes.PromoExpired] = new(StatusCodes.Status422UnprocessableEntity, "انتهت صلاحية كود الخصم", "The promo code has expired"),
+        [ErrorCodes.PromoNotEligible] = new(StatusCodes.Status422UnprocessableEntity, "كود الخصم لا ينطبق على هذه الرحلة", "The promo code does not apply to this trip"),
+        [ErrorCodes.PromoUsageLimitReached] = new(StatusCodes.Status422UnprocessableEntity, "تم استنفاد كود الخصم", "The promo code has been used up"),
+        [ErrorCodes.IncentiveOptInClosed] = new(StatusCodes.Status409Conflict, "الاشتراك في هذا الحافز غير متاح", "Joining this incentive is not available"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 
