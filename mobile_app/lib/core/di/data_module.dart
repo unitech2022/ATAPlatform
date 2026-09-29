@@ -17,6 +17,9 @@ import 'package:ata_app/features/driver_dashboard/domain/repositories/driver_das
 import 'package:ata_app/features/driver_onboarding/data/datasources/driver_onboarding_remote_data_source.dart';
 import 'package:ata_app/features/driver_onboarding/data/repositories/driver_onboarding_repository_impl.dart';
 import 'package:ata_app/features/driver_onboarding/domain/repositories/driver_onboarding_repository.dart';
+import 'package:ata_app/features/driver_rewards/data/datasources/driver_rewards_remote_data_source.dart';
+import 'package:ata_app/features/driver_rewards/data/repositories/driver_rewards_repository_impl.dart';
+import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewards_repository.dart';
 import 'package:ata_app/features/driver_wallet/data/datasources/driver_wallet_remote_data_source.dart';
 import 'package:ata_app/features/driver_wallet/data/repositories/driver_wallet_repository_impl.dart';
 import 'package:ata_app/features/driver_wallet/domain/repositories/driver_wallet_repository.dart';
@@ -34,6 +37,12 @@ import 'package:ata_app/features/payments/domain/repositories/payments_repositor
 import 'package:ata_app/features/pricing/data/datasources/pricing_remote_data_source.dart';
 import 'package:ata_app/features/pricing/data/repositories/pricing_repository_impl.dart';
 import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.dart';
+import 'package:ata_app/features/promotions/data/datasources/promotions_remote_data_source.dart';
+import 'package:ata_app/features/promotions/data/repositories/promotions_repository_impl.dart';
+import 'package:ata_app/features/promotions/domain/repositories/promotions_repository.dart';
+import 'package:ata_app/features/rating/data/datasources/rating_remote_data_source.dart';
+import 'package:ata_app/features/rating/data/repositories/rating_repository_impl.dart';
+import 'package:ata_app/features/rating/domain/repositories/rating_repository.dart';
 import 'package:ata_app/features/rides/data/datasources/rides_remote_data_source.dart';
 import 'package:ata_app/features/rides/data/repositories/rides_repository_impl.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
@@ -149,6 +158,15 @@ void registerData({
         remote: TripChatRemoteDataSource(getIt()),
         realtime: getIt(),
       ),
+    )
+    ..registerLazySingleton<RatingRepository>(
+      () => RatingRepositoryImpl(RatingRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<PromotionsRepository>(
+      () => PromotionsRepositoryImpl(PromotionsRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<DriverRewardsRepository>(
+      () => DriverRewardsRepositoryImpl(DriverRewardsRemoteDataSource(getIt())),
     )
     ..registerLazySingleton<LocationRepository>(
       () => simulateLocation

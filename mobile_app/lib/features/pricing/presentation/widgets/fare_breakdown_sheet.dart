@@ -81,13 +81,25 @@ class FareBreakdownSheet extends StatelessWidget {
             ),
           _Row(l10n.fareBookingFee, TripText.price(l10n, b.bookingFee)),
           _Row(l10n.fareServiceFee, TripText.price(l10n, b.serviceFee)),
-          if (b.hasDiscount)
+          if (b.hasDiscount && b.discounts.isEmpty)
             _Row(
               l10n.fareDiscount,
               '- ${TripText.price(l10n, b.discount)}',
               color: AtaColors.brand,
             ),
+          for (final FareDiscount d in b.discounts)
+            _Row(
+              discountLabel(l10n, d),
+              '- ${TripText.price(l10n, d.amount)}',
+              color: AtaColors.brand,
+            ),
           const Divider(color: AtaColors.line, height: AtaSpacing.lg),
+          if (b.hasDiscount)
+            _Row(
+              l10n.fareTotalBeforeDiscount,
+              TripText.price(l10n, category.totalBeforeDiscount),
+              muted: true,
+            ),
           _Row(
             l10n.fareTotal,
             TripText.price(l10n, category.total),
@@ -104,6 +116,17 @@ class FareBreakdownSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "خصم ATA10 · كود خصم": API label (or the source name) and its source.
+String discountLabel(AppLocalizations l10n, FareDiscount d) {
+  final String source = switch (d.source) {
+    DiscountSource.promotion => l10n.discountSourcePromotion,
+    DiscountSource.favoriteDriver => l10n.discountSourceFavoriteDriver,
+    DiscountSource.other => l10n.fareDiscount,
+  };
+  if (d.label.isNotEmpty) return '${d.label} · $source';
+  return d.reference.isEmpty ? source : '$source (${d.reference})';
 }
 
 class _Row extends StatelessWidget {

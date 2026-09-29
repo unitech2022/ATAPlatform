@@ -7,11 +7,15 @@ import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
+import 'package:ata_app/features/trip/presentation/widgets/trip_rate_button.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-/// Completed-trip summary: fare, distance, duration, payment, rating CTA.
+/// Completed-trip summary: fare, promo discount, distance, duration,
+/// payment and the rating button (F15).
 class TripReceiptView extends StatelessWidget {
   const TripReceiptView({
     super.key,
@@ -29,6 +33,7 @@ class TripReceiptView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
+    final TripPromotion? promotion = trip.promotion;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -66,6 +71,13 @@ class TripReceiptView extends StatelessWidget {
                 value: TripText.price(l10n, trip.fare),
                 strong: true,
               ),
+              if (promotion != null && !promotion.isReleased)
+                _ReceiptRow(
+                  label: l10n.receiptPromo(promotion.code),
+                  value: promotion.discountAmount == null
+                      ? l10n.promoReserved
+                      : '- ${TripText.price(l10n, promotion.discountAmount!)}',
+                ),
               _ReceiptRow(
                 label: l10n.receiptDistance,
                 value: TripText.distance(l10n, trip.distanceMeters),
@@ -109,11 +121,7 @@ class TripReceiptView extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AtaSpacing.lg),
-        AtaButton(
-          label: '${l10n.rateTrip} · ${l10n.comingSoon}',
-          variant: AtaButtonVariant.brand,
-          onPressed: null,
-        ),
+        TripRateButton(trip: trip, rater: TripActor.passenger),
         const SizedBox(height: AtaSpacing.sm),
         AtaButton(label: l10n.done, onPressed: onDone),
       ],

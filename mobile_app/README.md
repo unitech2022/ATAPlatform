@@ -11,8 +11,9 @@ receipts and the driver wallet (statement, cash debt, payouts); F13 adds
 OneSignal push with `ata://` deep links. F12 adds safety (trip sharing,
 trusted contacts, SOS, "are you OK?" checks, in-trip masked chat, lost items,
 safety reports) and F14 the cancellation engine (reasons from the API, fee
-preview, no-show) and reliability (rates, points, restrictions). Google Maps
-arrives with the Maps integration (the map is still the painted canvas).
+preview, no-show) and reliability (rates, points, restrictions). F15 adds
+trip ratings, promo codes, the driver tier and driver incentives (quests).
+Google Maps arrives with the Maps integration (the map is still the painted canvas).
 
 ## Run
 
@@ -251,6 +252,68 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
   `OnlineStatusCubit` and a dated message in `TripRequestCubit`; the
   deprioritized / reduced-incentives levels are explained on the card.
 
+### Ratings, promo codes, tier and incentives (F15)
+
+`docs/10` §F15 (F16 favourite drivers is not part of this step).
+
+- `rating` feature. `RatingCubit` drives the form: 1–5 stars (key
+  `star-<n>`), tags from `GET /catalog/rating-tags?target=driver|passenger`
+  (the seeded codes are shown with local labels if the catalog fails), the
+  tag header follows the stars (≤ 3 "ما الذي لم يعجبك؟", ≥ 4 "ما الذي
+  أعجبك؟", crossing the boundary clears the chosen tags), a comment of at
+  most 500 characters and one submission (`POST /passenger|driver/trips/{id}/
+  rating`). `SubmitRating` validates stars / comment locally; `409
+  rating_exists` finishes the form, `422 rating_window_closed` closes it.
+  `RatingSheet.show` (bottom sheet, usable on the pinned `/trip` and
+  `/driver/trip` pages) is opened by `TripRateButton` on the rider receipt
+  view ("قيّم الرحلة", replaces the old "قريباً" button) and the driver trip
+  summary ("قيّم الراكب"), by the "قيّم" pill of completed trips in the rides
+  list inside the 72 h window (`canRate` / `rateUntil` / `myRating`, falling
+  back to `completedAt` + 72 h), by the pending prompt and by `/rate/:tripId`
+  (rider) · `/driver/rate/:tripId` (driver) for `ata://rate/{tripId}`.
+- `PendingRatingCubit` (app-wide, bound by `RatingPromptBinder` in
+  `bootstrapApp`): loads `GET /passenger|driver/ratings/pending` on sign-in /
+  app start and again when the rider's or driver's trip completes, and
+  exposes one prompt at a time. `PendingRatingCard` (top of the home request
+  sheet, top of the driver overview) shows it with "قيّم الآن" / dismiss;
+  a dismissed prompt is not shown again this session. Ratings sent from any
+  screen are remembered so the rate buttons turn into "تم تقييم الرحلة".
+- `/driver/ratings` (`RatingSummaryCubit`): average, distribution, top tags
+  (positive / negative) and anonymous recent comments (week only).
+- `promotions` feature. Home sheet row "كود خصم" → `PromoCodeSheet`:
+  `PromoCodeCubit` normalizes the code (uppercase, 4–20 letters / digits,
+  otherwise `promo_not_found` locally) and validates it with `POST
+  /passenger/promotions/validate {code, quoteId, rideCategoryId,
+  paymentMethod, bookingType}`. The applied code goes to `HomeCubit`
+  (`HomeSync`), which re-quotes with `promoCode`; category tiles show the
+  struck-through price before the discount, `FareBreakdownSheet` lists
+  `breakdown.discounts[]` (label + source) and the total before the
+  discount, and `POST /passenger/trips` carries `promoCode`. A quote with
+  `promotion.valid = false` or a `promo_*` error on the request removes the
+  code with the localized reason (`promo_not_found`, `promo_expired`,
+  `promo_usage_limit_reached` (+ `scope: user`), `promo_not_eligible` with
+  every `details.reason`). Offering a price disables the promo row (the code
+  is kept but never sent; `TripRequestCubit` drops it for `pricingMode:
+  offer`). The receipt view shows the trip's `promotion`.
+- `/promotions` ("العروض", `ata://promotions`, wallet page + header menu):
+  `PromotionsCubit` with available / used / expired tabs, copy the code or
+  "استخدم" (opens `/home?promo=CODE`; the code is validated once the first
+  quote arrives).
+- `driver_rewards` feature. `DriverTierCubit` + `TierCard` on the overview
+  (badge, progress to the next tier, criteria met, commission discount) and
+  `/driver/tier` (`ata://driver/tier`: each criterion vs. the next tier,
+  next recalculation). `IncentivesCubit` (`GET /driver/incentives?status=`
+  active / upcoming / completed) + `/driver/incentives`, the "أقرب حافز" card
+  on the overview; `IncentiveDetailCubit` + `/driver/incentives/:id`
+  (window, zones, categories, opt-in with `409 incentive_opt_in_closed`).
+  Rewards show the reliability `effects.incentiveMultiplier` (`GET
+  /driver/reliability`): below 1 the reduced amount is shown with a notice.
+  The earnings statement lists incentives in the totals and per day.
+- Deep links / events: `rating.reminder` → `ata://rate/{tripId}`,
+  `promo.new` → `ata://promotions`, `incentive.new` / `incentive.achieved` →
+  `ata://driver/incentives/{id}`, `driver.tier_changed` → `ata://driver/tier`
+  (also derived for inbox rows without `data.deepLink`).
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -283,7 +346,8 @@ lib/
 
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
-`pricing`, `payments`, `driver_wallet`, `trip_chat`.
+`pricing`, `payments`, `driver_wallet`, `trip_chat`, `rating`, `promotions`,
+`driver_rewards`.
 
 ### Rules
 
@@ -299,7 +363,9 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
   repositories, never through widget state.
 - Dependency injection: `core/di/injector.dart` registers infrastructure,
   `data_module.dart` registers repositories, `use_case_module.dart` registers
-  use cases. Tests register fake repositories and reuse the real use cases.
+  use cases (with `payments_module.dart`, `safety_module.dart` and
+  `rewards_module.dart` for F11/F13, F12/F14 and F15). Tests register fake
+  repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
   splash, signed-out → `/auth/*`, new rider → terms, driver not approved →
   `/driver/pending`, approved driver → `/driver`, rider → `/home`. The trip
@@ -367,6 +433,14 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `CancelFlowCubit`        | trip               | reasons → fee / points preview → confirm          |
 | `NoShowCubit`            | trip               | no-show countdown from `arrivedAt`, confirm       |
 | `ReliabilityCubit`       | trip               | reliability summary (rider / driver)              |
+| `RatingCubit`            | rating             | stars, tags by stars, comment, single submit      |
+| `PendingRatingCubit`     | rating (app-wide)  | unrated recent trips, one prompt, dismissed / rated |
+| `RatingSummaryCubit`     | rating             | driver's own rating summary                       |
+| `PromoCodeCubit`         | promotions         | promo input, validate against the quote, apply / remove, errors |
+| `PromotionsCubit`        | promotions         | available / used / expired promotions             |
+| `DriverTierCubit`        | driver_rewards     | tier, next-tier criteria, benefits                |
+| `IncentivesCubit`        | driver_rewards     | quests per tab, reliability multiplier, nearest quest |
+| `IncentiveDetailCubit`   | driver_rewards     | one quest, opt-in                                 |
 
 ## API
 
@@ -374,7 +448,8 @@ Typed clients for sections 1–7 of `docs/05-api-contract.md`, the F8
 endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
 endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
 driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` and
-`docs/09-feature-f12-f14-safety-cancellation.md` live in each feature's
+`docs/09-feature-f12-f14-safety-cancellation.md` and the F15 endpoints of
+`docs/10-feature-f15-f16-ratings-promotions-favorites.md` live in each feature's
 `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope

@@ -22,7 +22,8 @@ class TripRequestCubit extends Cubit<TripRequestState> {
   final CancelTrip _cancelTrip;
 
   /// Requests the trip. An [TripRequest.offeredPrice] switches the pricing
-  /// mode to `offer`; otherwise the category price is `fixed`. Without a
+  /// mode to `offer` (and drops any promo code, F15); otherwise the category
+  /// price is `fixed`. Without a
   /// [TripRequest.quoteId] (F10) the legacy estimate runs first.
   Future<void> request(TripRequest draft) async {
     if (state.isBusy || state.isSearching) return;
@@ -33,10 +34,10 @@ class TripRequestCubit extends Cubit<TripRequestState> {
         clearTrip: true,
       ),
     );
+    final bool offer = draft.offeredPrice != null;
     final TripRequest request = draft.copyWith(
-      pricingMode: draft.offeredPrice == null
-          ? PricingMode.fixed
-          : PricingMode.offer,
+      pricingMode: offer ? PricingMode.offer : PricingMode.fixed,
+      clearPromoCode: offer,
     );
     TripEstimate? estimate;
     if (request.quoteId == null) {

@@ -4,6 +4,7 @@ import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/notifications/presentation/cubit/deep_link_cubit.dart';
 import 'package:ata_app/features/notifications/presentation/cubit/deep_link_state.dart';
+import 'package:ata_app/features/rating/presentation/cubit/pending_rating_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_cubits.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class AtaApp extends StatelessWidget {
     required this.tripCubits,
     required this.safetyCubits,
     required this.deepLinkCubit,
+    required this.pendingRatingCubit,
     required this.router,
   });
 
@@ -29,6 +31,9 @@ class AtaApp extends StatelessWidget {
   final TripCubits tripCubits;
   final SafetyCubits safetyCubits;
   final DeepLinkCubit deepLinkCubit;
+
+  /// App-wide pending-rating prompt (F15).
+  final PendingRatingCubit pendingRatingCubit;
   final GoRouter router;
 
   @override
@@ -38,6 +43,7 @@ class AtaApp extends StatelessWidget {
         BlocProvider<SessionCubit>.value(value: sessionCubit),
         BlocProvider<LocaleCubit>.value(value: localeCubit),
         BlocProvider<DeepLinkCubit>.value(value: deepLinkCubit),
+        BlocProvider<PendingRatingCubit>.value(value: pendingRatingCubit),
       ],
       child: tripCubits.provide(
         child: safetyCubits.provide(

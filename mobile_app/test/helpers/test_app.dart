@@ -8,9 +8,12 @@ import 'package:ata_app/features/account/domain/repositories/account_repository.
 import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewards_repository.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:ata_app/features/passenger_home/domain/repositories/passenger_repository.dart';
 import 'package:ata_app/features/pricing/domain/repositories/pricing_repository.dart';
+import 'package:ata_app/features/promotions/domain/repositories/promotions_repository.dart';
+import 'package:ata_app/features/rating/domain/repositories/rating_repository.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
 import 'package:ata_app/features/safety/domain/repositories/safety_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/cancellation_repository.dart';
@@ -24,6 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes.dart';
 import 'pricing_fakes.dart';
+import 'rewards_fakes.dart';
 import 'safety_fakes.dart';
 import 'trip_fakes.dart';
 
@@ -49,7 +53,10 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     ..registerSingleton<LocationRepository>(FakeLocationRepository())
     ..registerSingleton<SafetyRepository>(FakeSafetyRepository())
     ..registerSingleton<TripChatRepository>(FakeTripChatRepository())
-    ..registerSingleton<CancellationRepository>(FakeCancellationRepository());
+    ..registerSingleton<CancellationRepository>(FakeCancellationRepository())
+    ..registerSingleton<RatingRepository>(FakeRatingRepository())
+    ..registerSingleton<PromotionsRepository>(FakePromotionsRepository())
+    ..registerSingleton<DriverRewardsRepository>(FakeDriverRewardsRepository());
   registerUseCases();
 }
 

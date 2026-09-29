@@ -2,9 +2,12 @@ import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
+import 'package:ata_app/features/pricing/domain/entities/fare_quote.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_state.dart';
+import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
+import 'package:ata_app/features/promotions/presentation/cubit/promo_code_state.dart';
 import 'package:ata_app/features/trip/presentation/cubit/active_trip_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
@@ -17,7 +20,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// * a usable quote in [QuoteCubit] → applied to [HomeCubit] (prices, offer
 ///   bounds, `quoteId`);
 /// * `offer_out_of_range` → offer clamped; `quote_expired` → quote refreshed;
-/// * a created trip → handed to the app-wide [ActiveTripCubit].
+/// * a created trip → handed to the app-wide [ActiveTripCubit];
+/// * promo code (F15): applied code → [HomeCubit] (re-quote with
+///   `promoCode`); a quote or request refusing it → [PromoCodeCubit] error;
+///   a pre-filled code is validated once the first quote arrives.
 class HomeSync extends StatelessWidget {
   const HomeSync({super.key, required this.child});
 
@@ -29,7 +35,9 @@ class HomeSync extends StatelessWidget {
       listeners: <BlocListener<dynamic, dynamic>>[
         BlocListener<HomeCubit, HomeState>(
           listenWhen: (HomeState p, HomeState c) =>
-              p.stops != c.stops || p.rideTime != c.rideTime,
+              p.stops != c.stops ||
+              p.rideTime != c.rideTime ||
+              p.effectivePromoCode != c.effectivePromoCode,
           listener: (BuildContext context, HomeState state) => context
               .read<QuoteCubit>()
               .update(buildQuoteRequest(state, context.l10n)),
@@ -40,10 +48,34 @@ class HomeSync extends StatelessWidget {
           listener: (BuildContext context, QuoteState state) =>
               context.read<HomeCubit>().applyQuote(state.usableQuote),
         ),
+        BlocListener<PromoCodeCubit, PromoCodeState>(
+          listenWhen: (PromoCodeState p, PromoCodeState c) =>
+              p.appliedCode != c.appliedCode,
+          listener: (BuildContext context, PromoCodeState state) =>
+              context.read<HomeCubit>().applyPromoCode(state.appliedCode),
+        ),
+        BlocListener<QuoteCubit, QuoteState>(
+          listenWhen: (QuoteState p, QuoteState c) =>
+              p.quote?.promotion != c.quote?.promotion,
+          listener: (BuildContext context, QuoteState state) {
+            final QuotePromotion? promotion = state.quote?.promotion;
+            if (promotion != null && !promotion.valid) {
+              context.read<PromoCodeCubit>().rejectedByQuote(promotion.reason);
+            }
+          },
+        ),
+        BlocListener<QuoteCubit, QuoteState>(
+          listenWhen: (QuoteState p, QuoteState c) =>
+              p.usableQuote == null && c.usableQuote != null,
+          listener: _validatePrefilledPromo,
+        ),
         BlocListener<TripRequestCubit, TripRequestState>(
           listenWhen: (TripRequestState p, TripRequestState c) =>
               p.failure != c.failure && c.failure != null,
           listener: (BuildContext context, TripRequestState state) {
+            if (state.isPromoRejected) {
+              context.read<PromoCodeCubit>().rejected(state.failure!);
+            }
             final OfferBounds? bounds = state.offerBounds;
             if (bounds != null) {
               context.read<HomeCubit>().clampOfferedPrice(bounds);
@@ -64,5 +96,16 @@ class HomeSync extends StatelessWidget {
       ],
       child: child,
     );
+  }
+
+  void _validatePrefilledPromo(BuildContext context, QuoteState _) {
+    final PromoCodeCubit promo = context.read<PromoCodeCubit>();
+    final HomeState home = context.read<HomeCubit>().state;
+    if (promo.state.status == PromoCodeStatus.empty &&
+        promo.state.applied == null &&
+        promo.state.canValidate &&
+        home.canUsePromo) {
+      promo.validate(buildPromoContext(home));
+    }
   }
 }

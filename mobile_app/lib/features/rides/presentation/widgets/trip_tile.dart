@@ -8,6 +8,7 @@ import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/bordered_row.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
+import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/features/rides/domain/entities/trip_summary.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -22,12 +23,15 @@ import 'package:flutter/material.dart';
 
 /// One trip in a list: car box, place, status, date and fare.
 class TripTile extends StatelessWidget {
-  const TripTile({super.key, required this.trip, this.onTap});
+  const TripTile({super.key, required this.trip, this.onTap, this.onRate});
 
   final TripSummary trip;
 
   /// Opens the receipt (completed trips).
   final VoidCallback? onTap;
+
+  /// Opens the rating sheet (completed, unrated, inside the 72 h window).
+  final VoidCallback? onRate;
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +65,22 @@ class TripTile extends StatelessWidget {
             style: AtaText.bodyStrong,
           ),
           const SizedBox(height: AtaSpacing.xxs),
-          const AtaIcon(
-            AtaIcons.chevron,
-            size: AtaSizes.iconSmall,
-            color: AtaColors.muted,
-          ),
+          if (onRate != null)
+            PillButton(
+              key: ValueKey<String>('rate-${trip.id}'),
+              label: l10n.rateShort,
+              icon: AtaIcons.star,
+              background: AtaColors.warningSoft,
+              foreground: AtaColors.warning,
+              elevated: false,
+              onTap: onRate,
+            )
+          else
+            const AtaIcon(
+              AtaIcons.chevron,
+              size: AtaSizes.iconSmall,
+              color: AtaColors.muted,
+            ),
         ],
       ),
     );

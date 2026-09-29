@@ -14,6 +14,7 @@ class FareBreakdownModel extends FareBreakdown {
     super.bookingFee,
     super.serviceFee,
     super.discount,
+    super.discounts,
   });
 
   factory FareBreakdownModel.fromJson(Map<String, dynamic> json) =>
@@ -28,6 +29,18 @@ class FareBreakdownModel extends FareBreakdown {
         bookingFee: JsonReaders.number(json, 'bookingFee'),
         serviceFee: JsonReaders.number(json, 'serviceFee'),
         discount: JsonReaders.number(json, 'discount'),
+        discounts: JsonReaders.objects(json, 'discounts')
+            .map(
+              (Map<String, dynamic> d) => FareDiscount(
+                source: DiscountSource.parse(
+                  JsonReaders.optionalString(d, 'source'),
+                ),
+                reference: JsonReaders.string(d, 'reference'),
+                label: JsonReaders.string(d, 'label'),
+                amount: JsonReaders.number(d, 'amount'),
+              ),
+            )
+            .toList(growable: false),
       );
 
   static Map<String, dynamic> toJsonOf(FareBreakdown b) => <String, dynamic>{
@@ -40,6 +53,16 @@ class FareBreakdownModel extends FareBreakdown {
     'bookingFee': b.bookingFee,
     'serviceFee': b.serviceFee,
     'discount': b.discount,
+    'discounts': b.discounts
+        .map(
+          (FareDiscount d) => <String, dynamic>{
+            'source': d.source.apiValue,
+            'reference': d.reference,
+            'label': d.label,
+            'amount': d.amount,
+          },
+        )
+        .toList(growable: false),
   };
 }
 

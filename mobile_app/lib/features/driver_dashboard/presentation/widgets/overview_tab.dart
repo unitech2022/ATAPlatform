@@ -11,13 +11,17 @@ import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_over
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/driver_wallet_links.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/earnings_card.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/widgets/recent_trips_card.dart';
+import 'package:ata_app/features/driver_rewards/presentation/widgets/nearest_incentive_card.dart';
+import 'package:ata_app/features/driver_rewards/presentation/widgets/tier_card.dart';
+import 'package:ata_app/features/rating/presentation/widgets/pending_rating_card.dart';
 import 'package:ata_app/features/trip/presentation/widgets/reliability_card.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-/// Stat cards, recent trips and the weekly earnings card.
+/// Pending rating prompt, stat cards, tier and nearest quest (F15),
+/// reliability, recent trips and the weekly earnings card.
 class OverviewTab extends StatelessWidget {
   const OverviewTab({super.key});
 
@@ -30,6 +34,7 @@ class OverviewTab extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            const PendingRatingCard(bottomSpacing: AtaSpacing.md),
             if (state.failure != null) ...<Widget>[
               FailureView(
                 failure: state.failure!,
@@ -81,6 +86,10 @@ class OverviewTab extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: AtaSpacing.xl),
+            const TierCard(),
+            const SizedBox(height: AtaSpacing.xl),
+            const NearestIncentiveCard(),
             const SizedBox(height: AtaSpacing.xl),
             ReliabilityCard(
               onDetails: () => context.push(AppRoutes.driverReliability),

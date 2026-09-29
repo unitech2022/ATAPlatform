@@ -1,5 +1,6 @@
 import 'package:ata_app/features/trip/domain/entities/trip_cancellation.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stop.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_timeline.dart';
@@ -54,6 +55,8 @@ class Trip extends Equatable {
     this.events = const <TripEvent>[],
     this.collectCashAmount,
     this.cancellation,
+    this.rating = const TripRatingInfo(),
+    this.promotion,
   });
 
   /// Trip event recorded when a card capture failed and the fare moved to
@@ -95,6 +98,12 @@ class Trip extends Equatable {
 
   /// Stage, reason, fee / compensation of a cancelled trip (F14).
   final TripCancellation? cancellation;
+
+  /// My rating of the trip and the 72 h window (F15).
+  final TripRatingInfo rating;
+
+  /// Promo code reserved / applied on the trip (F15).
+  final TripPromotion? promotion;
 
   bool get isScheduled => bookingType == 'scheduled';
 
@@ -139,6 +148,8 @@ class Trip extends Equatable {
     events: events,
     collectCashAmount: collectCashAmount,
     cancellation: cancellation,
+    rating: rating,
+    promotion: promotion,
   );
 
   @override
@@ -173,5 +184,7 @@ class Trip extends Equatable {
     events,
     collectCashAmount,
     cancellation,
+    rating,
+    promotion,
   ];
 }

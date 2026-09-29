@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 /// Draws one of the prototype's stroked icons.
 ///
 /// The color defaults to the ambient [IconTheme] color. Set [mirrored] to
-/// flip horizontally (the prototype's `rotate-180` arrow).
+/// flip horizontally (the prototype's `rotate-180` arrow) and [filled] to
+/// fill the closed paths as well (selected rating stars).
 class AtaIcon extends StatelessWidget {
   const AtaIcon(
     this.icon, {
@@ -14,12 +15,14 @@ class AtaIcon extends StatelessWidget {
     this.size = AtaSizes.iconDefault,
     this.color,
     this.mirrored = false,
+    this.filled = false,
   });
 
   final AtaIcons icon;
   final double size;
   final Color? color;
   final bool mirrored;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +34,12 @@ class AtaIcon extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _IconPainter(icon: icon, color: resolved, mirrored: mirrored),
+        painter: _IconPainter(
+          icon: icon,
+          color: resolved,
+          mirrored: mirrored,
+          filled: filled,
+        ),
       ),
     );
   }
@@ -42,11 +50,13 @@ class _IconPainter extends CustomPainter {
     required this.icon,
     required this.color,
     required this.mirrored,
+    required this.filled,
   });
 
   final AtaIcons icon;
   final Color color;
   final bool mirrored;
+  final bool filled;
 
   static final Map<AtaIcons, List<Path>> _cache = <AtaIcons, List<Path>>{};
 
@@ -71,7 +81,9 @@ class _IconPainter extends CustomPainter {
       canvas.scale(-1, 1);
     }
     canvas.scale(scale);
+    final Paint? fill = filled ? (Paint()..color = color) : null;
     for (final Path path in _paths()) {
+      if (fill != null) canvas.drawPath(path, fill);
       canvas.drawPath(path, paint);
     }
     for (final IconCircle circle in icon.circles) {
@@ -84,5 +96,6 @@ class _IconPainter extends CustomPainter {
   bool shouldRepaint(_IconPainter oldDelegate) =>
       oldDelegate.icon != icon ||
       oldDelegate.color != color ||
-      oldDelegate.mirrored != mirrored;
+      oldDelegate.mirrored != mirrored ||
+      oldDelegate.filled != filled;
 }

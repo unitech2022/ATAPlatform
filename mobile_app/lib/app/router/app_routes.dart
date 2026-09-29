@@ -22,6 +22,10 @@ abstract final class AppRoutes {
   static const String driverTripChat = '/driver/trip/chat';
   static const String driverReliability = '/driver/reliability';
   static const String driverLostItems = '/driver/lost-items';
+  static const String driverTier = '/driver/tier';
+  static const String driverIncentives = '/driver/incentives';
+  static const String driverRatings = '/driver/ratings';
+  static const String driverRate = '/driver/rate';
 
   /// Query parameter selecting the dashboard tab (`/driver?tab=documents`).
   static const String tabParam = 'tab';
@@ -37,8 +41,16 @@ abstract final class AppRoutes {
   static const String alertIdParam = 'alertId';
   static const String reportIdParam = 'reportId';
 
+  /// Path parameter of `/driver/incentives/:incentiveId` (F15).
+  static const String incentiveIdParam = 'incentiveId';
+
+  /// Query parameter pre-filling the promo code of the home sheet.
+  static const String promoParam = 'promo';
+
   static const String home = '/home';
   static const String trip = '/trip';
+  static const String rate = '/rate';
+  static const String promotions = '/promotions';
   static const String tripChat = '/trip/chat';
   static const String rides = '/rides';
   static const String wallet = '/wallet';
@@ -69,6 +81,21 @@ abstract final class AppRoutes {
 
   /// `/rides/{tripId}/lost-item` (F12).
   static String rideLostItem(String tripId) => '$rides/$tripId/lost-item';
+
+  /// `/rate/{tripId}` (F15, `ata://rate/{tripId}`).
+  static String rateTrip(String tripId) => '$rate/$tripId';
+
+  /// `/driver/rate/{tripId}` (driver side of `ata://rate/{tripId}`).
+  static String driverRateTrip(String tripId) => '$driverRate/$tripId';
+
+  /// `/driver/incentives/{id}`.
+  static String driverIncentive(String id) => '$driverIncentives/$id';
+
+  /// `/home?promo=CODE` (a code picked on the promotions page).
+  static String homeWithPromo(String code) => Uri(
+    path: home,
+    queryParameters: <String, String>{promoParam: code},
+  ).toString();
 
   /// `/safety/report?tripId=…` (F12).
   static String safetyReportFor(String tripId) =>

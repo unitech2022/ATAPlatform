@@ -13,6 +13,19 @@ class QuoteZone extends Equatable {
   List<Object?> get props => <Object?>[id, name];
 }
 
+/// `promotion: { code, valid, reason }` of a quote priced with a promo code:
+/// an invalid code does not fail the quote (F15).
+class QuotePromotion extends Equatable {
+  const QuotePromotion({required this.code, this.valid = true, this.reason});
+
+  final String code;
+  final bool valid;
+  final String? reason;
+
+  @override
+  List<Object?> get props => <Object?>[code, valid, reason];
+}
+
 /// Result of `POST /pricing/quote`: a price per category, valid until
 /// [expiresAt] (5 minutes server side).
 class FareQuote extends Equatable {
@@ -24,6 +37,7 @@ class FareQuote extends Equatable {
     this.pickupZone,
     this.demand = DemandLevel.normal,
     this.categories = const <QuoteCategory>[],
+    this.promotion,
   });
 
   final String quoteId;
@@ -33,6 +47,7 @@ class FareQuote extends Equatable {
   final QuoteZone? pickupZone;
   final DemandLevel demand;
   final List<QuoteCategory> categories;
+  final QuotePromotion? promotion;
 
   QuoteCategory? forCategory(String? rideCategoryId) {
     for (final QuoteCategory category in categories) {
@@ -52,5 +67,6 @@ class FareQuote extends Equatable {
     pickupZone,
     demand,
     categories,
+    promotion,
   ];
 }

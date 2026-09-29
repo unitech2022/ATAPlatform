@@ -20,6 +20,7 @@ class HomeState extends Equatable {
     this.offeredPrice,
     this.estimate = const FareEstimate(price: 0, etaMinutes: 0),
     this.quote,
+    this.promoCode,
   });
 
   /// Lowest price a rider may ever offer, and the fallback offer range used
@@ -45,6 +46,9 @@ class HomeState extends Equatable {
 
   /// The usable (non-expired) fare quote applied from `QuoteCubit`.
   final FareQuote? quote;
+
+  /// Promo code validated by `PromoCodeCubit` (F15).
+  final String? promoCode;
 
   RideCategory? get selectedCategory {
     for (final RideCategory category in categories) {
@@ -85,6 +89,12 @@ class HomeState extends Equatable {
   bool get hasOfferedPrice => offeredPrice != null;
   bool get hasQuote => quote != null;
 
+  /// Promo codes are not offered with "offer your price" (`docs/10` §1).
+  bool get canUsePromo => !hasOfferedPrice;
+
+  /// The promo code sent with the quote and the request.
+  String? get effectivePromoCode => canUsePromo ? promoCode : null;
+
   HomeState copyWith({
     List<RideCategory>? categories,
     bool? loadingCategories,
@@ -97,9 +107,11 @@ class HomeState extends Equatable {
     double? offeredPrice,
     FareEstimate? estimate,
     FareQuote? quote,
+    String? promoCode,
     bool clearFailure = false,
     bool clearOfferedPrice = false,
     bool clearQuote = false,
+    bool clearPromoCode = false,
   }) => HomeState(
     categories: categories ?? this.categories,
     loadingCategories: loadingCategories ?? this.loadingCategories,
@@ -114,6 +126,7 @@ class HomeState extends Equatable {
     offeredPrice: clearOfferedPrice ? null : offeredPrice ?? this.offeredPrice,
     estimate: estimate ?? this.estimate,
     quote: clearQuote ? null : quote ?? this.quote,
+    promoCode: clearPromoCode ? null : promoCode ?? this.promoCode,
   );
 
   @override
@@ -129,5 +142,6 @@ class HomeState extends Equatable {
     offeredPrice,
     estimate,
     quote,
+    promoCode,
   ];
 }

@@ -516,8 +516,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get promoTitle => 'وجهتك المعتادة أقرب';
 
   @override
-  String get promoCopy =>
-      'احفظ الأماكن التي تزورها كثيراً لطلب رحلتك بخطوة واحدة.';
+  String get promoCopy => 'نسخ';
 
   @override
   String get promoCta => 'احجز رحلة الآن';
@@ -2435,4 +2434,501 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get safetyReportRowCopy => 'أبلغ عن قيادة غير آمنة أو سلوك غير لائق';
+
+  @override
+  String get later => 'لاحقاً';
+
+  @override
+  String get rateShort => 'قيّم';
+
+  @override
+  String get rateNow => 'قيّم الآن';
+
+  @override
+  String get ratePassenger => 'قيّم الراكب';
+
+  @override
+  String get tripRated => 'تم تقييم الرحلة';
+
+  @override
+  String get rateTripCopy =>
+      'تقييمك يساعدنا على تحسين الخدمة ويبقى مجهول الهوية.';
+
+  @override
+  String get rateDriverQuestion => 'كيف كانت رحلتك مع الكابتن؟';
+
+  @override
+  String rateDriverQuestionNamed(String name) {
+    return 'كيف كانت رحلتك مع $name؟';
+  }
+
+  @override
+  String get ratePassengerQuestion => 'كيف كان الراكب؟';
+
+  @override
+  String ratePassengerQuestionNamed(String name) {
+    return 'كيف كان الراكب $name؟';
+  }
+
+  @override
+  String get ratingStarsNone => 'اختر عدد النجوم';
+
+  @override
+  String get ratingStars1 => 'سيئة';
+
+  @override
+  String get ratingStars2 => 'دون المتوقع';
+
+  @override
+  String get ratingStars3 => 'مقبولة';
+
+  @override
+  String get ratingStars4 => 'جيدة';
+
+  @override
+  String get ratingStars5 => 'ممتازة';
+
+  @override
+  String get ratingTagsPositive => 'ما الذي أعجبك؟';
+
+  @override
+  String get ratingTagsNegative => 'ما الذي لم يعجبك؟';
+
+  @override
+  String get ratingTagDriving => 'القيادة';
+
+  @override
+  String get ratingTagCleanliness => 'النظافة';
+
+  @override
+  String get ratingTagBehaviour => 'التعامل';
+
+  @override
+  String get ratingTagNavigation => 'معرفة الطريق';
+
+  @override
+  String get ratingTagVehicleCondition => 'حالة المركبة';
+
+  @override
+  String get ratingTagPunctuality => 'الالتزام بالوقت';
+
+  @override
+  String get ratingCommentHint => 'أضف تعليقاً (اختياري)';
+
+  @override
+  String get ratingSubmit => 'إرسال التقييم';
+
+  @override
+  String get ratingThanks => 'شكراً لتقييمك';
+
+  @override
+  String get ratingThanksCopy => 'ملاحظاتك تساعدنا على تقديم رحلات أفضل.';
+
+  @override
+  String get ratingWindowClosedError => 'انتهت مدة التقييم';
+
+  @override
+  String get ratingExistsError => 'تم تقييم هذه الرحلة مسبقاً';
+
+  @override
+  String get pendingRatingTitle => 'قيّم رحلتك الأخيرة';
+
+  @override
+  String get pendingRatingCopy => 'أخبرنا كيف كانت الرحلة.';
+
+  @override
+  String pendingRatingCopyNamed(String name) {
+    return 'كيف كانت رحلتك مع $name؟';
+  }
+
+  @override
+  String get driverRatingsTitle => 'تقييماتي';
+
+  @override
+  String get driverRatingsCopy =>
+      'متوسط تقييمك وأكثر ما يذكره الركاب، دون أسماء.';
+
+  @override
+  String ratingCountLine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقييم',
+      few: '$count تقييمات',
+      two: 'تقييمان',
+      one: 'تقييم واحد',
+      zero: 'لا تقييمات بعد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ratingTopTags => 'الأكثر ذكراً';
+
+  @override
+  String get ratingRecentComments => 'آخر التعليقات';
+
+  @override
+  String get ratingNoComments => 'لا توجد تعليقات بعد.';
+
+  @override
+  String get fareTotalBeforeDiscount => 'قبل الخصم';
+
+  @override
+  String receiptPromo(String code) {
+    return 'كود الخصم $code';
+  }
+
+  @override
+  String get promoReserved => 'محجوز';
+
+  @override
+  String get promoCodeLabel => 'كود خصم';
+
+  @override
+  String get promoAddHint => 'أضف كود الخصم إن كان لديك';
+
+  @override
+  String get promoNotWithOffer => 'لا ينطبق الخصم مع اقتراح السعر';
+
+  @override
+  String promoAppliedLine(String code) {
+    return '$code مطبّق';
+  }
+
+  @override
+  String promoAppliedDiscount(String code, String amount) {
+    return '$code مطبّق · وفّرت $amount';
+  }
+
+  @override
+  String get promoRemove => 'إزالة';
+
+  @override
+  String get promoCodeTitle => 'كود الخصم';
+
+  @override
+  String get promoCodeCopy => 'أدخل الكود وسنتحقق منه على سعر رحلتك الحالية.';
+
+  @override
+  String get promoCodeHint => 'مثال: ATA10';
+
+  @override
+  String get promoApply => 'تطبيق';
+
+  @override
+  String get promoNotFoundError => 'كود الخصم غير صحيح';
+
+  @override
+  String get promoExpiredError => 'انتهت صلاحية كود الخصم';
+
+  @override
+  String get promoNotEligibleError => 'كود الخصم لا ينطبق على هذه الرحلة';
+
+  @override
+  String get promoUsageLimitError => 'تم استنفاد كود الخصم';
+
+  @override
+  String get promoUserLimitError => 'استخدمت هذا الكود الحد الأقصى من المرات';
+
+  @override
+  String get promoReasonFirstTrip => 'هذا الكود لرحلتك الأولى فقط';
+
+  @override
+  String get promoReasonNewUsers => 'هذا الكود للمستخدمين الجدد فقط';
+
+  @override
+  String get promoReasonCity => 'هذا الكود غير متاح في مدينتك';
+
+  @override
+  String get promoReasonCategory =>
+      'هذا الكود لا ينطبق على فئة الرحلة المختارة';
+
+  @override
+  String get promoReasonZone => 'هذا الكود لا ينطبق على منطقة الالتقاط';
+
+  @override
+  String get promoReasonPaymentMethod =>
+      'هذا الكود لا ينطبق على طريقة الدفع المختارة';
+
+  @override
+  String get promoReasonBookingType => 'هذا الكود لا ينطبق على نوع الحجز';
+
+  @override
+  String get promoReasonMinFare => 'أجرة الرحلة أقل من الحد الأدنى لهذا الكود';
+
+  @override
+  String get promoReasonPricingMode => 'لا ينطبق الخصم مع اقتراح السعر';
+
+  @override
+  String get promotionsTitle => 'العروض';
+
+  @override
+  String get promotionsCopy =>
+      'أكواد الخصم المتاحة لك وما استخدمته أو انتهت صلاحيته.';
+
+  @override
+  String get promotionsLinkCopy => 'أكواد الخصم المتاحة لك';
+
+  @override
+  String get promotionsEmpty => 'لا توجد عروض هنا حالياً.';
+
+  @override
+  String get promoTabAvailable => 'المتاحة';
+
+  @override
+  String get promoTabUsed => 'المستخدمة';
+
+  @override
+  String get promoTabExpired => 'المنتهية';
+
+  @override
+  String promoPercentOff(String percent) {
+    return 'خصم $percent%';
+  }
+
+  @override
+  String promoUpTo(String discount, String cap) {
+    return '$discount حتى $cap';
+  }
+
+  @override
+  String promoAmountOff(String amount) {
+    return 'خصم $amount';
+  }
+
+  @override
+  String get promoFreeBookingFee => 'رسوم حجز مجانية';
+
+  @override
+  String promoMinFare(String amount) {
+    return 'الحد الأدنى للأجرة $amount';
+  }
+
+  @override
+  String get promoFirstTripOnly => 'للرحلة الأولى فقط';
+
+  @override
+  String promoValidTo(String date) {
+    return 'صالح حتى $date';
+  }
+
+  @override
+  String get promoUse => 'استخدم';
+
+  @override
+  String promoCopied(String code) {
+    return 'تم نسخ الكود $code';
+  }
+
+  @override
+  String get tierTitle => 'مستوى الكابتن';
+
+  @override
+  String get tierCopy => 'يُحسب أسبوعياً من أدائك في آخر 28 يوماً.';
+
+  @override
+  String get tierBronze => 'برونزي';
+
+  @override
+  String get tierSilver => 'فضي';
+
+  @override
+  String get tierGold => 'ذهبي';
+
+  @override
+  String get tierPlatinum => 'بلاتيني';
+
+  @override
+  String get tierTopReached => 'وصلت إلى أعلى مستوى، حافظ على أدائك.';
+
+  @override
+  String tierTripsToNext(int count, String tier) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تبقّت $count رحلة للوصول إلى $tier',
+      few: 'تبقّت $count رحلات للوصول إلى $tier',
+      two: 'تبقّت رحلتان للوصول إلى $tier',
+      one: 'تبقّت رحلة واحدة للوصول إلى $tier',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tierProgressTo(String tier) {
+    return 'تقدّمك نحو $tier';
+  }
+
+  @override
+  String tierChecksMet(int met, int total) {
+    return '$met من $total شروط محققة';
+  }
+
+  @override
+  String tierCommissionDiscount(String percent) {
+    return 'خصم العمولة $percent%';
+  }
+
+  @override
+  String tierRequirementsTitle(String tier, int days) {
+    return 'شروط $tier (آخر $days يوماً)';
+  }
+
+  @override
+  String get tierCriterionTrips => 'الرحلات المكتملة';
+
+  @override
+  String get tierCriterionRating => 'متوسط التقييم';
+
+  @override
+  String get tierCriterionAcceptance => 'نسبة القبول';
+
+  @override
+  String get tierCriterionCancellation => 'نسبة الإلغاء';
+
+  @override
+  String tierRecalcAt(String date) {
+    return 'إعادة الحساب القادمة: $date';
+  }
+
+  @override
+  String get tierRecalcWeekly => 'يُعاد حساب المستوى كل أحد.';
+
+  @override
+  String get incentivesTitle => 'الحوافز';
+
+  @override
+  String get incentivesCopy =>
+      'أكمل الرحلات المطلوبة خلال الفترة واحصل على المكافأة.';
+
+  @override
+  String get incentivesLinkCopy => 'التحديات النشطة والقادمة ومكافآتها';
+
+  @override
+  String get incentivesEmpty => 'لا توجد حوافز هنا حالياً.';
+
+  @override
+  String get incentiveNearest => 'أقرب حافز';
+
+  @override
+  String get incentiveTabActive => 'النشطة';
+
+  @override
+  String get incentiveTabUpcoming => 'القادمة';
+
+  @override
+  String get incentiveTabCompleted => 'المنتهية';
+
+  @override
+  String get incentiveTypeDaily => 'يومي';
+
+  @override
+  String get incentiveTypeWeekly => 'أسبوعي';
+
+  @override
+  String get incentiveTypeZone => 'منطقة';
+
+  @override
+  String get incentiveTypeOneTime => 'مرة واحدة';
+
+  @override
+  String get incentiveInProgress => 'جارٍ';
+
+  @override
+  String get incentiveAchieved => 'تحقق · يُصرف بعد نهاية الفترة';
+
+  @override
+  String get incentivePaid => 'تم الصرف';
+
+  @override
+  String get incentiveExpired => 'انتهى';
+
+  @override
+  String get incentiveVoided => 'أُلغي';
+
+  @override
+  String incentiveTripsProgress(int done, int target) {
+    return '$done من $target رحلات';
+  }
+
+  @override
+  String incentiveTripsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رحلة',
+      few: '$count رحلات',
+      two: 'رحلتان',
+      one: 'رحلة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get incentiveJoinFirst => 'اشترك لتبدأ الاحتساب';
+
+  @override
+  String get incentiveJoined => 'أنت مشترك في هذا الحافز';
+
+  @override
+  String get incentiveOptIn => 'اشترك في الحافز';
+
+  @override
+  String get incentiveOptInClosedError => 'الاشتراك في هذا الحافز غير متاح';
+
+  @override
+  String incentiveEndsAt(String date) {
+    return 'ينتهي $date';
+  }
+
+  @override
+  String incentiveReducedNotice(String multiplier) {
+    return 'مكافآتك مخفّضة (×$multiplier) بسبب مستوى الموثوقية، حسّن التزامك لاستعادتها كاملة.';
+  }
+
+  @override
+  String get incentiveDetailTitle => 'تفاصيل الحافز';
+
+  @override
+  String get incentiveTarget => 'الهدف';
+
+  @override
+  String get incentiveWindow => 'الأيام والساعات';
+
+  @override
+  String get incentiveZones => 'المناطق';
+
+  @override
+  String get incentiveAllZones => 'كل المناطق';
+
+  @override
+  String get incentiveCategories => 'الفئات';
+
+  @override
+  String get incentiveAllCategories => 'كل الفئات';
+
+  @override
+  String get incentivePeriod => 'الفترة';
+
+  @override
+  String get daySun => 'الأحد';
+
+  @override
+  String get dayMon => 'الاثنين';
+
+  @override
+  String get dayTue => 'الثلاثاء';
+
+  @override
+  String get dayWed => 'الأربعاء';
+
+  @override
+  String get dayThu => 'الخميس';
+
+  @override
+  String get dayFri => 'الجمعة';
+
+  @override
+  String get daySat => 'السبت';
 }

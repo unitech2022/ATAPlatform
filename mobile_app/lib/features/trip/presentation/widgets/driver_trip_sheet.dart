@@ -20,6 +20,7 @@ import 'package:ata_app/features/trip/presentation/widgets/driver_pin_entry.dart
 import 'package:ata_app/features/trip/presentation/widgets/driver_trip_info.dart';
 import 'package:ata_app/features/trip/presentation/widgets/no_show_section.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_ended_view.dart';
+import 'package:ata_app/features/trip/presentation/widgets/trip_rate_button.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -199,6 +200,8 @@ class _Ended extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AtaSpacing.lg),
+        TripRateButton(trip: trip, rater: TripActor.driver),
+        const SizedBox(height: AtaSpacing.sm),
         AtaButton(label: l10n.backToDashboard, onPressed: onDone),
       ],
     );

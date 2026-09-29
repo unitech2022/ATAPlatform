@@ -41,6 +41,10 @@ class TripRequestState extends Equatable {
   /// text includes `details.restrictedUntil`.
   bool get isAccountRestricted => failure?.code == ErrorCodes.accountRestricted;
 
+  /// `promo_*` (F15): the promo code was refused when creating the trip.
+  bool get isPromoRejected =>
+      failure?.code.startsWith(ErrorCodes.promoPrefix) ?? false;
+
   /// Amount owed, from `details.amount` (positive).
   double? get outstandingAmount => failure?.numDetail(ErrorCodes.amount)?.abs();
 

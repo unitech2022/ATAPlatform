@@ -1019,7 +1019,7 @@ abstract class AppLocalizations {
   /// No description provided for @promoCopy.
   ///
   /// In ar, this message translates to:
-  /// **'احفظ الأماكن التي تزورها كثيراً لطلب رحلتك بخطوة واحدة.'**
+  /// **'نسخ'**
   String get promoCopy;
 
   /// No description provided for @promoCta.
@@ -4482,6 +4482,846 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أبلغ عن قيادة غير آمنة أو سلوك غير لائق'**
   String get safetyReportRowCopy;
+
+  /// No description provided for @later.
+  ///
+  /// In ar, this message translates to:
+  /// **'لاحقاً'**
+  String get later;
+
+  /// No description provided for @rateShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيّم'**
+  String get rateShort;
+
+  /// No description provided for @rateNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيّم الآن'**
+  String get rateNow;
+
+  /// No description provided for @ratePassenger.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيّم الراكب'**
+  String get ratePassenger;
+
+  /// No description provided for @tripRated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تقييم الرحلة'**
+  String get tripRated;
+
+  /// No description provided for @rateTripCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييمك يساعدنا على تحسين الخدمة ويبقى مجهول الهوية.'**
+  String get rateTripCopy;
+
+  /// No description provided for @rateDriverQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كانت رحلتك مع الكابتن؟'**
+  String get rateDriverQuestion;
+
+  /// No description provided for @rateDriverQuestionNamed.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كانت رحلتك مع {name}؟'**
+  String rateDriverQuestionNamed(String name);
+
+  /// No description provided for @ratePassengerQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كان الراكب؟'**
+  String get ratePassengerQuestion;
+
+  /// No description provided for @ratePassengerQuestionNamed.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كان الراكب {name}؟'**
+  String ratePassengerQuestionNamed(String name);
+
+  /// No description provided for @ratingStarsNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر عدد النجوم'**
+  String get ratingStarsNone;
+
+  /// No description provided for @ratingStars1.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيئة'**
+  String get ratingStars1;
+
+  /// No description provided for @ratingStars2.
+  ///
+  /// In ar, this message translates to:
+  /// **'دون المتوقع'**
+  String get ratingStars2;
+
+  /// No description provided for @ratingStars3.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقبولة'**
+  String get ratingStars3;
+
+  /// No description provided for @ratingStars4.
+  ///
+  /// In ar, this message translates to:
+  /// **'جيدة'**
+  String get ratingStars4;
+
+  /// No description provided for @ratingStars5.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتازة'**
+  String get ratingStars5;
+
+  /// No description provided for @ratingTagsPositive.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما الذي أعجبك؟'**
+  String get ratingTagsPositive;
+
+  /// No description provided for @ratingTagsNegative.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما الذي لم يعجبك؟'**
+  String get ratingTagsNegative;
+
+  /// No description provided for @ratingTagDriving.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيادة'**
+  String get ratingTagDriving;
+
+  /// No description provided for @ratingTagCleanliness.
+  ///
+  /// In ar, this message translates to:
+  /// **'النظافة'**
+  String get ratingTagCleanliness;
+
+  /// No description provided for @ratingTagBehaviour.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعامل'**
+  String get ratingTagBehaviour;
+
+  /// No description provided for @ratingTagNavigation.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرفة الطريق'**
+  String get ratingTagNavigation;
+
+  /// No description provided for @ratingTagVehicleCondition.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة المركبة'**
+  String get ratingTagVehicleCondition;
+
+  /// No description provided for @ratingTagPunctuality.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام بالوقت'**
+  String get ratingTagPunctuality;
+
+  /// No description provided for @ratingCommentHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف تعليقاً (اختياري)'**
+  String get ratingCommentHint;
+
+  /// No description provided for @ratingSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال التقييم'**
+  String get ratingSubmit;
+
+  /// No description provided for @ratingThanks.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً لتقييمك'**
+  String get ratingThanks;
+
+  /// No description provided for @ratingThanksCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظاتك تساعدنا على تقديم رحلات أفضل.'**
+  String get ratingThanksCopy;
+
+  /// No description provided for @ratingWindowClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة التقييم'**
+  String get ratingWindowClosedError;
+
+  /// No description provided for @ratingExistsError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تقييم هذه الرحلة مسبقاً'**
+  String get ratingExistsError;
+
+  /// No description provided for @pendingRatingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيّم رحلتك الأخيرة'**
+  String get pendingRatingTitle;
+
+  /// No description provided for @pendingRatingCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخبرنا كيف كانت الرحلة.'**
+  String get pendingRatingCopy;
+
+  /// No description provided for @pendingRatingCopyNamed.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كانت رحلتك مع {name}؟'**
+  String pendingRatingCopyNamed(String name);
+
+  /// No description provided for @driverRatingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقييماتي'**
+  String get driverRatingsTitle;
+
+  /// No description provided for @driverRatingsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط تقييمك وأكثر ما يذكره الركاب، دون أسماء.'**
+  String get driverRatingsCopy;
+
+  /// No description provided for @ratingCountLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لا تقييمات بعد} =1{تقييم واحد} =2{تقييمان} few{{count} تقييمات} other{{count} تقييم}}'**
+  String ratingCountLine(int count);
+
+  /// No description provided for @ratingTopTags.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأكثر ذكراً'**
+  String get ratingTopTags;
+
+  /// No description provided for @ratingRecentComments.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر التعليقات'**
+  String get ratingRecentComments;
+
+  /// No description provided for @ratingNoComments.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تعليقات بعد.'**
+  String get ratingNoComments;
+
+  /// No description provided for @fareTotalBeforeDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل الخصم'**
+  String get fareTotalBeforeDiscount;
+
+  /// No description provided for @receiptPromo.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الخصم {code}'**
+  String receiptPromo(String code);
+
+  /// No description provided for @promoReserved.
+  ///
+  /// In ar, this message translates to:
+  /// **'محجوز'**
+  String get promoReserved;
+
+  /// No description provided for @promoCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود خصم'**
+  String get promoCodeLabel;
+
+  /// No description provided for @promoAddHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف كود الخصم إن كان لديك'**
+  String get promoAddHint;
+
+  /// No description provided for @promoNotWithOffer.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا ينطبق الخصم مع اقتراح السعر'**
+  String get promoNotWithOffer;
+
+  /// No description provided for @promoAppliedLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{code} مطبّق'**
+  String promoAppliedLine(String code);
+
+  /// No description provided for @promoAppliedDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{code} مطبّق · وفّرت {amount}'**
+  String promoAppliedDiscount(String code, String amount);
+
+  /// No description provided for @promoRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get promoRemove;
+
+  /// No description provided for @promoCodeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الخصم'**
+  String get promoCodeTitle;
+
+  /// No description provided for @promoCodeCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الكود وسنتحقق منه على سعر رحلتك الحالية.'**
+  String get promoCodeCopy;
+
+  /// No description provided for @promoCodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ATA10'**
+  String get promoCodeHint;
+
+  /// No description provided for @promoApply.
+  ///
+  /// In ar, this message translates to:
+  /// **'تطبيق'**
+  String get promoApply;
+
+  /// No description provided for @promoNotFoundError.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الخصم غير صحيح'**
+  String get promoNotFoundError;
+
+  /// No description provided for @promoExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية كود الخصم'**
+  String get promoExpiredError;
+
+  /// No description provided for @promoNotEligibleError.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الخصم لا ينطبق على هذه الرحلة'**
+  String get promoNotEligibleError;
+
+  /// No description provided for @promoUsageLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استنفاد كود الخصم'**
+  String get promoUsageLimitError;
+
+  /// No description provided for @promoUserLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدمت هذا الكود الحد الأقصى من المرات'**
+  String get promoUserLimitError;
+
+  /// No description provided for @promoReasonFirstTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود لرحلتك الأولى فقط'**
+  String get promoReasonFirstTrip;
+
+  /// No description provided for @promoReasonNewUsers.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود للمستخدمين الجدد فقط'**
+  String get promoReasonNewUsers;
+
+  /// No description provided for @promoReasonCity.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود غير متاح في مدينتك'**
+  String get promoReasonCity;
+
+  /// No description provided for @promoReasonCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود لا ينطبق على فئة الرحلة المختارة'**
+  String get promoReasonCategory;
+
+  /// No description provided for @promoReasonZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود لا ينطبق على منطقة الالتقاط'**
+  String get promoReasonZone;
+
+  /// No description provided for @promoReasonPaymentMethod.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود لا ينطبق على طريقة الدفع المختارة'**
+  String get promoReasonPaymentMethod;
+
+  /// No description provided for @promoReasonBookingType.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكود لا ينطبق على نوع الحجز'**
+  String get promoReasonBookingType;
+
+  /// No description provided for @promoReasonMinFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'أجرة الرحلة أقل من الحد الأدنى لهذا الكود'**
+  String get promoReasonMinFare;
+
+  /// No description provided for @promoReasonPricingMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا ينطبق الخصم مع اقتراح السعر'**
+  String get promoReasonPricingMode;
+
+  /// No description provided for @promotionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العروض'**
+  String get promotionsTitle;
+
+  /// No description provided for @promotionsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكواد الخصم المتاحة لك وما استخدمته أو انتهت صلاحيته.'**
+  String get promotionsCopy;
+
+  /// No description provided for @promotionsLinkCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكواد الخصم المتاحة لك'**
+  String get promotionsLinkCopy;
+
+  /// No description provided for @promotionsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عروض هنا حالياً.'**
+  String get promotionsEmpty;
+
+  /// No description provided for @promoTabAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاحة'**
+  String get promoTabAvailable;
+
+  /// No description provided for @promoTabUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدمة'**
+  String get promoTabUsed;
+
+  /// No description provided for @promoTabExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتهية'**
+  String get promoTabExpired;
+
+  /// No description provided for @promoPercentOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {percent}%'**
+  String promoPercentOff(String percent);
+
+  /// No description provided for @promoUpTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'{discount} حتى {cap}'**
+  String promoUpTo(String discount, String cap);
+
+  /// No description provided for @promoAmountOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {amount}'**
+  String promoAmountOff(String amount);
+
+  /// No description provided for @promoFreeBookingFee.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم حجز مجانية'**
+  String get promoFreeBookingFee;
+
+  /// No description provided for @promoMinFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى للأجرة {amount}'**
+  String promoMinFare(String amount);
+
+  /// No description provided for @promoFirstTripOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'للرحلة الأولى فقط'**
+  String get promoFirstTripOnly;
+
+  /// No description provided for @promoValidTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'صالح حتى {date}'**
+  String promoValidTo(String date);
+
+  /// No description provided for @promoUse.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم'**
+  String get promoUse;
+
+  /// No description provided for @promoCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم نسخ الكود {code}'**
+  String promoCopied(String code);
+
+  /// No description provided for @tierTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى الكابتن'**
+  String get tierTitle;
+
+  /// No description provided for @tierCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُحسب أسبوعياً من أدائك في آخر 28 يوماً.'**
+  String get tierCopy;
+
+  /// No description provided for @tierBronze.
+  ///
+  /// In ar, this message translates to:
+  /// **'برونزي'**
+  String get tierBronze;
+
+  /// No description provided for @tierSilver.
+  ///
+  /// In ar, this message translates to:
+  /// **'فضي'**
+  String get tierSilver;
+
+  /// No description provided for @tierGold.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذهبي'**
+  String get tierGold;
+
+  /// No description provided for @tierPlatinum.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاتيني'**
+  String get tierPlatinum;
+
+  /// No description provided for @tierTopReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى أعلى مستوى، حافظ على أدائك.'**
+  String get tierTopReached;
+
+  /// No description provided for @tierTripsToNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{تبقّت رحلة واحدة للوصول إلى {tier}} =2{تبقّت رحلتان للوصول إلى {tier}} few{تبقّت {count} رحلات للوصول إلى {tier}} other{تبقّت {count} رحلة للوصول إلى {tier}}}'**
+  String tierTripsToNext(int count, String tier);
+
+  /// No description provided for @tierProgressTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدّمك نحو {tier}'**
+  String tierProgressTo(String tier);
+
+  /// No description provided for @tierChecksMet.
+  ///
+  /// In ar, this message translates to:
+  /// **'{met} من {total} شروط محققة'**
+  String tierChecksMet(int met, int total);
+
+  /// No description provided for @tierCommissionDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم العمولة {percent}%'**
+  String tierCommissionDiscount(String percent);
+
+  /// No description provided for @tierRequirementsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط {tier} (آخر {days} يوماً)'**
+  String tierRequirementsTitle(String tier, int days);
+
+  /// No description provided for @tierCriterionTrips.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلات المكتملة'**
+  String get tierCriterionTrips;
+
+  /// No description provided for @tierCriterionRating.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط التقييم'**
+  String get tierCriterionRating;
+
+  /// No description provided for @tierCriterionAcceptance.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة القبول'**
+  String get tierCriterionAcceptance;
+
+  /// No description provided for @tierCriterionCancellation.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الإلغاء'**
+  String get tierCriterionCancellation;
+
+  /// No description provided for @tierRecalcAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة الحساب القادمة: {date}'**
+  String tierRecalcAt(String date);
+
+  /// No description provided for @tierRecalcWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُعاد حساب المستوى كل أحد.'**
+  String get tierRecalcWeekly;
+
+  /// No description provided for @incentivesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحوافز'**
+  String get incentivesTitle;
+
+  /// No description provided for @incentivesCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكمل الرحلات المطلوبة خلال الفترة واحصل على المكافأة.'**
+  String get incentivesCopy;
+
+  /// No description provided for @incentivesLinkCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحديات النشطة والقادمة ومكافآتها'**
+  String get incentivesLinkCopy;
+
+  /// No description provided for @incentivesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حوافز هنا حالياً.'**
+  String get incentivesEmpty;
+
+  /// No description provided for @incentiveNearest.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرب حافز'**
+  String get incentiveNearest;
+
+  /// No description provided for @incentiveTabActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'النشطة'**
+  String get incentiveTabActive;
+
+  /// No description provided for @incentiveTabUpcoming.
+  ///
+  /// In ar, this message translates to:
+  /// **'القادمة'**
+  String get incentiveTabUpcoming;
+
+  /// No description provided for @incentiveTabCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتهية'**
+  String get incentiveTabCompleted;
+
+  /// No description provided for @incentiveTypeDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'يومي'**
+  String get incentiveTypeDaily;
+
+  /// No description provided for @incentiveTypeWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوعي'**
+  String get incentiveTypeWeekly;
+
+  /// No description provided for @incentiveTypeZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقة'**
+  String get incentiveTypeZone;
+
+  /// No description provided for @incentiveTypeOneTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get incentiveTypeOneTime;
+
+  /// No description provided for @incentiveInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ'**
+  String get incentiveInProgress;
+
+  /// No description provided for @incentiveAchieved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحقق · يُصرف بعد نهاية الفترة'**
+  String get incentiveAchieved;
+
+  /// No description provided for @incentivePaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الصرف'**
+  String get incentivePaid;
+
+  /// No description provided for @incentiveExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهى'**
+  String get incentiveExpired;
+
+  /// No description provided for @incentiveVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُلغي'**
+  String get incentiveVoided;
+
+  /// No description provided for @incentiveTripsProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {target} رحلات'**
+  String incentiveTripsProgress(int done, int target);
+
+  /// No description provided for @incentiveTripsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رحلة واحدة} =2{رحلتان} few{{count} رحلات} other{{count} رحلة}}'**
+  String incentiveTripsCount(int count);
+
+  /// No description provided for @incentiveJoinFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك لتبدأ الاحتساب'**
+  String get incentiveJoinFirst;
+
+  /// No description provided for @incentiveJoined.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت مشترك في هذا الحافز'**
+  String get incentiveJoined;
+
+  /// No description provided for @incentiveOptIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في الحافز'**
+  String get incentiveOptIn;
+
+  /// No description provided for @incentiveOptInClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك في هذا الحافز غير متاح'**
+  String get incentiveOptInClosedError;
+
+  /// No description provided for @incentiveEndsAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ينتهي {date}'**
+  String incentiveEndsAt(String date);
+
+  /// No description provided for @incentiveReducedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافآتك مخفّضة (×{multiplier}) بسبب مستوى الموثوقية، حسّن التزامك لاستعادتها كاملة.'**
+  String incentiveReducedNotice(String multiplier);
+
+  /// No description provided for @incentiveDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الحافز'**
+  String get incentiveDetailTitle;
+
+  /// No description provided for @incentiveTarget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف'**
+  String get incentiveTarget;
+
+  /// No description provided for @incentiveWindow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام والساعات'**
+  String get incentiveWindow;
+
+  /// No description provided for @incentiveZones.
+  ///
+  /// In ar, this message translates to:
+  /// **'المناطق'**
+  String get incentiveZones;
+
+  /// No description provided for @incentiveAllZones.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المناطق'**
+  String get incentiveAllZones;
+
+  /// No description provided for @incentiveCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئات'**
+  String get incentiveCategories;
+
+  /// No description provided for @incentiveAllCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الفئات'**
+  String get incentiveAllCategories;
+
+  /// No description provided for @incentivePeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفترة'**
+  String get incentivePeriod;
+
+  /// No description provided for @daySun.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأحد'**
+  String get daySun;
+
+  /// No description provided for @dayMon.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاثنين'**
+  String get dayMon;
+
+  /// No description provided for @dayTue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الثلاثاء'**
+  String get dayTue;
+
+  /// No description provided for @dayWed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأربعاء'**
+  String get dayWed;
+
+  /// No description provided for @dayThu.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخميس'**
+  String get dayThu;
+
+  /// No description provided for @dayFri.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجمعة'**
+  String get dayFri;
+
+  /// No description provided for @daySat.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبت'**
+  String get daySat;
 }
 
 class _AppLocalizationsDelegate

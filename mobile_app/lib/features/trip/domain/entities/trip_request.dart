@@ -26,6 +26,7 @@ class TripRequest extends Equatable {
     this.offeredPrice,
     this.quoteId,
     this.riderNote,
+    this.promoCode,
   });
 
   final TripStop pickup;
@@ -43,11 +44,16 @@ class TripRequest extends Equatable {
   final String? quoteId;
   final String? riderNote;
 
+  /// Validated promo code (F15); reserved when the trip is created. Promo
+  /// codes do not apply to `pricingMode: offer`.
+  final String? promoCode;
+
   TripRequest copyWith({
     PricingMode? pricingMode,
     double? offeredPrice,
     String? quoteId,
     bool clearQuoteId = false,
+    bool clearPromoCode = false,
   }) => TripRequest(
         pickup: pickup,
         dropoff: dropoff,
@@ -61,6 +67,7 @@ class TripRequest extends Equatable {
         offeredPrice: offeredPrice ?? this.offeredPrice,
         quoteId: clearQuoteId ? null : quoteId ?? this.quoteId,
         riderNote: riderNote,
+        promoCode: clearPromoCode ? null : promoCode,
       );
 
   @override
@@ -77,5 +84,6 @@ class TripRequest extends Equatable {
     offeredPrice,
     quoteId,
     riderNote,
+    promoCode,
   ];
 }

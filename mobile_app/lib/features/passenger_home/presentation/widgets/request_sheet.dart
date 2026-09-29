@@ -18,11 +18,13 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/fare_detail
 import 'package:ata_app/features/passenger_home/presentation/widgets/female_driver_option.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/offered_price_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/promo_code_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/ride_category_list.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/route_fields.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/time_pills.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
 import 'package:ata_app/features/pricing/presentation/widgets/demand_badge.dart';
+import 'package:ata_app/features/rating/presentation/widgets/pending_rating_card.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
 import 'package:ata_app/features/wallet/presentation/widgets/outstanding_balance_banner.dart';
@@ -78,6 +80,7 @@ class _RequestForm extends StatelessWidget {
         const SizedBox(height: AtaSpacing.xs),
         const DemandBadge(),
         const SizedBox(height: AtaSpacing.md),
+        const PendingRatingCard(),
         const RouteFields(),
         const SizedBox(height: AtaSpacing.xl),
         const TimePills(),
@@ -96,6 +99,8 @@ class _RequestForm extends StatelessWidget {
         const FareDetailsLink(),
         const SizedBox(height: AtaSpacing.sm),
         const PaymentRow(),
+        const SizedBox(height: AtaSpacing.sm),
+        const PromoCodeRow(),
         const SizedBox(height: AtaSpacing.sm),
         const OfferedPriceRow(),
         const SizedBox(height: AtaSpacing.lg),

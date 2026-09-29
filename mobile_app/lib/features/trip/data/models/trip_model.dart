@@ -1,6 +1,7 @@
 import 'package:ata_app/features/trip/data/models/cancellation_models.dart';
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
 import 'package:ata_app/features/trip/data/models/trip_parties_model.dart';
+import 'package:ata_app/features/trip/data/models/trip_rewards_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_stop_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_timeline_model.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
@@ -39,6 +40,8 @@ class TripModel extends Trip {
     super.events,
     super.collectCashAmount,
     super.cancellation,
+    super.rating,
+    super.promotion,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -117,6 +120,8 @@ class TripModel extends Trip {
       cancellation: cancellation == null
           ? null
           : TripCancellationModel.fromJson(cancellation),
+      rating: TripRewardsModel.rating(json),
+      promotion: TripRewardsModel.promotion(json),
     );
   }
 
@@ -198,5 +203,6 @@ class TripModel extends Trip {
     'cancellation': cancellation == null
         ? null
         : TripCancellationModel.toJson(cancellation!),
+    ...TripRewardsModel.toJson(rating, promotion),
   };
 }

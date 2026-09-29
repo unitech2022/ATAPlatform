@@ -16,6 +16,7 @@ class QuoteModel extends FareQuote {
     super.pickupZone,
     super.demand,
     super.categories,
+    super.promotion,
   });
 
   /// Fallback validity when the API omits `expiresAt`.
@@ -24,6 +25,10 @@ class QuoteModel extends FareQuote {
   factory QuoteModel.fromJson(Map<String, dynamic> json) {
     final Map<String, dynamic>? zone = JsonReaders.object(json, 'pickupZone');
     final Map<String, dynamic>? demand = JsonReaders.object(json, 'demand');
+    final Map<String, dynamic>? promotion = JsonReaders.object(
+      json,
+      'promotion',
+    );
     return QuoteModel(
       quoteId: JsonReaders.string(json, 'quoteId'),
       expiresAt:
@@ -44,6 +49,13 @@ class QuoteModel extends FareQuote {
         json,
         'categories',
       ).map(QuoteCategoryModel.fromJson).toList(growable: false),
+      promotion: promotion == null
+          ? null
+          : QuotePromotion(
+              code: JsonReaders.string(promotion, 'code'),
+              valid: promotion['valid'] != false,
+              reason: JsonReaders.optionalString(promotion, 'reason'),
+            ),
     );
   }
 
@@ -64,6 +76,13 @@ class QuoteModel extends FareQuote {
     'categories': categories
         .map(QuoteCategoryModel.toJsonOf)
         .toList(growable: false),
+    'promotion': promotion == null
+        ? null
+        : <String, dynamic>{
+            'code': promotion!.code,
+            'valid': promotion!.valid,
+            'reason': promotion!.reason,
+          },
   };
 }
 
@@ -76,6 +95,7 @@ abstract final class QuoteRequestMapper {
     'rideCategoryId': ?request.rideCategoryId,
     'bookingType': request.bookingType,
     'scheduledAt': ?request.scheduledAt?.toIso8601String(),
+    'promoCode': ?request.promoCode,
   };
 
   static Map<String, dynamic> _point(GeoPoint point) => <String, dynamic>{

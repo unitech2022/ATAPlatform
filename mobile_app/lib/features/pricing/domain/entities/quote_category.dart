@@ -48,6 +48,12 @@ class QuoteCategory extends Equatable {
 
   OfferBounds get offerBounds => OfferBounds(min: offerMin, max: offerMax);
 
+  /// A discount (promo code, F15) lowers [total].
+  bool get hasDiscount => breakdown.hasDiscount;
+
+  /// Price before the discount ("was" price shown struck through).
+  double get totalBeforeDiscount => total + breakdown.discount;
+
   @override
   List<Object?> get props => <Object?>[
     rideCategoryId,

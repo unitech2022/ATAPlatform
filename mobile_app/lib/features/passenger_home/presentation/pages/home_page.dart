@@ -10,17 +10,25 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/request_she
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/demand_cubit.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
+import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
+import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Rider home: full-screen map with the ride-request bottom sheet.
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.promoCode});
+
+  /// Code picked on the promotions page (`/home?promo=`), validated once
+  /// the first quote arrives.
+  final String? promoCode;
 
   @override
   Widget build(BuildContext context) {
+    // Read here: a provider `create` must not subscribe to inherited widgets.
+    final AppLocalizations l10n = context.l10n;
     return MultiBlocProvider(
       providers: <BlocProvider<dynamic>>[
         BlocProvider<HomeCubit>(
@@ -31,14 +39,18 @@ class HomePage extends StatelessWidget {
           )..loadCategories(),
         ),
         BlocProvider<QuoteCubit>(
-          create: (BuildContext context) =>
+          create: (_) =>
               QuoteCubit(getFareQuote: getIt())
-                ..update(buildQuoteRequest(const HomeState(), context.l10n)),
+                ..update(buildQuoteRequest(const HomeState(), l10n)),
         ),
         BlocProvider<DemandCubit>(
           create: (_) =>
               DemandCubit(getDemand: getIt())
                 ..watch(TripPlaces.currentLocation),
+        ),
+        BlocProvider<PromoCodeCubit>(
+          create: (_) =>
+              PromoCodeCubit(validate: getIt(), initialCode: promoCode),
         ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(

@@ -523,8 +523,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promoTitle => 'Your usual destination, closer';
 
   @override
-  String get promoCopy =>
-      'Save the places you visit often to request a ride in one step.';
+  String get promoCopy => 'Copy';
 
   @override
   String get promoCta => 'Book a ride now';
@@ -2472,4 +2471,503 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get safetyReportRowCopy => 'Report unsafe driving or misconduct';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get rateShort => 'Rate';
+
+  @override
+  String get rateNow => 'Rate now';
+
+  @override
+  String get ratePassenger => 'Rate the passenger';
+
+  @override
+  String get tripRated => 'Trip rated';
+
+  @override
+  String get rateTripCopy =>
+      'Your rating helps us improve and stays anonymous.';
+
+  @override
+  String get rateDriverQuestion => 'How was your trip with the captain?';
+
+  @override
+  String rateDriverQuestionNamed(String name) {
+    return 'How was your trip with $name?';
+  }
+
+  @override
+  String get ratePassengerQuestion => 'How was the passenger?';
+
+  @override
+  String ratePassengerQuestionNamed(String name) {
+    return 'How was $name?';
+  }
+
+  @override
+  String get ratingStarsNone => 'Choose a star rating';
+
+  @override
+  String get ratingStars1 => 'Bad';
+
+  @override
+  String get ratingStars2 => 'Below expectations';
+
+  @override
+  String get ratingStars3 => 'Okay';
+
+  @override
+  String get ratingStars4 => 'Good';
+
+  @override
+  String get ratingStars5 => 'Excellent';
+
+  @override
+  String get ratingTagsPositive => 'What did you like?';
+
+  @override
+  String get ratingTagsNegative => 'What went wrong?';
+
+  @override
+  String get ratingTagDriving => 'Driving';
+
+  @override
+  String get ratingTagCleanliness => 'Cleanliness';
+
+  @override
+  String get ratingTagBehaviour => 'Behaviour';
+
+  @override
+  String get ratingTagNavigation => 'Navigation';
+
+  @override
+  String get ratingTagVehicleCondition => 'Vehicle condition';
+
+  @override
+  String get ratingTagPunctuality => 'Punctuality';
+
+  @override
+  String get ratingCommentHint => 'Add a comment (optional)';
+
+  @override
+  String get ratingSubmit => 'Submit rating';
+
+  @override
+  String get ratingThanks => 'Thanks for your rating';
+
+  @override
+  String get ratingThanksCopy =>
+      'Your feedback helps us make every trip better.';
+
+  @override
+  String get ratingWindowClosedError => 'The rating period has ended';
+
+  @override
+  String get ratingExistsError => 'This trip has already been rated';
+
+  @override
+  String get pendingRatingTitle => 'Rate your last trip';
+
+  @override
+  String get pendingRatingCopy => 'Tell us how it went.';
+
+  @override
+  String pendingRatingCopyNamed(String name) {
+    return 'How was your trip with $name?';
+  }
+
+  @override
+  String get driverRatingsTitle => 'My ratings';
+
+  @override
+  String get driverRatingsCopy =>
+      'Your average and what passengers mention most, anonymously.';
+
+  @override
+  String ratingCountLine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ratings',
+      one: '1 rating',
+      zero: 'No ratings yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get ratingTopTags => 'Mentioned most';
+
+  @override
+  String get ratingRecentComments => 'Recent comments';
+
+  @override
+  String get ratingNoComments => 'No comments yet.';
+
+  @override
+  String get fareTotalBeforeDiscount => 'Before discount';
+
+  @override
+  String receiptPromo(String code) {
+    return 'Promo code $code';
+  }
+
+  @override
+  String get promoReserved => 'Reserved';
+
+  @override
+  String get promoCodeLabel => 'Promo code';
+
+  @override
+  String get promoAddHint => 'Add a promo code if you have one';
+
+  @override
+  String get promoNotWithOffer =>
+      'Promo codes do not apply when you offer a price';
+
+  @override
+  String promoAppliedLine(String code) {
+    return '$code applied';
+  }
+
+  @override
+  String promoAppliedDiscount(String code, String amount) {
+    return '$code applied · you save $amount';
+  }
+
+  @override
+  String get promoRemove => 'Remove';
+
+  @override
+  String get promoCodeTitle => 'Promo code';
+
+  @override
+  String get promoCodeCopy =>
+      'Enter the code and we will check it against your current fare.';
+
+  @override
+  String get promoCodeHint => 'e.g. ATA10';
+
+  @override
+  String get promoApply => 'Apply';
+
+  @override
+  String get promoNotFoundError => 'The promo code is invalid';
+
+  @override
+  String get promoExpiredError => 'The promo code has expired';
+
+  @override
+  String get promoNotEligibleError =>
+      'The promo code does not apply to this trip';
+
+  @override
+  String get promoUsageLimitError => 'The promo code has been used up';
+
+  @override
+  String get promoUserLimitError =>
+      'You have used this code the maximum number of times';
+
+  @override
+  String get promoReasonFirstTrip => 'This code is for your first trip only';
+
+  @override
+  String get promoReasonNewUsers => 'This code is for new users only';
+
+  @override
+  String get promoReasonCity => 'This code is not available in your city';
+
+  @override
+  String get promoReasonCategory =>
+      'This code does not apply to the selected ride type';
+
+  @override
+  String get promoReasonZone => 'This code does not apply to the pickup area';
+
+  @override
+  String get promoReasonPaymentMethod =>
+      'This code does not apply to the selected payment method';
+
+  @override
+  String get promoReasonBookingType =>
+      'This code does not apply to this booking type';
+
+  @override
+  String get promoReasonMinFare => 'The fare is below this code\'s minimum';
+
+  @override
+  String get promoReasonPricingMode =>
+      'Promo codes do not apply when you offer a price';
+
+  @override
+  String get promotionsTitle => 'Offers';
+
+  @override
+  String get promotionsCopy => 'Promo codes available to you, used or expired.';
+
+  @override
+  String get promotionsLinkCopy => 'Promo codes available to you';
+
+  @override
+  String get promotionsEmpty => 'No offers here right now.';
+
+  @override
+  String get promoTabAvailable => 'Available';
+
+  @override
+  String get promoTabUsed => 'Used';
+
+  @override
+  String get promoTabExpired => 'Expired';
+
+  @override
+  String promoPercentOff(String percent) {
+    return '$percent% off';
+  }
+
+  @override
+  String promoUpTo(String discount, String cap) {
+    return '$discount up to $cap';
+  }
+
+  @override
+  String promoAmountOff(String amount) {
+    return '$amount off';
+  }
+
+  @override
+  String get promoFreeBookingFee => 'Free booking fee';
+
+  @override
+  String promoMinFare(String amount) {
+    return 'Minimum fare $amount';
+  }
+
+  @override
+  String get promoFirstTripOnly => 'First trip only';
+
+  @override
+  String promoValidTo(String date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String get promoUse => 'Use';
+
+  @override
+  String promoCopied(String code) {
+    return 'Code $code copied';
+  }
+
+  @override
+  String get tierTitle => 'Captain level';
+
+  @override
+  String get tierCopy => 'Recalculated weekly from your last 28 days.';
+
+  @override
+  String get tierBronze => 'Bronze';
+
+  @override
+  String get tierSilver => 'Silver';
+
+  @override
+  String get tierGold => 'Gold';
+
+  @override
+  String get tierPlatinum => 'Platinum';
+
+  @override
+  String get tierTopReached => 'You reached the top level — keep it up.';
+
+  @override
+  String tierTripsToNext(int count, String tier) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips to reach $tier',
+      one: '1 trip to reach $tier',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tierProgressTo(String tier) {
+    return 'Your progress to $tier';
+  }
+
+  @override
+  String tierChecksMet(int met, int total) {
+    return '$met of $total requirements met';
+  }
+
+  @override
+  String tierCommissionDiscount(String percent) {
+    return '$percent% commission discount';
+  }
+
+  @override
+  String tierRequirementsTitle(String tier, int days) {
+    return '$tier requirements (last $days days)';
+  }
+
+  @override
+  String get tierCriterionTrips => 'Completed trips';
+
+  @override
+  String get tierCriterionRating => 'Average rating';
+
+  @override
+  String get tierCriterionAcceptance => 'Acceptance rate';
+
+  @override
+  String get tierCriterionCancellation => 'Cancellation rate';
+
+  @override
+  String tierRecalcAt(String date) {
+    return 'Next recalculation: $date';
+  }
+
+  @override
+  String get tierRecalcWeekly => 'Your level is recalculated every Sunday.';
+
+  @override
+  String get incentivesTitle => 'Incentives';
+
+  @override
+  String get incentivesCopy =>
+      'Complete the required trips in the period to earn the reward.';
+
+  @override
+  String get incentivesLinkCopy =>
+      'Active and upcoming quests and their rewards';
+
+  @override
+  String get incentivesEmpty => 'No incentives here right now.';
+
+  @override
+  String get incentiveNearest => 'Closest quest';
+
+  @override
+  String get incentiveTabActive => 'Active';
+
+  @override
+  String get incentiveTabUpcoming => 'Upcoming';
+
+  @override
+  String get incentiveTabCompleted => 'Completed';
+
+  @override
+  String get incentiveTypeDaily => 'Daily';
+
+  @override
+  String get incentiveTypeWeekly => 'Weekly';
+
+  @override
+  String get incentiveTypeZone => 'Zone';
+
+  @override
+  String get incentiveTypeOneTime => 'One-time';
+
+  @override
+  String get incentiveInProgress => 'In progress';
+
+  @override
+  String get incentiveAchieved => 'Achieved · paid after the period ends';
+
+  @override
+  String get incentivePaid => 'Paid';
+
+  @override
+  String get incentiveExpired => 'Expired';
+
+  @override
+  String get incentiveVoided => 'Voided';
+
+  @override
+  String incentiveTripsProgress(int done, int target) {
+    return '$done of $target trips';
+  }
+
+  @override
+  String incentiveTripsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips',
+      one: '1 trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get incentiveJoinFirst => 'Join to start counting';
+
+  @override
+  String get incentiveJoined => 'You joined this incentive';
+
+  @override
+  String get incentiveOptIn => 'Join the incentive';
+
+  @override
+  String get incentiveOptInClosedError =>
+      'Joining this incentive is not available';
+
+  @override
+  String incentiveEndsAt(String date) {
+    return 'Ends $date';
+  }
+
+  @override
+  String incentiveReducedNotice(String multiplier) {
+    return 'Your rewards are reduced (×$multiplier) because of your reliability level. Improve it to get full rewards.';
+  }
+
+  @override
+  String get incentiveDetailTitle => 'Incentive details';
+
+  @override
+  String get incentiveTarget => 'Target';
+
+  @override
+  String get incentiveWindow => 'Days and hours';
+
+  @override
+  String get incentiveZones => 'Zones';
+
+  @override
+  String get incentiveAllZones => 'All zones';
+
+  @override
+  String get incentiveCategories => 'Ride types';
+
+  @override
+  String get incentiveAllCategories => 'All ride types';
+
+  @override
+  String get incentivePeriod => 'Period';
+
+  @override
+  String get daySun => 'Sun';
+
+  @override
+  String get dayMon => 'Mon';
+
+  @override
+  String get dayTue => 'Tue';
+
+  @override
+  String get dayWed => 'Wed';
+
+  @override
+  String get dayThu => 'Thu';
+
+  @override
+  String get dayFri => 'Fri';
+
+  @override
+  String get daySat => 'Sat';
 }

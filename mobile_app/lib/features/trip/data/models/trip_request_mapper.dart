@@ -23,5 +23,6 @@ abstract final class TripRequestMapper {
         'offeredPrice': ?request.offeredPrice,
         'quoteId': ?request.quoteId,
         'riderNote': ?request.riderNote,
+        'promoCode': ?request.promoCode,
       };
 }

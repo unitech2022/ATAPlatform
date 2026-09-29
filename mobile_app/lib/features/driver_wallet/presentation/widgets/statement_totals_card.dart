@@ -73,13 +73,19 @@ class StatementTotalsCard extends StatelessWidget {
               children: <Widget>[
                 Text(l10n.statementDaily, style: AtaText.section),
                 const SizedBox(height: AtaSpacing.sm),
-                for (final StatementDay day in statement.days)
+                for (final StatementDay day in statement.days) ...<Widget>[
                   _Row(
                     label:
                         '${DateText.longDate(day.date, context.localeCode)}'
                         ' · ${l10n.statementTrips(day.trips)}',
                     value: day.earnings,
                   ),
+                  if (day.incentives != 0)
+                    _Row(
+                      label: '    ${l10n.statementIncentives}',
+                      value: day.incentives,
+                    ),
+                ],
               ],
             ),
           ),

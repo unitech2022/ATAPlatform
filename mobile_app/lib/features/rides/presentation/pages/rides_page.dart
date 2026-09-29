@@ -10,11 +10,16 @@ import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
+import 'package:ata_app/features/rating/domain/entities/rating_subject.dart';
+import 'package:ata_app/features/rating/presentation/cubit/pending_rating_cubit.dart';
+import 'package:ata_app/features/rating/presentation/cubit/pending_rating_state.dart';
+import 'package:ata_app/features/rating/presentation/widgets/rating_sheet.dart';
 import 'package:ata_app/features/rides/domain/entities/trip_summary.dart';
 import 'package:ata_app/features/rides/presentation/cubit/rides_cubit.dart';
 import 'package:ata_app/features/rides/presentation/cubit/rides_state.dart';
 import 'package:ata_app/features/rides/presentation/widgets/promo_card.dart';
 import 'package:ata_app/features/rides/presentation/widgets/trip_tile.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -93,6 +98,10 @@ class _TripsCard extends StatelessWidget {
                   ],
                 );
               }
+              final PendingRatingState ratings = context
+                  .watch<PendingRatingCubit>()
+                  .state;
+              final DateTime now = DateTime.now();
               return Column(
                 children: <Widget>[
                   for (final TripSummary trip in state.trips) ...<Widget>[
@@ -100,6 +109,16 @@ class _TripsCard extends StatelessWidget {
                       trip: trip,
                       onTap: trip.status == TripStatus.completed
                           ? () => context.push(AppRoutes.rideReceipt(trip.id))
+                          : null,
+                      onRate: trip.canRateAt(now) && !ratings.isRated(trip.id)
+                          ? () => RatingSheet.show(
+                              context,
+                              subject: RatingSubject(
+                                tripId: trip.id,
+                                rater: TripActor.passenger,
+                                counterpartName: trip.driverName,
+                              ),
+                            )
                           : null,
                     ),
                     const SizedBox(height: AtaSpacing.sm),

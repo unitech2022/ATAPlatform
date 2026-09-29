@@ -4,6 +4,11 @@ abstract final class NotificationTypes {
   static const String tripCompleted = 'trip.completed';
   static const String tripNoDrivers = 'trip.no_drivers';
   static const String applicationApproved = 'driver.application.approved';
+  static const String ratingReminder = 'rating.reminder';
+  static const String promoNew = 'promo.new';
+  static const String incentivePrefix = 'incentive.';
+  static const String incentiveAchieved = 'incentive.achieved';
+  static const String tierChanged = 'driver.tier_changed';
 
   static const Map<String, String> _legacy = <String, String>{
     'driver_application_approved': 'driver.application.approved',
@@ -24,6 +29,7 @@ abstract final class NotificationTypes {
   /// Category of a code (`trips`, `wallet`, `safety`, `promotions`,
   /// `system`), used when the API row has none.
   static String categoryOf(String code) {
+    if (code == incentiveAchieved) return 'wallet';
     final String prefix = code.split('.').first;
     return switch (prefix) {
       'trip' || 'scheduled' || 'rating' || 'lost_item' => 'trips',
@@ -46,6 +52,15 @@ abstract final class NotificationTypes {
       return 'ata://rides/$tripId/receipt';
     }
     if (code == tripNoDrivers) return 'ata://home';
+    if (code == ratingReminder && tripId != null) return 'ata://rate/$tripId';
+    if (code == promoNew) return 'ata://promotions';
+    final String? incentiveId = data?['incentiveId']?.toString();
+    if (code.startsWith(incentivePrefix)) {
+      return incentiveId == null
+          ? 'ata://driver/incentives'
+          : 'ata://driver/incentives/$incentiveId';
+    }
+    if (code == tierChanged) return 'ata://driver/tier';
     if (code.startsWith('trip.') && tripId != null) return 'ata://trip/$tripId';
     if (code == applicationApproved) return 'ata://driver';
     if (code.startsWith('driver.application.')) return 'ata://driver/pending';

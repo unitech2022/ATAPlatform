@@ -48,6 +48,23 @@ enum AtaIcons {
     paths: <String>['m20 20-4-4'],
     circles: <IconCircle>[IconCircle(11, 11, 7)],
   ),
+  star(
+    paths: <String>[
+      'm12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
+    ],
+  ),
+  gift(
+    paths: <String>[
+      'M3 8h18v4H3zM5 12v9h14v-9M12 8v13',
+      'M12 8C10 4 7 3.5 7 6s3 2 5 2Zm0 0c2-4 5-4.5 5-2s-3 2-5 2Z',
+    ],
+  ),
+  trophy(
+    paths: <String>[
+      'M8 21h8M12 16v5M7 4h10v5a5 5 0 0 1-10 0z',
+      'M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3',
+    ],
+  ),
   shield(
     paths: <String>[
       'M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z',

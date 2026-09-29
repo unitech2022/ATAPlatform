@@ -47,6 +47,7 @@ class _HeaderMenu extends StatelessWidget {
       (l10n.menuLanguage, AtaIcons.document, AppRoutes.accountLanguage),
       (l10n.menuNotifications, AtaIcons.bell, AppRoutes.accountNotifications),
       (l10n.menuSafety, AtaIcons.shield, AppRoutes.safety),
+      (l10n.promotionsTitle, AtaIcons.gift, AppRoutes.promotions),
       (l10n.menuContact, AtaIcons.phone, AppRoutes.accountContact),
     ];
     return SafeArea(

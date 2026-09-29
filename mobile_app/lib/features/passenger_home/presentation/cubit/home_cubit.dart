@@ -93,6 +93,13 @@ class HomeCubit extends Cubit<HomeState> {
     emit(_withClampedOffer(next));
   }
 
+  /// Applies (or drops) the validated promo code; re-pricing follows.
+  void applyPromoCode(String? code) => emit(
+    code == null
+        ? state.copyWith(clearPromoCode: true)
+        : state.copyWith(promoCode: code),
+  );
+
   /// Starts a price offer from the current price, or clears it.
   void toggleOfferedPrice() {
     if (state.hasOfferedPrice) {

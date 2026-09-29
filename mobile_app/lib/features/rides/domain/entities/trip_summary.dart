@@ -1,3 +1,4 @@
+import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
 import 'package:equatable/equatable.dart';
 
 /// Lifecycle bucket of a trip as shown in lists.
@@ -33,6 +34,8 @@ class TripSummary extends Equatable {
     this.completedAt,
     this.requestedAt,
     this.earning,
+    this.driverName = '',
+    this.rating = const TripRatingInfo(),
   });
 
   final String id;
@@ -48,6 +51,17 @@ class TripSummary extends Equatable {
 
   /// Driver net earning (driver list only).
   final double? earning;
+
+  /// Driver first name when the list includes it (rating sheet title).
+  final String driverName;
+
+  /// `myRating` / `canRate` / `rateUntil` (F15).
+  final TripRatingInfo rating;
+
+  /// A completed trip that can still be rated at [now] (72 h window).
+  bool canRateAt(DateTime now) =>
+      status == TripStatus.completed &&
+      rating.canRateAt(now, completedAt: completedAt);
 
   /// Best timestamp to display.
   DateTime? get displayDate => completedAt ?? scheduledAt ?? requestedAt;
@@ -68,5 +82,7 @@ class TripSummary extends Equatable {
     completedAt,
     requestedAt,
     earning,
+    driverName,
+    rating,
   ];
 }

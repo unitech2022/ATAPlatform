@@ -1,6 +1,7 @@
 import 'package:ata_app/app/router/app_redirect.dart';
 import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/app/router/driver_routes.dart';
+import 'package:ata_app/app/router/rewards_routes.dart';
 import 'package:ata_app/app/router/router_refresh.dart';
 import 'package:ata_app/app/router/safety_routes.dart';
 import 'package:ata_app/app/shell/passenger_shell.dart';
@@ -60,7 +61,12 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
         builder: (BuildContext context, GoRouterState state, Widget child) =>
             PassengerShell(location: state.matchedLocation, child: child),
         routes: <RouteBase>[
-          GoRoute(path: AppRoutes.home, builder: (_, _) => const HomePage()),
+          GoRoute(
+            path: AppRoutes.home,
+            builder: (BuildContext context, GoRouterState state) => HomePage(
+              promoCode: state.uri.queryParameters[AppRoutes.promoParam],
+            ),
+          ),
           GoRoute(
             path: AppRoutes.trip,
             builder: (_, _) => const ActiveTripPage(),
@@ -108,6 +114,7 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
             ],
           ),
           safetyRoute,
+          ...riderRewardsRoutes,
           GoRoute(
             path: AppRoutes.account,
             builder: (_, _) => const AccountPage(),

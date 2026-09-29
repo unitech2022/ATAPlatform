@@ -1,4 +1,5 @@
 import 'package:ata_app/features/rides/domain/entities/trip_summary.dart';
+import 'package:ata_app/features/trip/data/models/trip_rewards_model.dart';
 
 /// JSON mapping for [TripSummary].
 class TripSummaryModel extends TripSummary {
@@ -14,6 +15,8 @@ class TripSummaryModel extends TripSummary {
     super.completedAt,
     super.requestedAt,
     super.earning,
+    super.driverName,
+    super.rating,
   });
 
   factory TripSummaryModel.fromJson(Map<String, dynamic> json) =>
@@ -29,5 +32,7 @@ class TripSummaryModel extends TripSummary {
         completedAt: DateTime.tryParse(json['completedAt'] as String? ?? ''),
         requestedAt: DateTime.tryParse(json['requestedAt'] as String? ?? ''),
         earning: (json['earning'] as num?)?.toDouble(),
+        driverName: json['driverName'] as String? ?? '',
+        rating: TripRewardsModel.rating(json),
       );
 }

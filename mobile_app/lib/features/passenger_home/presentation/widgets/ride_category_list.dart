@@ -144,9 +144,27 @@ class _CategoryTile extends StatelessWidget {
           if (pricing && quoted == null)
             Text(l10n.quoteLoading, style: AtaText.caption)
           else if (price != null)
-            Text(
-              l10n.priceWithCurrency(Money.compact(price)),
-              style: AtaText.bodyStrong,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                if (quoted?.hasDiscount ?? false)
+                  Text(
+                    l10n.priceWithCurrency(
+                      Money.compact(quoted!.totalBeforeDiscount),
+                    ),
+                    style: AtaText.caption.copyWith(
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                Text(
+                  l10n.priceWithCurrency(Money.compact(price)),
+                  style: AtaText.bodyStrong.copyWith(
+                    color: quoted?.hasDiscount ?? false
+                        ? AtaColors.brand
+                        : null,
+                  ),
+                ),
+              ],
             ),
         ],
       ),

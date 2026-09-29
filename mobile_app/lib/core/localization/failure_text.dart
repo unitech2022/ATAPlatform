@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/rewards_failure_text.dart';
 import 'package:ata_app/core/localization/safety_failure_text.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -39,6 +40,16 @@ abstract final class ErrorCodes {
   static const String noShowTooEarly = 'no_show_too_early';
   static const String accountRestricted = 'account_restricted';
   static const String validationFailed = 'validation_failed';
+  static const String ratingWindowClosed = 'rating_window_closed';
+  static const String ratingExists = 'rating_exists';
+  static const String promoPrefix = 'promo_';
+  static const String promoNotFound = 'promo_not_found';
+  static const String promoExpired = 'promo_expired';
+  static const String promoNotEligible = 'promo_not_eligible';
+  static const String promoUsageLimitReached = 'promo_usage_limit_reached';
+  static const String incentiveOptInClosed = 'incentive_opt_in_closed';
+  static const String reason = 'reason';
+  static const String scope = 'scope';
   static const String conflict = 'conflict';
   static const String secondsRemaining = 'secondsRemaining';
   static const String restrictedUntil = 'restrictedUntil';
@@ -100,6 +111,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
   }
   return _paymentText(failure, l10n) ??
       safetyFailureText(failure, l10n) ??
+      rewardsFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

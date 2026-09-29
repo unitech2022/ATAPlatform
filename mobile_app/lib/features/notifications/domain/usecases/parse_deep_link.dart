@@ -70,7 +70,9 @@ class ParseDeepLink {
         return '/rides/$id';
       case 'rides' when n == 3 && s[2] == 'receipt':
         return '/rides/$id/receipt';
-      case 'rate' || 'scheduled' when n == 2:
+      case 'rate' when n == 2:
+        return p.isDriver ? '$_driver/rate/$id' : '/rate/$id';
+      case 'scheduled' when n == 2:
         return '/$head/$id';
       case 'wallet' when n == 1:
         return '/wallet';
@@ -103,6 +105,8 @@ class ParseDeepLink {
     'earnings',
     'payouts',
     'tier',
+    'incentives',
+    'ratings',
     'scheduled',
   };
   static const Set<String> _driverWithId = <String>{

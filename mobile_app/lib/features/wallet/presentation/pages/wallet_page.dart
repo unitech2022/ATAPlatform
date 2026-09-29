@@ -14,6 +14,7 @@ import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
 import 'package:ata_app/features/payments/presentation/widgets/payment_text.dart';
+import 'package:ata_app/features/promotions/presentation/widgets/promotions_link_card.dart';
 import 'package:ata_app/features/wallet/domain/entities/wallet_summary.dart';
 import 'package:ata_app/features/wallet/presentation/cubit/wallet_cubit.dart';
 import 'package:ata_app/features/wallet/presentation/cubit/wallet_state.dart';
@@ -69,6 +70,8 @@ class WalletPage extends StatelessWidget {
                   BalanceCard(balance: state.balance),
                   const SizedBox(height: AtaSpacing.xl),
                   _MethodsCard(state: state),
+                  const SizedBox(height: AtaSpacing.xl),
+                  const PromotionsLinkCard(),
                 ],
               );
             },
