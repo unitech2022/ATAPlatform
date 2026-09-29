@@ -2931,4 +2931,194 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get daySat => 'السبت';
+
+  @override
+  String get favoriteDriversTitle => 'السائقون المفضلون';
+
+  @override
+  String get favoriteDriversCopy =>
+      'الكباتن الذين أضفتهم بعد رحلات سابقة. اطلبهم مباشرة واحصل على خصم.';
+
+  @override
+  String get favoriteEmptyTitle => 'لا يوجد كباتن مفضلون بعد';
+
+  @override
+  String get favoriteEmptyCopy =>
+      'بعد إكمال رحلة يمكنك إضافة الكابتن إلى مفضلتك من شاشة التقييم أو من الإيصال.';
+
+  @override
+  String favoriteTripsTogether(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رحلة معاً',
+      few: '$count رحلات معاً',
+      two: 'رحلتان معاً',
+      one: 'رحلة واحدة معاً',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String favoriteLastTrip(String date) {
+    return 'آخر رحلة $date';
+  }
+
+  @override
+  String get favoriteAvailableNow => 'متاح الآن';
+
+  @override
+  String favoriteAvailableEta(String eta) {
+    return 'متاح الآن · يصل خلال $eta';
+  }
+
+  @override
+  String get favoriteRemove => 'إزالة من المفضلة';
+
+  @override
+  String favoriteRemoveTitle(String name) {
+    return 'إزالة $name من المفضلة؟';
+  }
+
+  @override
+  String get favoriteRemoveCopy =>
+      'لن تتمكن من طلبه مباشرة ولن ينطبق خصم المفضل معه. لا يتأثر أي رحلة جارية.';
+
+  @override
+  String get favoriteRemoveConfirm => 'إزالة';
+
+  @override
+  String favoriteRemovedSnack(String name) {
+    return 'تمت إزالة $name من المفضلة';
+  }
+
+  @override
+  String get favoriteAdd => 'أضف إلى المفضلة';
+
+  @override
+  String get favoriteAdding => 'جارٍ الإضافة…';
+
+  @override
+  String get favoriteAdded => 'تمت الإضافة إلى المفضلة';
+
+  @override
+  String get favoriteAlready => 'الكابتن في مفضلتك';
+
+  @override
+  String favoriteAddOptionCopy(String name) {
+    return 'اطلب $name مباشرة في رحلاتك القادمة';
+  }
+
+  @override
+  String get favoriteAddOptionCopyAnon =>
+      'اطلب هذا الكابتن مباشرة في رحلاتك القادمة';
+
+  @override
+  String get favoriteRatingAdded => 'تمت إضافة الكابتن إلى مفضلتك';
+
+  @override
+  String favoriteRatingFailed(String reason) {
+    return 'تم إرسال التقييم، لكن تعذّرت إضافة الكابتن إلى المفضلة: $reason';
+  }
+
+  @override
+  String get favoriteNotEligibleError =>
+      'يمكنك إضافة الكابتن بعد إكمال رحلة معه';
+
+  @override
+  String get favoriteExistsError => 'الكابتن موجود في مفضلتك بالفعل';
+
+  @override
+  String get favoritesLimitError => 'وصلت إلى الحد الأقصى للكباتن المفضلين';
+
+  @override
+  String get favoriteNotFavoriteError => 'هذا الكابتن لم يعد في مفضلتك';
+
+  @override
+  String get favoriteRowTitle => 'السائقون المفضلون';
+
+  @override
+  String get favoriteRowManage => 'إدارة';
+
+  @override
+  String get favoriteRowHint => 'اختر كابتنك المفضل ليصله طلبك أولاً';
+
+  @override
+  String get favoriteRowNone => 'لا أحد من كباتنك المفضلين متاح الآن';
+
+  @override
+  String get favoriteRowLoading => 'جارٍ البحث عن كباتنك المفضلين…';
+
+  @override
+  String get favoriteRowNotWithOffer => 'غير متاح مع اقتراح السعر';
+
+  @override
+  String get favoriteChipUnavailable => 'غير متاح حالياً';
+
+  @override
+  String favoriteDiscountBadge(String percent) {
+    return 'خصم $percent%';
+  }
+
+  @override
+  String favoriteSelectedLine(String name) {
+    return 'سيصل طلبك أولاً إلى $name';
+  }
+
+  @override
+  String get favoriteFallbackNote => 'إن لم يكن متاحاً سنبحث عن أقرب كابتن';
+
+  @override
+  String favoriteDiscountSaved(String amount) {
+    return 'خصم الكابتن المفضل · وفّرت $amount';
+  }
+
+  @override
+  String favoriteDiscountConditional(String name) {
+    return 'يُطبّق الخصم عند قبول $name للرحلة';
+  }
+
+  @override
+  String get favoritePromoNotStacked =>
+      'لم يُطبَّق كود الخصم: لا يُجمع مع خصم الكابتن المفضل الأكبر';
+
+  @override
+  String get favoriteLostToPromo =>
+      'لم يُطبَّق خصم المفضل: كود الخصم أكبر ولا يُجمع معه';
+
+  @override
+  String get favoriteDeselect => 'إلغاء اختيار الكابتن المفضل';
+
+  @override
+  String get favoriteSearchingTitle => 'نتواصل مع كابتنك المفضل...';
+
+  @override
+  String favoriteSearchingCopy(String name) {
+    return 'طلبك موجّه أولاً إلى $name. إن لم يرد سنبحث لك عن أقرب كابتن.';
+  }
+
+  @override
+  String favoriteFallbackNotice(String name) {
+    return 'لم يتمكن $name من الرد، نبحث لك عن كابتن آخر';
+  }
+
+  @override
+  String favoriteUnavailableNotice(String name) {
+    return '$name غير متاح حالياً، نبحث لك عن أقرب كابتن';
+  }
+
+  @override
+  String get receiptFavoriteDiscount => 'خصم الكابتن المفضل';
+
+  @override
+  String get favoriteDiscountApplied => 'مطبّق';
+
+  @override
+  String get favoriteDriverBadge => 'مفضل';
+
+  @override
+  String get offerFavoriteRequest => 'من راكب يفضّلك';
+
+  @override
+  String get offerFavoriteExclusive => 'عرض حصري لك';
 }

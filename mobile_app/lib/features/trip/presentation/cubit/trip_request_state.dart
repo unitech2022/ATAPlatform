@@ -1,5 +1,6 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/core/localization/failure_text.dart';
+import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
@@ -44,6 +45,13 @@ class TripRequestState extends Equatable {
   /// `promo_*` (F15): the promo code was refused when creating the trip.
   bool get isPromoRejected =>
       failure?.code.startsWith(ErrorCodes.promoPrefix) ?? false;
+
+  /// `422 validation_failed { favoriteDriverId: not_favorite }` (F16): the
+  /// selected driver is no longer in my favourites.
+  bool get isFavoriteRejected {
+    final Failure? failure = this.failure;
+    return failure != null && isNotFavorite(failure);
+  }
 
   /// Amount owed, from `details.amount` (positive).
   double? get outstandingAmount => failure?.numDetail(ErrorCodes.amount)?.abs();

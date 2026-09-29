@@ -22,6 +22,11 @@ class QuotePromotion extends Equatable {
   final bool valid;
   final String? reason;
 
+  /// The code was not applied because it cannot be combined with the larger
+  /// favourite-driver discount (`docs/10` §1, `not_stacked`).
+  bool get isNotStacked =>
+      reason == 'not_stacked' || reason == 'promo_not_stacked';
+
   @override
   List<Object?> get props => <Object?>[code, valid, reason];
 }
@@ -38,6 +43,7 @@ class FareQuote extends Equatable {
     this.demand = DemandLevel.normal,
     this.categories = const <QuoteCategory>[],
     this.promotion,
+    this.favoriteDiscountConditional = false,
   });
 
   final String quoteId;
@@ -48,6 +54,10 @@ class FareQuote extends Equatable {
   final DemandLevel demand;
   final List<QuoteCategory> categories;
   final QuotePromotion? promotion;
+
+  /// The favourite-driver discount in the totals assumes the driver
+  /// accepts (`favoriteDiscountConditional`, F16).
+  final bool favoriteDiscountConditional;
 
   QuoteCategory? forCategory(String? rideCategoryId) {
     for (final QuoteCategory category in categories) {
@@ -68,5 +78,6 @@ class FareQuote extends Equatable {
     demand,
     categories,
     promotion,
+    favoriteDiscountConditional,
   ];
 }

@@ -70,6 +70,7 @@ abstract final class AppRoutes {
   static const String accountTerms = '/account/terms';
   static const String accountDelete = '/account/delete';
   static const String accountReliability = '/account/reliability';
+  static const String accountFavoriteDrivers = '/account/favorite-drivers';
 
   /// Query parameter carrying the chosen role to the phone screen.
   static const String roleParam = 'role';

@@ -11,6 +11,7 @@ import 'package:ata_app/design/widgets/star_rating.dart';
 import 'package:ata_app/features/rating/domain/entities/submitted_rating.dart';
 import 'package:ata_app/features/rating/presentation/cubit/rating_cubit.dart';
 import 'package:ata_app/features/rating/presentation/cubit/rating_state.dart';
+import 'package:ata_app/features/rating/presentation/widgets/rating_favorite_option.dart';
 import 'package:ata_app/features/rating/presentation/widgets/rating_tag_chips.dart';
 import 'package:ata_app/features/rating/presentation/widgets/rating_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -29,7 +30,7 @@ class RatingForm extends StatelessWidget {
     return BlocBuilder<RatingCubit, RatingState>(
       builder: (BuildContext context, RatingState state) =>
           state.status == RatingStatus.done && state.result != null
-          ? _Thanks(onDone: onDone)
+          ? _Thanks(state: state, onDone: onDone)
           : _Editor(state: state, onDone: onDone),
     );
   }
@@ -106,6 +107,10 @@ class _Editor extends StatelessWidget {
             decoration: InputDecoration(hintText: l10n.ratingCommentHint),
           ),
         ],
+        if (cubit.canAddFavorite) ...<Widget>[
+          const SizedBox(height: AtaSpacing.md),
+          RatingFavoriteOption(state: state),
+        ],
         if (state.failure != null) ...<Widget>[
           const SizedBox(height: AtaSpacing.sm),
           InlineError(message: failureText(state.failure!, l10n)),
@@ -128,8 +133,9 @@ class _Editor extends StatelessWidget {
 }
 
 class _Thanks extends StatelessWidget {
-  const _Thanks({required this.onDone});
+  const _Thanks({required this.state, required this.onDone});
 
+  final RatingState state;
   final VoidCallback onDone;
 
   @override
@@ -159,6 +165,10 @@ class _Thanks extends StatelessWidget {
           style: AtaText.bodyMuted,
           textAlign: TextAlign.center,
         ),
+        if (state.addToFavorites) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          RatingFavoriteNotice(state: state),
+        ],
         const SizedBox(height: AtaSpacing.lg),
         AtaButton(label: l10n.done, onPressed: onDone),
       ],

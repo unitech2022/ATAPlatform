@@ -2,6 +2,7 @@ import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/home_sync.dart';
@@ -51,6 +52,12 @@ class HomePage extends StatelessWidget {
         BlocProvider<PromoCodeCubit>(
           create: (_) =>
               PromoCodeCubit(validate: getIt(), initialCode: promoCode),
+        ),
+        BlocProvider<AvailableFavoritesCubit>(
+          lazy: false,
+          create: (_) =>
+              AvailableFavoritesCubit(getAvailable: getIt())
+                ..watch(TripPlaces.currentLocation),
         ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(

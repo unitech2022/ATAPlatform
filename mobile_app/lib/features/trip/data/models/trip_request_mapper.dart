@@ -24,5 +24,6 @@ abstract final class TripRequestMapper {
         'quoteId': ?request.quoteId,
         'riderNote': ?request.riderNote,
         'promoCode': ?request.promoCode,
+        'favoriteDriverId': ?request.favoriteDriverId,
       };
 }

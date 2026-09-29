@@ -20,6 +20,7 @@ import 'package:ata_app/features/auth/presentation/pages/otp_page_args.dart';
 import 'package:ata_app/features/auth/presentation/pages/phone_page.dart';
 import 'package:ata_app/features/auth/presentation/pages/role_page.dart';
 import 'package:ata_app/features/auth/presentation/pages/terms_page.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/pages/favorite_drivers_page.dart';
 import 'package:ata_app/features/passenger_home/presentation/pages/home_page.dart';
 import 'package:ata_app/features/payments/presentation/pages/add_card_page.dart';
 import 'package:ata_app/features/payments/presentation/pages/payment_methods_page.dart';
@@ -142,6 +143,10 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
               GoRoute(
                 path: 'reliability',
                 builder: (_, _) => const ReliabilityPage(),
+              ),
+              GoRoute(
+                path: 'favorite-drivers',
+                builder: (_, _) => const FavoriteDriversPage(),
               ),
             ],
           ),

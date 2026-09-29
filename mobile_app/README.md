@@ -12,7 +12,9 @@ OneSignal push with `ata://` deep links. F12 adds safety (trip sharing,
 trusted contacts, SOS, "are you OK?" checks, in-trip masked chat, lost items,
 safety reports) and F14 the cancellation engine (reasons from the API, fee
 preview, no-show) and reliability (rates, points, restrictions). F15 adds
-trip ratings, promo codes, the driver tier and driver incentives (quests).
+trip ratings, promo codes, the driver tier and driver incentives (quests);
+F16 adds favourite drivers (add after a trip, request them first with the
+favourite discount).
 Google Maps arrives with the Maps integration (the map is still the painted canvas).
 
 ## Run
@@ -254,7 +256,7 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
 
 ### Ratings, promo codes, tier and incentives (F15)
 
-`docs/10` §F15 (F16 favourite drivers is not part of this step).
+`docs/10` §F15 (favourite drivers are the next section, F16).
 
 - `rating` feature. `RatingCubit` drives the form: 1–5 stars (key
   `star-<n>`), tags from `GET /catalog/rating-tags?target=driver|passenger`
@@ -314,6 +316,66 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
   `ata://driver/incentives/{id}`, `driver.tier_changed` → `ata://driver/tier`
   (also derived for inbox rows without `data.deepLink`).
 
+### Favourite drivers (F16)
+
+`docs/10` §F16 and §1 (discount engine).
+
+- `favorite_drivers` feature (`GET|POST /passenger/favorite-drivers`, `DELETE
+  …/{driverId}`, `GET …/available?lat&lng&rideCategoryId`). Use cases
+  `GetFavoriteDrivers`, `AddFavoriteDriver` (exactly one of `driverId` /
+  `tripId`), `RemoveFavoriteDriver`, `GetAvailableFavorites`.
+- `/account/favorite-drivers` (header menu "السائقون المفضلون" + the "إدارة"
+  link of the request sheet): `FavoriteDriversCubit` lists the favourites
+  (name, rating, vehicle, trips together, last trip); an `AvailableFavoritesCubit`
+  around the fixed pickup adds the "متاح الآن · يصل خلال n" badge; removal
+  asks for confirmation (`RemoveFavoriteDialog`) and shows a snackbar;
+  empty state explains how to add.
+- Adding: the rating form (riders) has the option "أضف إلى المفضلة"
+  (`RatingCubit.toggleAddToFavorites`, calls `AddFavoriteDriver {tripId}`
+  only after the rating was sent; a failure is a notice on the thank-you
+  screen), and `AddFavoriteButton` (own `AddFavoriteCubit`, `409
+  favorite_exists` = already a favourite) sits on the end-of-trip summary,
+  the receipt page and, as a heart, on completed trips of the rides list.
+  `favorite_not_eligible`, `favorites_limit` and `favorite_exists` have
+  their own texts (`favorites_failure_text.dart`).
+- Home request sheet: `FavoriteDriversRow` shows the favourites available now
+  from `AvailableFavoritesCubit` (debounce 600 ms on pickup / category, 30 s
+  refresh) as chips (name, rating, ETA, "خصم 10%"). Picking one calls
+  `HomeCubit.toggleFavorite` (tap again or "إزالة" deselects) and sets
+  `favoriteDriverId` on the quote (`POST /pricing/quote`) and on `POST
+  /passenger/trips`; the sheet states "سيصل طلبك أولاً إلى {name}" and "إن لم
+  يكن متاحاً سنبحث عن أقرب كابتن". The quote is priced assuming acceptance
+  (`favoriteDiscountConditional`): the favourite line (`discounts[]` source
+  `favorite_driver`) is shown as "وفّرت …" plus "يُطبّق الخصم عند قبول
+  {name}", the category tiles show the price before / after and
+  `FareBreakdownSheet` labels the line with the "الكابتن المفضل" source.
+  Promo interplay follows the API: a quote with `promotion.reason:
+  not_stacked` (or a favourite line without a promo line) keeps the code but
+  explains "لم يُطبَّق كود الخصم…" on both rows; a promo line without a
+  favourite line explains "لم يُطبَّق خصم المفضل…" (`FavoritePromoOutcome`).
+  Offering your own price disables the row ("غير متاح مع اقتراح السعر"; the
+  selection is kept but `TripRequestCubit` drops `favoriteDriverId` for
+  `pricingMode: offer`). `422 validation_failed {favoriteDriverId:
+  not_favorite}` clears the selection and refreshes the availability.
+- Searching: `Trip.favorite { driverId, driverName, status, discountApplied }`
+  drives the trip page. While `status = requested` the view says "نتواصل مع
+  كابتنك المفضل..." (+ "طلبك موجّه أولاً إلى {name}…"); after `rejected` /
+  `expired` / `unavailable` it goes back to the normal searching copy with a
+  notice ("لم يتمكن {name} من الرد، نبحث لك عن كابتن آخر" / "{name} غير متاح
+  حالياً…"). The hub `TripUpdated` and polling carry the field; the push
+  `trip.favorite_fallback` opens `ata://trip/{tripId}` (`/trip`).
+- Trip end: the summary shows "خصم الكابتن المفضل · مطبّق" when
+  `favorite.discountApplied`, the itemised receipt already lists the
+  discount with the "الكابتن المفضل" badge, and the driver card shows a heart
+  when the assigned driver is a favourite (`favorite.status = accepted` for
+  that driver, or the optional `driver.isFavorite` flag).
+- Driver offers carry `isFavoriteRequest` / `exclusive`: the offer page shows
+  "من راكب يفضّلك" / "عرض حصري لك". (`GET /driver/favorites/count` and the
+  scheduled favourite priority of F17 are not part of this step.)
+- Assumptions beyond the spec: the driver photo (`photoUrl`) needs auth and
+  is shown as a placeholder; `promotion.reason` may be `not_stacked`;
+  `Trip.driver.isFavorite` is optional.
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -347,7 +409,7 @@ lib/
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
 `pricing`, `payments`, `driver_wallet`, `trip_chat`, `rating`, `promotions`,
-`driver_rewards`.
+`driver_rewards`, `favorite_drivers`.
 
 ### Rules
 
@@ -364,7 +426,7 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 - Dependency injection: `core/di/injector.dart` registers infrastructure,
   `data_module.dart` registers repositories, `use_case_module.dart` registers
   use cases (with `payments_module.dart`, `safety_module.dart` and
-  `rewards_module.dart` for F11/F13, F12/F14 and F15). Tests register fake
+  `rewards_module.dart` for F11/F13, F12/F14 and F15/F16). Tests register fake
   repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
   splash, signed-out → `/auth/*`, new rider → terms, driver not approved →
@@ -433,7 +495,7 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `CancelFlowCubit`        | trip               | reasons → fee / points preview → confirm          |
 | `NoShowCubit`            | trip               | no-show countdown from `arrivedAt`, confirm       |
 | `ReliabilityCubit`       | trip               | reliability summary (rider / driver)              |
-| `RatingCubit`            | rating             | stars, tags by stars, comment, single submit      |
+| `RatingCubit`            | rating             | stars, tags by stars, comment, single submit, rider add-to-favourites |
 | `PendingRatingCubit`     | rating (app-wide)  | unrated recent trips, one prompt, dismissed / rated |
 | `RatingSummaryCubit`     | rating             | driver's own rating summary                       |
 | `PromoCodeCubit`         | promotions         | promo input, validate against the quote, apply / remove, errors |
@@ -441,6 +503,9 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `DriverTierCubit`        | driver_rewards     | tier, next-tier criteria, benefits                |
 | `IncentivesCubit`        | driver_rewards     | quests per tab, reliability multiplier, nearest quest |
 | `IncentiveDetailCubit`   | driver_rewards     | one quest, opt-in                                 |
+| `FavoriteDriversCubit`   | favorite_drivers   | my favourite drivers, removal                     |
+| `AvailableFavoritesCubit`| favorite_drivers   | favourites available now around the pickup (debounce + 30 s refresh) |
+| `AddFavoriteCubit`       | favorite_drivers   | add the driver of a completed trip (`tripId`), already-a-favourite |
 
 ## API
 
@@ -448,7 +513,7 @@ Typed clients for sections 1–7 of `docs/05-api-contract.md`, the F8
 endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
 endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
 driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` and
-`docs/09-feature-f12-f14-safety-cancellation.md` and the F15 endpoints of
+`docs/09-feature-f12-f14-safety-cancellation.md` and the F15 / F16 endpoints of
 `docs/10-feature-f15-f16-ratings-promotions-favorites.md` live in each feature's
 `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token

@@ -43,6 +43,7 @@ class RateTripPage extends StatelessWidget {
         ),
         getTags: getIt(),
         submitRating: getIt(),
+        addFavorite: getIt(),
       )..loadTags(),
       child: BlocListener<RatingCubit, RatingState>(
         listenWhen: (RatingState p, RatingState c) =>

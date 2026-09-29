@@ -11,6 +11,7 @@ class TripDriverModel extends TripDriver {
     super.photoFileId,
     super.phoneMasked,
     super.gender,
+    super.isFavorite,
   });
 
   factory TripDriverModel.fromJson(Map<String, dynamic> json) =>
@@ -21,6 +22,7 @@ class TripDriverModel extends TripDriver {
         photoFileId: JsonReaders.optionalString(json, 'photoFileId'),
         phoneMasked: JsonReaders.optionalString(json, 'phoneMasked'),
         gender: JsonReaders.optionalString(json, 'gender'),
+        isFavorite: json['isFavorite'] == true,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -30,6 +32,7 @@ class TripDriverModel extends TripDriver {
     'photoFileId': photoFileId,
     'phoneMasked': phoneMasked,
     'gender': gender,
+    'isFavorite': isFavorite,
   };
 }
 

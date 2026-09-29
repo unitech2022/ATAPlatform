@@ -24,6 +24,7 @@ class RatingSheet extends StatelessWidget {
       subject: subject,
       getTags: getIt(),
       submitRating: getIt(),
+      addFavorite: getIt(),
     )..loadTags();
     await showModalBottomSheet<void>(
       context: context,

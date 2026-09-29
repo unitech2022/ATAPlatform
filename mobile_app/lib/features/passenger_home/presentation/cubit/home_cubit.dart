@@ -1,6 +1,8 @@
 import 'package:ata_app/core/usecases/use_case.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/catalog/domain/usecases/get_ride_categories.dart';
+import 'package:ata_app/features/favorite_drivers/domain/entities/available_favorite.dart';
+import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/domain/usecases/estimate_fare.dart';
 import 'package:ata_app/features/passenger_home/domain/usecases/update_passenger_preferences.dart';
@@ -100,6 +102,20 @@ class HomeCubit extends Cubit<HomeState> {
         : state.copyWith(promoCode: code),
   );
 
+  /// Picks [favorite] (F16), or drops the selection when it is already the
+  /// chosen one; re-pricing follows (`favoriteDriverId` goes to the quote).
+  void toggleFavorite(AvailableFavorite favorite) {
+    if (state.favorite?.driverId == favorite.driverId) {
+      emit(state.copyWith(clearFavorite: true));
+    } else {
+      emit(state.copyWith(favorite: FavoriteSelection.from(favorite)));
+    }
+  }
+
+  /// Drops the favourite driver (deselect, or the API says they are no
+  /// longer a favourite).
+  void clearFavorite() => emit(state.copyWith(clearFavorite: true));
+
   /// Starts a price offer from the current price, or clears it.
   void toggleOfferedPrice() {
     if (state.hasOfferedPrice) {
@@ -111,7 +127,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Sets the offer (slider), clamped to [HomeState.offerBounds].
   void setOfferedPrice(double price) => emit(
-    state.copyWith(offeredPrice: state.offerBounds.clamp(price.roundToDouble())),
+    state.copyWith(
+      offeredPrice: state.offerBounds.clamp(price.roundToDouble()),
+    ),
   );
 
   void adjustOfferedPrice(double delta) {

@@ -10,6 +10,7 @@ import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/widgets/add_favorite_button.dart';
 import 'package:ata_app/features/rating/domain/entities/rating_subject.dart';
 import 'package:ata_app/features/rating/presentation/cubit/pending_rating_cubit.dart';
 import 'package:ata_app/features/rating/presentation/cubit/pending_rating_state.dart';
@@ -107,6 +108,11 @@ class _TripsCard extends StatelessWidget {
                   for (final TripSummary trip in state.trips) ...<Widget>[
                     TripTile(
                       trip: trip,
+                      favoriteAction:
+                          trip.status == TripStatus.completed &&
+                              trip.driverName.isNotEmpty
+                          ? AddFavoriteButton(tripId: trip.id, compact: true)
+                          : null,
                       onTap: trip.status == TripStatus.completed
                           ? () => context.push(AppRoutes.rideReceipt(trip.id))
                           : null,

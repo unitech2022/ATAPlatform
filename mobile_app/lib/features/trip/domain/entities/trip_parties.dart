@@ -9,6 +9,7 @@ class TripDriver extends Equatable {
     this.photoFileId,
     this.phoneMasked,
     this.gender,
+    this.isFavorite = false,
   });
 
   final String id;
@@ -17,6 +18,9 @@ class TripDriver extends Equatable {
   final String? photoFileId;
   final String? phoneMasked;
   final String? gender;
+
+  /// The rider has this driver in the favourites (optional API flag).
+  final bool isFavorite;
 
   String get firstName => fullName.trim().split(' ').first;
 
@@ -28,6 +32,7 @@ class TripDriver extends Equatable {
     photoFileId,
     phoneMasked,
     gender,
+    isFavorite,
   ];
 }
 

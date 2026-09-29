@@ -27,6 +27,27 @@ abstract final class TripRewardsModel {
     );
   }
 
+  static TripFavorite? favorite(Map<String, dynamic> json) {
+    final Map<String, dynamic>? f = JsonReaders.object(json, 'favorite');
+    if (f == null) return null;
+    return TripFavorite(
+      driverId: JsonReaders.string(f, 'driverId'),
+      driverName: JsonReaders.string(f, 'driverName'),
+      status: FavoriteStatus.parse(JsonReaders.optionalString(f, 'status')),
+      discountApplied: f['discountApplied'] == true,
+    );
+  }
+
+  static Map<String, dynamic>? favoriteJson(TripFavorite? favorite) =>
+      favorite == null
+      ? null
+      : <String, dynamic>{
+          'driverId': favorite.driverId,
+          'driverName': favorite.driverName,
+          'status': favorite.status.apiValue,
+          'discountApplied': favorite.discountApplied,
+        };
+
   static Map<String, dynamic> toJson(
     TripRatingInfo rating,
     TripPromotion? promotion,

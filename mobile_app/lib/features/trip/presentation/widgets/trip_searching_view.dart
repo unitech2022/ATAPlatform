@@ -8,6 +8,8 @@ import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
+import 'package:ata_app/features/trip/presentation/widgets/favorite_search_notice.dart';
 import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +33,7 @@ class TripSearchingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
+    final TripFavorite? favorite = trip.favorite;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -53,16 +56,22 @@ class TripSearchingView extends StatelessWidget {
         ),
         const SizedBox(height: AtaSpacing.xl),
         Text(
-          l10n.searchingTitle,
+          FavoriteSearchText.title(l10n, favorite),
+          key: const ValueKey<String>('searching-title'),
           style: AtaText.headline,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AtaSpacing.xs),
         Text(
-          l10n.searchingCopy(l10n.minutesLabel(trip.etaMinutes)),
+          FavoriteSearchText.copy(l10n, favorite) ??
+              l10n.searchingCopy(l10n.minutesLabel(trip.etaMinutes)),
           style: AtaText.bodyMuted,
           textAlign: TextAlign.center,
         ),
+        if (favorite != null && favorite.fellBack) ...<Widget>[
+          const SizedBox(height: AtaSpacing.md),
+          FavoriteFallbackNotice(favorite: favorite),
+        ],
         const SizedBox(height: AtaSpacing.xl),
         Container(
           padding: const EdgeInsets.all(AtaSpacing.md),

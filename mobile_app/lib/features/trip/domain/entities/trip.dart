@@ -57,6 +57,7 @@ class Trip extends Equatable {
     this.cancellation,
     this.rating = const TripRatingInfo(),
     this.promotion,
+    this.favorite,
   });
 
   /// Trip event recorded when a card capture failed and the fare moved to
@@ -105,7 +106,19 @@ class Trip extends Equatable {
   /// Promo code reserved / applied on the trip (F15).
   final TripPromotion? promotion;
 
+  /// Favourite driver requested for this trip and how it went (F16).
+  final TripFavorite? favorite;
+
   bool get isScheduled => bookingType == 'scheduled';
+
+  /// The assigned driver is one of my favourites: the API flag
+  /// (`driver.isFavorite`) or the accepted favourite request.
+  bool get hasFavoriteDriver =>
+      driver != null &&
+      (driver!.isFavorite ||
+          (favorite != null &&
+              favorite!.isAccepted &&
+              favorite!.driverId == driver!.id));
 
   /// The card could not be charged and the trip is paid in cash.
   bool get paymentFellBackToCash =>
@@ -150,6 +163,7 @@ class Trip extends Equatable {
     cancellation: cancellation,
     rating: rating,
     promotion: promotion,
+    favorite: favorite,
   );
 
   @override
@@ -186,5 +200,6 @@ class Trip extends Equatable {
     cancellation,
     rating,
     promotion,
+    favorite,
   ];
 }

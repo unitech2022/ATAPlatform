@@ -12,6 +12,7 @@ class QuoteRequest extends Equatable {
     this.bookingType = 'now',
     this.scheduledAt,
     this.promoCode,
+    this.favoriteDriverId,
   });
 
   final GeoPoint pickup;
@@ -24,6 +25,9 @@ class QuoteRequest extends Equatable {
   /// Applied promo code (F15); never sent with "offer your price".
   final String? promoCode;
 
+  /// Selected favourite driver (F16): the quote assumes they accept.
+  final String? favoriteDriverId;
+
   @override
   List<Object?> get props => <Object?>[
     pickup,
@@ -33,5 +37,6 @@ class QuoteRequest extends Equatable {
     bookingType,
     scheduledAt,
     promoCode,
+    favoriteDriverId,
   ];
 }

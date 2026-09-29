@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/core/localization/rewards_failure_text.dart';
 import 'package:ata_app/core/localization/safety_failure_text.dart';
 import 'package:ata_app/core/utils/money.dart';
@@ -48,6 +49,11 @@ abstract final class ErrorCodes {
   static const String promoNotEligible = 'promo_not_eligible';
   static const String promoUsageLimitReached = 'promo_usage_limit_reached';
   static const String incentiveOptInClosed = 'incentive_opt_in_closed';
+  static const String favoriteNotEligible = 'favorite_not_eligible';
+  static const String favoriteExists = 'favorite_exists';
+  static const String favoritesLimit = 'favorites_limit';
+  static const String favoriteDriverId = 'favoriteDriverId';
+  static const String notFavorite = 'not_favorite';
   static const String reason = 'reason';
   static const String scope = 'scope';
   static const String conflict = 'conflict';
@@ -112,6 +118,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
   return _paymentText(failure, l10n) ??
       safetyFailureText(failure, l10n) ??
       rewardsFailureText(failure, l10n) ??
+      favoritesFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

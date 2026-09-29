@@ -15,6 +15,7 @@ import 'package:ata_app/design/widgets/sheet_handle.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/fare_details_link.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/favorite_drivers_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/female_driver_option.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/offered_price_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row.dart';
@@ -99,6 +100,8 @@ class _RequestForm extends StatelessWidget {
         const FareDetailsLink(),
         const SizedBox(height: AtaSpacing.sm),
         const PaymentRow(),
+        const SizedBox(height: AtaSpacing.sm),
+        const FavoriteDriversRow(),
         const SizedBox(height: AtaSpacing.sm),
         const PromoCodeRow(),
         const SizedBox(height: AtaSpacing.sm),

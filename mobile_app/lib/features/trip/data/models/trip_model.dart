@@ -42,6 +42,7 @@ class TripModel extends Trip {
     super.cancellation,
     super.rating,
     super.promotion,
+    super.favorite,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -122,6 +123,7 @@ class TripModel extends Trip {
           : TripCancellationModel.fromJson(cancellation),
       rating: TripRewardsModel.rating(json),
       promotion: TripRewardsModel.promotion(json),
+      favorite: TripRewardsModel.favorite(json),
     );
   }
 
@@ -162,6 +164,7 @@ class TripModel extends Trip {
             'photoFileId': driver!.photoFileId,
             'phoneMasked': driver!.phoneMasked,
             'gender': driver!.gender,
+            'isFavorite': driver!.isFavorite,
           },
     'vehicle': vehicle == null
         ? null
@@ -204,5 +207,6 @@ class TripModel extends Trip {
         ? null
         : TripCancellationModel.toJson(cancellation!),
     ...TripRewardsModel.toJson(rating, promotion),
+    'favorite': TripRewardsModel.favoriteJson(favorite),
   };
 }

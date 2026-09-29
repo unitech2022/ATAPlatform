@@ -1,4 +1,5 @@
 import 'package:ata_app/core/localization/l10n_extension.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
@@ -8,6 +9,7 @@ import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_state.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_state.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:ata_app/features/trip/presentation/cubit/active_trip_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
@@ -23,7 +25,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// * a created trip → handed to the app-wide [ActiveTripCubit];
 /// * promo code (F15): applied code → [HomeCubit] (re-quote with
 ///   `promoCode`); a quote or request refusing it → [PromoCodeCubit] error;
-///   a pre-filled code is validated once the first quote arrives.
+///   a pre-filled code is validated once the first quote arrives;
+/// * favourite driver (F16): the selection is sent with the quote; a category
+///   change re-reads the available favourites; `not_favorite` on the request
+///   clears the selection. A `not_stacked` promo stays applied (only
+///   explained in the sheet).
 class HomeSync extends StatelessWidget {
   const HomeSync({super.key, required this.child});
 
@@ -37,10 +43,20 @@ class HomeSync extends StatelessWidget {
           listenWhen: (HomeState p, HomeState c) =>
               p.stops != c.stops ||
               p.rideTime != c.rideTime ||
-              p.effectivePromoCode != c.effectivePromoCode,
+              p.effectivePromoCode != c.effectivePromoCode ||
+              p.effectiveFavoriteDriverId != c.effectiveFavoriteDriverId,
           listener: (BuildContext context, HomeState state) => context
               .read<QuoteCubit>()
               .update(buildQuoteRequest(state, context.l10n)),
+        ),
+        BlocListener<HomeCubit, HomeState>(
+          listenWhen: (HomeState p, HomeState c) =>
+              p.selectedCategoryId != c.selectedCategoryId,
+          listener: (BuildContext context, HomeState state) =>
+              context.read<AvailableFavoritesCubit>().watch(
+                TripPlaces.currentLocation,
+                rideCategoryId: state.selectedCategory?.id,
+              ),
         ),
         BlocListener<QuoteCubit, QuoteState>(
           listenWhen: (QuoteState p, QuoteState c) =>
@@ -59,7 +75,9 @@ class HomeSync extends StatelessWidget {
               p.quote?.promotion != c.quote?.promotion,
           listener: (BuildContext context, QuoteState state) {
             final QuotePromotion? promotion = state.quote?.promotion;
-            if (promotion != null && !promotion.valid) {
+            if (promotion != null &&
+                !promotion.valid &&
+                !promotion.isNotStacked) {
               context.read<PromoCodeCubit>().rejectedByQuote(promotion.reason);
             }
           },
@@ -75,6 +93,10 @@ class HomeSync extends StatelessWidget {
           listener: (BuildContext context, TripRequestState state) {
             if (state.isPromoRejected) {
               context.read<PromoCodeCubit>().rejected(state.failure!);
+            }
+            if (state.isFavoriteRejected) {
+              context.read<HomeCubit>().clearFavorite();
+              context.read<AvailableFavoritesCubit>().refresh();
             }
             final OfferBounds? bounds = state.offerBounds;
             if (bounds != null) {

@@ -70,6 +70,14 @@ class FareBreakdown extends Equatable {
   bool get hasDemandMultiplier => demandMultiplier != 1;
   bool get hasDiscount => discount > 0;
 
+  /// The discount line of [source], if that source applied.
+  FareDiscount? discountFrom(DiscountSource source) {
+    for (final FareDiscount d in discounts) {
+      if (d.source == source && d.amount > 0) return d;
+    }
+    return null;
+  }
+
   @override
   List<Object?> get props => <Object?>[
     baseFare,

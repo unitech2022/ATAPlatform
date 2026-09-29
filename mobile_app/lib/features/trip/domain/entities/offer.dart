@@ -19,6 +19,8 @@ class Offer extends Equatable {
     this.passengerRating,
     this.passengerOffered = false,
     this.round = 1,
+    this.isFavoriteRequest = false,
+    this.exclusive = false,
   });
 
   final String id;
@@ -41,6 +43,12 @@ class Offer extends Equatable {
   /// Matching round (F9); grows as the search radius widens.
   final int round;
 
+  /// A passenger who favours this driver asked for them (F16).
+  final bool isFavoriteRequest;
+
+  /// Only this driver receives the offer (exclusive round).
+  final bool exclusive;
+
   int get etaMinutes => (etaSeconds / 60).ceil();
 
   @override
@@ -60,5 +68,7 @@ class Offer extends Equatable {
     passengerRating,
     passengerOffered,
     round,
+    isFavoriteRequest,
+    exclusive,
   ];
 }

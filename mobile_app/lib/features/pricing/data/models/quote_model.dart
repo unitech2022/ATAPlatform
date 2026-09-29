@@ -17,6 +17,7 @@ class QuoteModel extends FareQuote {
     super.demand,
     super.categories,
     super.promotion,
+    super.favoriteDiscountConditional,
   });
 
   /// Fallback validity when the API omits `expiresAt`.
@@ -56,6 +57,7 @@ class QuoteModel extends FareQuote {
               valid: promotion['valid'] != false,
               reason: JsonReaders.optionalString(promotion, 'reason'),
             ),
+      favoriteDiscountConditional: json['favoriteDiscountConditional'] == true,
     );
   }
 
@@ -83,6 +85,7 @@ class QuoteModel extends FareQuote {
             'valid': promotion!.valid,
             'reason': promotion!.reason,
           },
+    'favoriteDiscountConditional': favoriteDiscountConditional,
   };
 }
 
@@ -96,6 +99,7 @@ abstract final class QuoteRequestMapper {
     'bookingType': request.bookingType,
     'scheduledAt': ?request.scheduledAt?.toIso8601String(),
     'promoCode': ?request.promoCode,
+    'favoriteDriverId': ?request.favoriteDriverId,
   };
 
   static Map<String, dynamic> _point(GeoPoint point) => <String, dynamic>{

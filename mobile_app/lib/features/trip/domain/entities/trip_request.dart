@@ -27,6 +27,7 @@ class TripRequest extends Equatable {
     this.quoteId,
     this.riderNote,
     this.promoCode,
+    this.favoriteDriverId,
   });
 
   final TripStop pickup;
@@ -48,27 +49,33 @@ class TripRequest extends Equatable {
   /// codes do not apply to `pricingMode: offer`.
   final String? promoCode;
 
+  /// Favourite driver asked for first (F16); must be one of my favourites.
+  /// Not offered with `pricingMode: offer`.
+  final String? favoriteDriverId;
+
   TripRequest copyWith({
     PricingMode? pricingMode,
     double? offeredPrice,
     String? quoteId,
     bool clearQuoteId = false,
     bool clearPromoCode = false,
+    bool clearFavoriteDriver = false,
   }) => TripRequest(
-        pickup: pickup,
-        dropoff: dropoff,
-        rideCategoryId: rideCategoryId,
-        stops: stops,
-        bookingType: bookingType,
-        scheduledAt: scheduledAt,
-        paymentMethod: paymentMethod,
-        preferFemaleDriver: preferFemaleDriver,
-        pricingMode: pricingMode ?? this.pricingMode,
-        offeredPrice: offeredPrice ?? this.offeredPrice,
-        quoteId: clearQuoteId ? null : quoteId ?? this.quoteId,
-        riderNote: riderNote,
-        promoCode: clearPromoCode ? null : promoCode,
-      );
+    pickup: pickup,
+    dropoff: dropoff,
+    rideCategoryId: rideCategoryId,
+    stops: stops,
+    bookingType: bookingType,
+    scheduledAt: scheduledAt,
+    paymentMethod: paymentMethod,
+    preferFemaleDriver: preferFemaleDriver,
+    pricingMode: pricingMode ?? this.pricingMode,
+    offeredPrice: offeredPrice ?? this.offeredPrice,
+    quoteId: clearQuoteId ? null : quoteId ?? this.quoteId,
+    riderNote: riderNote,
+    promoCode: clearPromoCode ? null : promoCode,
+    favoriteDriverId: clearFavoriteDriver ? null : favoriteDriverId,
+  );
 
   @override
   List<Object?> get props => <Object?>[
@@ -85,5 +92,6 @@ class TripRequest extends Equatable {
     quoteId,
     riderNote,
     promoCode,
+    favoriteDriverId,
   ];
 }

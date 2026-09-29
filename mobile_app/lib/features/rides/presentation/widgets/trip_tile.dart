@@ -23,7 +23,13 @@ import 'package:flutter/material.dart';
 
 /// One trip in a list: car box, place, status, date and fare.
 class TripTile extends StatelessWidget {
-  const TripTile({super.key, required this.trip, this.onTap, this.onRate});
+  const TripTile({
+    super.key,
+    required this.trip,
+    this.onTap,
+    this.onRate,
+    this.favoriteAction,
+  });
 
   final TripSummary trip;
 
@@ -32,6 +38,9 @@ class TripTile extends StatelessWidget {
 
   /// Opens the rating sheet (completed, unrated, inside the 72 h window).
   final VoidCallback? onRate;
+
+  /// Heart that adds the driver to the favourites (completed trips, F16).
+  final Widget? favoriteAction;
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +69,15 @@ class TripTile extends StatelessWidget {
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
-          Text(
-            l10n.priceWithCurrency(Money.compact(trip.fare)),
-            style: AtaText.bodyStrong,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ?favoriteAction,
+              Text(
+                l10n.priceWithCurrency(Money.compact(trip.fare)),
+                style: AtaText.bodyStrong,
+              ),
+            ],
           ),
           const SizedBox(height: AtaSpacing.xxs),
           if (onRate != null)

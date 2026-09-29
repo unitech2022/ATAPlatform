@@ -3,6 +3,9 @@
 abstract final class NotificationTypes {
   static const String tripCompleted = 'trip.completed';
   static const String tripNoDrivers = 'trip.no_drivers';
+
+  /// F16: the favourite captain did not answer, the search moved on.
+  static const String tripFavoriteFallback = 'trip.favorite_fallback';
   static const String applicationApproved = 'driver.application.approved';
   static const String ratingReminder = 'rating.reminder';
   static const String promoNew = 'promo.new';
@@ -61,6 +64,9 @@ abstract final class NotificationTypes {
           : 'ata://driver/incentives/$incentiveId';
     }
     if (code == tierChanged) return 'ata://driver/tier';
+    if (code == tripFavoriteFallback && tripId != null) {
+      return 'ata://trip/$tripId';
+    }
     if (code.startsWith('trip.') && tripId != null) return 'ata://trip/$tripId';
     if (code == applicationApproved) return 'ata://driver';
     if (code.startsWith('driver.application.')) return 'ata://driver/pending';

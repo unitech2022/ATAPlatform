@@ -1,7 +1,9 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/fare_estimate.dart';
+import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
+import 'package:ata_app/features/pricing/domain/entities/fare_breakdown.dart';
 import 'package:ata_app/features/pricing/domain/entities/fare_quote.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:equatable/equatable.dart';
@@ -21,6 +23,7 @@ class HomeState extends Equatable {
     this.estimate = const FareEstimate(price: 0, etaMinutes: 0),
     this.quote,
     this.promoCode,
+    this.favorite,
   });
 
   /// Lowest price a rider may ever offer, and the fallback offer range used
@@ -49,6 +52,9 @@ class HomeState extends Equatable {
 
   /// Promo code validated by `PromoCodeCubit` (F15).
   final String? promoCode;
+
+  /// Favourite driver picked for this request (F16).
+  final FavoriteSelection? favorite;
 
   RideCategory? get selectedCategory {
     for (final RideCategory category in categories) {
@@ -95,6 +101,40 @@ class HomeState extends Equatable {
   /// The promo code sent with the quote and the request.
   String? get effectivePromoCode => canUsePromo ? promoCode : null;
 
+  /// Favourite drivers are not offered with "offer your price" (`docs/10` §1).
+  bool get canUseFavorite => !hasOfferedPrice;
+
+  /// The favourite driver sent with the quote and the request.
+  String? get effectiveFavoriteDriverId =>
+      canUseFavorite ? favorite?.driverId : null;
+
+  /// Favourite discount line of the selected category's quote, if any.
+  FareDiscount? get favoriteDiscountLine =>
+      quoteCategory?.breakdown.discountFrom(DiscountSource.favoriteDriver);
+
+  /// Whether the favourite discount and the promo code were both wanted and
+  /// only one won (`docs/10` §1: not stackable → the larger one).
+  FavoritePromoOutcome get favoritePromoOutcome {
+    final QuoteCategory? quoted = quoteCategory;
+    if (quoted == null ||
+        effectiveFavoriteDriverId == null ||
+        effectivePromoCode == null) {
+      return FavoritePromoOutcome.none;
+    }
+    final FareBreakdown b = quoted.breakdown;
+    final bool hasFavorite =
+        b.discountFrom(DiscountSource.favoriteDriver) != null;
+    final bool hasPromo = b.discountFrom(DiscountSource.promotion) != null;
+    if (quote?.promotion?.isNotStacked ?? false) {
+      return FavoritePromoOutcome.promoNotApplied;
+    }
+    if (hasFavorite && !hasPromo) return FavoritePromoOutcome.promoNotApplied;
+    if (hasPromo && !hasFavorite && favorite?.discount != null) {
+      return FavoritePromoOutcome.favoriteNotApplied;
+    }
+    return FavoritePromoOutcome.none;
+  }
+
   HomeState copyWith({
     List<RideCategory>? categories,
     bool? loadingCategories,
@@ -108,10 +148,12 @@ class HomeState extends Equatable {
     FareEstimate? estimate,
     FareQuote? quote,
     String? promoCode,
+    FavoriteSelection? favorite,
     bool clearFailure = false,
     bool clearOfferedPrice = false,
     bool clearQuote = false,
     bool clearPromoCode = false,
+    bool clearFavorite = false,
   }) => HomeState(
     categories: categories ?? this.categories,
     loadingCategories: loadingCategories ?? this.loadingCategories,
@@ -127,6 +169,7 @@ class HomeState extends Equatable {
     estimate: estimate ?? this.estimate,
     quote: clearQuote ? null : quote ?? this.quote,
     promoCode: clearPromoCode ? null : promoCode ?? this.promoCode,
+    favorite: clearFavorite ? null : favorite ?? this.favorite,
   );
 
   @override
@@ -143,5 +186,6 @@ class HomeState extends Equatable {
     estimate,
     quote,
     promoCode,
+    favorite,
   ];
 }

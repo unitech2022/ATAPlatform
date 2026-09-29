@@ -6,6 +6,8 @@ import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/widgets/add_favorite_button.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/widgets/favorite_heart_badge.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -14,8 +16,8 @@ import 'package:ata_app/features/trip/presentation/widgets/trip_text.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-/// Completed-trip summary: fare, promo discount, distance, duration,
-/// payment and the rating button (F15).
+/// Completed-trip summary: fare, promo / favourite discount, distance,
+/// duration, payment, add to favourites (F16) and the rating button (F15).
 class TripReceiptView extends StatelessWidget {
   const TripReceiptView({
     super.key,
@@ -78,6 +80,11 @@ class TripReceiptView extends StatelessWidget {
                       ? l10n.promoReserved
                       : '- ${TripText.price(l10n, promotion.discountAmount!)}',
                 ),
+              if (trip.favorite?.discountApplied ?? false)
+                _ReceiptRow(
+                  label: l10n.receiptFavoriteDiscount,
+                  value: l10n.favoriteDiscountApplied,
+                ),
               _ReceiptRow(
                 label: l10n.receiptDistance,
                 value: TripText.distance(l10n, trip.distanceMeters),
@@ -119,6 +126,13 @@ class TripReceiptView extends StatelessWidget {
             variant: AtaButtonVariant.soft,
             onPressed: onReceipt,
           ),
+        ],
+        if (trip.driver != null) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          if (trip.hasFavoriteDriver)
+            const Center(child: FavoriteHeartBadge())
+          else
+            AddFavoriteButton(tripId: trip.id),
         ],
         const SizedBox(height: AtaSpacing.lg),
         TripRateButton(trip: trip, rater: TripActor.passenger),

@@ -56,3 +56,58 @@ class TripPromotion extends Equatable {
   @override
   List<Object?> get props => <Object?>[code, status, discountAmount];
 }
+
+/// `Trip.favorite.status` (`docs/10` §F16.1).
+enum FavoriteStatus {
+  /// The exclusive offer is pending with the favourite driver.
+  requested('requested'),
+  accepted('accepted'),
+
+  /// Not eligible when the trip was requested: normal matching at once.
+  unavailable('unavailable'),
+  rejected('rejected'),
+  expired('expired'),
+  unknown('');
+
+  const FavoriteStatus(this.apiValue);
+
+  final String apiValue;
+
+  static FavoriteStatus parse(String? value) => values.firstWhere(
+    (FavoriteStatus s) => s.apiValue == value && s != unknown,
+    orElse: () => unknown,
+  );
+}
+
+/// `Trip.favorite`: the favourite driver the rider asked for (F16).
+class TripFavorite extends Equatable {
+  const TripFavorite({
+    required this.driverId,
+    this.driverName = '',
+    this.status = FavoriteStatus.requested,
+    this.discountApplied = false,
+  });
+
+  final String driverId;
+  final String driverName;
+  final FavoriteStatus status;
+  final bool discountApplied;
+
+  /// The exclusive offer is still with the favourite driver.
+  bool get isPending => status == FavoriteStatus.requested;
+  bool get isAccepted => status == FavoriteStatus.accepted;
+
+  /// The search moved on to normal matching without the favourite.
+  bool get fellBack =>
+      status == FavoriteStatus.unavailable ||
+      status == FavoriteStatus.rejected ||
+      status == FavoriteStatus.expired;
+
+  @override
+  List<Object?> get props => <Object?>[
+    driverId,
+    driverName,
+    status,
+    discountApplied,
+  ];
+}

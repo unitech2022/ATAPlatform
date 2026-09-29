@@ -5322,6 +5322,300 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'السبت'**
   String get daySat;
+
+  /// No description provided for @favoriteDriversTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السائقون المفضلون'**
+  String get favoriteDriversTitle;
+
+  /// No description provided for @favoriteDriversCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكباتن الذين أضفتهم بعد رحلات سابقة. اطلبهم مباشرة واحصل على خصم.'**
+  String get favoriteDriversCopy;
+
+  /// No description provided for @favoriteEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد كباتن مفضلون بعد'**
+  String get favoriteEmptyTitle;
+
+  /// No description provided for @favoriteEmptyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد إكمال رحلة يمكنك إضافة الكابتن إلى مفضلتك من شاشة التقييم أو من الإيصال.'**
+  String get favoriteEmptyCopy;
+
+  /// No description provided for @favoriteTripsTogether.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رحلة واحدة معاً} =2{رحلتان معاً} few{{count} رحلات معاً} other{{count} رحلة معاً}}'**
+  String favoriteTripsTogether(int count);
+
+  /// No description provided for @favoriteLastTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر رحلة {date}'**
+  String favoriteLastTrip(String date);
+
+  /// No description provided for @favoriteAvailableNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح الآن'**
+  String get favoriteAvailableNow;
+
+  /// No description provided for @favoriteAvailableEta.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح الآن · يصل خلال {eta}'**
+  String favoriteAvailableEta(String eta);
+
+  /// No description provided for @favoriteRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من المفضلة'**
+  String get favoriteRemove;
+
+  /// No description provided for @favoriteRemoveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة {name} من المفضلة؟'**
+  String favoriteRemoveTitle(String name);
+
+  /// No description provided for @favoriteRemoveCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لن تتمكن من طلبه مباشرة ولن ينطبق خصم المفضل معه. لا يتأثر أي رحلة جارية.'**
+  String get favoriteRemoveCopy;
+
+  /// No description provided for @favoriteRemoveConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get favoriteRemoveConfirm;
+
+  /// No description provided for @favoriteRemovedSnack.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إزالة {name} من المفضلة'**
+  String favoriteRemovedSnack(String name);
+
+  /// No description provided for @favoriteAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف إلى المفضلة'**
+  String get favoriteAdd;
+
+  /// No description provided for @favoriteAdding.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الإضافة…'**
+  String get favoriteAdding;
+
+  /// No description provided for @favoriteAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الإضافة إلى المفضلة'**
+  String get favoriteAdded;
+
+  /// No description provided for @favoriteAlready.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن في مفضلتك'**
+  String get favoriteAlready;
+
+  /// No description provided for @favoriteAddOptionCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب {name} مباشرة في رحلاتك القادمة'**
+  String favoriteAddOptionCopy(String name);
+
+  /// No description provided for @favoriteAddOptionCopyAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب هذا الكابتن مباشرة في رحلاتك القادمة'**
+  String get favoriteAddOptionCopyAnon;
+
+  /// No description provided for @favoriteRatingAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة الكابتن إلى مفضلتك'**
+  String get favoriteRatingAdded;
+
+  /// No description provided for @favoriteRatingFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال التقييم، لكن تعذّرت إضافة الكابتن إلى المفضلة: {reason}'**
+  String favoriteRatingFailed(String reason);
+
+  /// No description provided for @favoriteNotEligibleError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إضافة الكابتن بعد إكمال رحلة معه'**
+  String get favoriteNotEligibleError;
+
+  /// No description provided for @favoriteExistsError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن موجود في مفضلتك بالفعل'**
+  String get favoriteExistsError;
+
+  /// No description provided for @favoritesLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت إلى الحد الأقصى للكباتن المفضلين'**
+  String get favoritesLimitError;
+
+  /// No description provided for @favoriteNotFavoriteError.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الكابتن لم يعد في مفضلتك'**
+  String get favoriteNotFavoriteError;
+
+  /// No description provided for @favoriteRowTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السائقون المفضلون'**
+  String get favoriteRowTitle;
+
+  /// No description provided for @favoriteRowManage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة'**
+  String get favoriteRowManage;
+
+  /// No description provided for @favoriteRowHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر كابتنك المفضل ليصله طلبك أولاً'**
+  String get favoriteRowHint;
+
+  /// No description provided for @favoriteRowNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا أحد من كباتنك المفضلين متاح الآن'**
+  String get favoriteRowNone;
+
+  /// No description provided for @favoriteRowLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ البحث عن كباتنك المفضلين…'**
+  String get favoriteRowLoading;
+
+  /// No description provided for @favoriteRowNotWithOffer.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاح مع اقتراح السعر'**
+  String get favoriteRowNotWithOffer;
+
+  /// No description provided for @favoriteChipUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاح حالياً'**
+  String get favoriteChipUnavailable;
+
+  /// No description provided for @favoriteDiscountBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {percent}%'**
+  String favoriteDiscountBadge(String percent);
+
+  /// No description provided for @favoriteSelectedLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيصل طلبك أولاً إلى {name}'**
+  String favoriteSelectedLine(String name);
+
+  /// No description provided for @favoriteFallbackNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'إن لم يكن متاحاً سنبحث عن أقرب كابتن'**
+  String get favoriteFallbackNote;
+
+  /// No description provided for @favoriteDiscountSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم الكابتن المفضل · وفّرت {amount}'**
+  String favoriteDiscountSaved(String amount);
+
+  /// No description provided for @favoriteDiscountConditional.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُطبّق الخصم عند قبول {name} للرحلة'**
+  String favoriteDiscountConditional(String name);
+
+  /// No description provided for @favoritePromoNotStacked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُطبَّق كود الخصم: لا يُجمع مع خصم الكابتن المفضل الأكبر'**
+  String get favoritePromoNotStacked;
+
+  /// No description provided for @favoriteLostToPromo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُطبَّق خصم المفضل: كود الخصم أكبر ولا يُجمع معه'**
+  String get favoriteLostToPromo;
+
+  /// No description provided for @favoriteDeselect.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء اختيار الكابتن المفضل'**
+  String get favoriteDeselect;
+
+  /// No description provided for @favoriteSearchingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتواصل مع كابتنك المفضل...'**
+  String get favoriteSearchingTitle;
+
+  /// No description provided for @favoriteSearchingCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبك موجّه أولاً إلى {name}. إن لم يرد سنبحث لك عن أقرب كابتن.'**
+  String favoriteSearchingCopy(String name);
+
+  /// No description provided for @favoriteFallbackNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتمكن {name} من الرد، نبحث لك عن كابتن آخر'**
+  String favoriteFallbackNotice(String name);
+
+  /// No description provided for @favoriteUnavailableNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} غير متاح حالياً، نبحث لك عن أقرب كابتن'**
+  String favoriteUnavailableNotice(String name);
+
+  /// No description provided for @receiptFavoriteDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم الكابتن المفضل'**
+  String get receiptFavoriteDiscount;
+
+  /// No description provided for @favoriteDiscountApplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطبّق'**
+  String get favoriteDiscountApplied;
+
+  /// No description provided for @favoriteDriverBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفضل'**
+  String get favoriteDriverBadge;
+
+  /// No description provided for @offerFavoriteRequest.
+  ///
+  /// In ar, this message translates to:
+  /// **'من راكب يفضّلك'**
+  String get offerFavoriteRequest;
+
+  /// No description provided for @offerFavoriteExclusive.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض حصري لك'**
+  String get offerFavoriteExclusive;
 }
 
 class _AppLocalizationsDelegate

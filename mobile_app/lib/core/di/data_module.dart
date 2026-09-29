@@ -23,6 +23,9 @@ import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewar
 import 'package:ata_app/features/driver_wallet/data/datasources/driver_wallet_remote_data_source.dart';
 import 'package:ata_app/features/driver_wallet/data/repositories/driver_wallet_repository_impl.dart';
 import 'package:ata_app/features/driver_wallet/domain/repositories/driver_wallet_repository.dart';
+import 'package:ata_app/features/favorite_drivers/data/datasources/favorite_drivers_remote_data_source.dart';
+import 'package:ata_app/features/favorite_drivers/data/repositories/favorite_drivers_repository_impl.dart';
+import 'package:ata_app/features/favorite_drivers/domain/repositories/favorite_drivers_repository.dart';
 import 'package:ata_app/features/notifications/data/datasources/notifications_remote_data_source.dart';
 import 'package:ata_app/features/notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
@@ -164,6 +167,11 @@ void registerData({
     )
     ..registerLazySingleton<PromotionsRepository>(
       () => PromotionsRepositoryImpl(PromotionsRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<FavoriteDriversRepository>(
+      () => FavoriteDriversRepositoryImpl(
+        FavoriteDriversRemoteDataSource(getIt()),
+      ),
     )
     ..registerLazySingleton<DriverRewardsRepository>(
       () => DriverRewardsRepositoryImpl(DriverRewardsRemoteDataSource(getIt())),

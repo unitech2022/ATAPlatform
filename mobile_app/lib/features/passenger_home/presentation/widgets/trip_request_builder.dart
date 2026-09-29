@@ -10,7 +10,8 @@ import 'package:ata_app/l10n/generated/app_localizations.dart';
 
 /// Builds the `POST /passenger/trips` body from the home sheet: the Step-1
 /// places get their fixed Riyadh coordinates, the usable quote is attached
-/// as `quoteId` and the applied promo code as `promoCode`.
+/// as `quoteId`, the applied promo code as `promoCode` and the selected
+/// favourite driver as `favoriteDriverId` (F16).
 TripRequest buildTripRequest(HomeState state, AppLocalizations l10n) =>
     TripRequest(
       pickup: TripStop(
@@ -34,6 +35,7 @@ TripRequest buildTripRequest(HomeState state, AppLocalizations l10n) =>
       offeredPrice: state.offeredPrice,
       quoteId: state.quote?.quoteId,
       promoCode: state.effectivePromoCode,
+      favoriteDriverId: state.effectiveFavoriteDriverId,
     );
 
 /// Builds the `POST /pricing/quote` body for the same route.
@@ -46,6 +48,7 @@ QuoteRequest buildQuoteRequest(HomeState state, AppLocalizations l10n) =>
       ],
       bookingType: bookingTypeOf(state.rideTime),
       promoCode: state.effectivePromoCode,
+      favoriteDriverId: state.effectiveFavoriteDriverId,
     );
 
 /// Context of `POST /passenger/promotions/validate` for the current draft.

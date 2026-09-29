@@ -8,6 +8,7 @@ import 'package:ata_app/design/widgets/ata_card.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/design/widgets/pill.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/widgets/favorite_heart_badge.dart';
 import 'package:ata_app/features/safety/presentation/widgets/share_trip_button.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
@@ -17,8 +18,8 @@ import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 /// Assigned-driver card: photo placeholder, name, rating, vehicle, plate,
-/// ETA chip, the prominent start PIN, masked call / chat and the tracking
-/// link share (F12).
+/// ETA chip, a heart when the driver is a favourite (F16), the prominent
+/// start PIN, masked call / chat and the tracking link share (F12).
 class DriverCard extends StatelessWidget {
   const DriverCard({super.key, required this.trip, this.etaMinutes});
 
@@ -50,10 +51,20 @@ class DriverCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(
-                      driver?.fullName ?? l10n.driverGuestName,
-                      style: AtaText.bodyStrong,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            driver?.fullName ?? l10n.driverGuestName,
+                            style: AtaText.bodyStrong,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (trip.hasFavoriteDriver) ...<Widget>[
+                          const SizedBox(width: AtaSpacing.xxs),
+                          const FavoriteHeartBadge(showLabel: false),
+                        ],
+                      ],
                     ),
                     if (driver != null)
                       Text(

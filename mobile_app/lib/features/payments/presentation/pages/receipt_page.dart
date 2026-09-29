@@ -10,6 +10,7 @@ import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
+import 'package:ata_app/features/favorite_drivers/presentation/widgets/add_favorite_button.dart';
 import 'package:ata_app/features/payments/domain/entities/receipt.dart';
 import 'package:ata_app/features/payments/presentation/cubit/receipt_cubit.dart';
 import 'package:ata_app/features/payments/presentation/cubit/receipt_state.dart';
@@ -71,6 +72,10 @@ class ReceiptPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   _ReceiptBody(receipt: receipt),
+                  if (receipt.driverName != null) ...<Widget>[
+                    const SizedBox(height: AtaSpacing.md),
+                    AddFavoriteButton(tripId: tripId),
+                  ],
                   const SizedBox(height: AtaSpacing.md),
                   TripHelpActions(tripId: tripId),
                 ],

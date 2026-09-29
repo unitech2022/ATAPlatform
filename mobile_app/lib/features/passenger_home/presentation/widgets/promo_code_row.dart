@@ -7,9 +7,11 @@ import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
+import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
+import 'package:ata_app/features/pricing/domain/entities/fare_breakdown.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_state.dart';
@@ -28,17 +30,24 @@ class PromoCodeRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     return BlocBuilder<HomeCubit, HomeState>(
       buildWhen: (HomeState p, HomeState c) =>
-          p.canUsePromo != c.canUsePromo || p.quoteCategory != c.quoteCategory,
+          p.canUsePromo != c.canUsePromo ||
+          p.quoteCategory != c.quoteCategory ||
+          p.favoritePromoOutcome != c.favoritePromoOutcome,
       builder: (BuildContext context, HomeState home) =>
           BlocBuilder<PromoCodeCubit, PromoCodeState>(
             builder: (BuildContext context, PromoCodeState promo) {
               final String? code = promo.appliedCode;
               final QuoteCategory? quoted = home.quoteCategory;
               final double? discount = quoted != null && quoted.hasDiscount
-                  ? quoted.breakdown.discount
+                  ? _promoDiscount(quoted)
                   : promo.applied?.discountAmount;
+              final bool notApplied =
+                  home.favoritePromoOutcome ==
+                  FavoritePromoOutcome.promoNotApplied;
               final String subtitle = !home.canUsePromo
                   ? l10n.promoNotWithOffer
+                  : code != null && notApplied
+                  ? l10n.favoritePromoNotStacked
                   : code == null
                   ? l10n.promoAddHint
                   : discount == null || discount <= 0
@@ -76,6 +85,18 @@ class PromoCodeRow extends StatelessWidget {
             },
           ),
     );
+  }
+
+  /// The promo line of the quote; the whole discount when the quote has no
+  /// per-source lines.
+  static double? _promoDiscount(QuoteCategory quoted) {
+    final FareDiscount? line = quoted.breakdown.discountFrom(
+      DiscountSource.promotion,
+    );
+    if (line != null) return line.amount;
+    return quoted.breakdown.discounts.isEmpty
+        ? quoted.breakdown.discount
+        : null;
   }
 
   void _open(BuildContext context) {

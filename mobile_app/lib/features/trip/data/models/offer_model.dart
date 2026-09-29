@@ -20,6 +20,8 @@ class OfferModel extends Offer {
     super.passengerRating,
     super.passengerOffered,
     super.round,
+    super.isFavoriteRequest,
+    super.exclusive,
   });
 
   static const String offerPricingMode = 'offer';
@@ -54,6 +56,8 @@ class OfferModel extends Offer {
           json['passengerOffered'] == true ||
           JsonReaders.optionalString(json, 'pricingMode') == offerPricingMode,
       round: JsonReaders.optionalInteger(json, 'round') ?? 1,
+      isFavoriteRequest: json['isFavoriteRequest'] == true,
+      exclusive: json['exclusive'] == true,
     );
   }
 
@@ -71,6 +75,8 @@ class OfferModel extends Offer {
     'expiresAt': expiresAt.toIso8601String(),
     'passengerOffered': passengerOffered,
     'round': round,
+    'isFavoriteRequest': isFavoriteRequest,
+    'exclusive': exclusive,
     'passenger': <String, dynamic>{
       'firstName': passengerFirstName,
       'ratingAvg': passengerRating,

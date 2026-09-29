@@ -2970,4 +2970,198 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get daySat => 'Sat';
+
+  @override
+  String get favoriteDriversTitle => 'Favourite drivers';
+
+  @override
+  String get favoriteDriversCopy =>
+      'Captains you added after past trips. Request them directly and get a discount.';
+
+  @override
+  String get favoriteEmptyTitle => 'No favourite captains yet';
+
+  @override
+  String get favoriteEmptyCopy =>
+      'After a completed trip you can add the captain from the rating sheet or the receipt.';
+
+  @override
+  String favoriteTripsTogether(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips together',
+      one: '1 trip together',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String favoriteLastTrip(String date) {
+    return 'Last trip $date';
+  }
+
+  @override
+  String get favoriteAvailableNow => 'Available now';
+
+  @override
+  String favoriteAvailableEta(String eta) {
+    return 'Available now · arrives in $eta';
+  }
+
+  @override
+  String get favoriteRemove => 'Remove from favourites';
+
+  @override
+  String favoriteRemoveTitle(String name) {
+    return 'Remove $name from favourites?';
+  }
+
+  @override
+  String get favoriteRemoveCopy =>
+      'You will no longer be able to request them directly or get the favourite discount. Any ongoing trip is not affected.';
+
+  @override
+  String get favoriteRemoveConfirm => 'Remove';
+
+  @override
+  String favoriteRemovedSnack(String name) {
+    return '$name was removed from your favourites';
+  }
+
+  @override
+  String get favoriteAdd => 'Add to favourites';
+
+  @override
+  String get favoriteAdding => 'Adding…';
+
+  @override
+  String get favoriteAdded => 'Added to favourites';
+
+  @override
+  String get favoriteAlready => 'Already in your favourites';
+
+  @override
+  String favoriteAddOptionCopy(String name) {
+    return 'Request $name directly on your next trips';
+  }
+
+  @override
+  String get favoriteAddOptionCopyAnon =>
+      'Request this captain directly on your next trips';
+
+  @override
+  String get favoriteRatingAdded => 'The captain was added to your favourites';
+
+  @override
+  String favoriteRatingFailed(String reason) {
+    return 'Your rating was sent, but the captain could not be added to your favourites: $reason';
+  }
+
+  @override
+  String get favoriteNotEligibleError =>
+      'You can add the captain after completing a trip with them';
+
+  @override
+  String get favoriteExistsError => 'The captain is already in your favourites';
+
+  @override
+  String get favoritesLimitError =>
+      'You reached the maximum number of favourite captains';
+
+  @override
+  String get favoriteNotFavoriteError =>
+      'This captain is no longer in your favourites';
+
+  @override
+  String get favoriteRowTitle => 'Favourite drivers';
+
+  @override
+  String get favoriteRowManage => 'Manage';
+
+  @override
+  String get favoriteRowHint =>
+      'Pick a favourite captain to get your request first';
+
+  @override
+  String get favoriteRowNone =>
+      'None of your favourite captains is available now';
+
+  @override
+  String get favoriteRowLoading => 'Looking for your favourite captains…';
+
+  @override
+  String get favoriteRowNotWithOffer =>
+      'Not available with your own price offer';
+
+  @override
+  String get favoriteChipUnavailable => 'Unavailable now';
+
+  @override
+  String favoriteDiscountBadge(String percent) {
+    return '$percent% off';
+  }
+
+  @override
+  String favoriteSelectedLine(String name) {
+    return 'Your request goes to $name first';
+  }
+
+  @override
+  String get favoriteFallbackNote =>
+      'If they are unavailable we will find the nearest captain';
+
+  @override
+  String favoriteDiscountSaved(String amount) {
+    return 'Favourite captain discount · you save $amount';
+  }
+
+  @override
+  String favoriteDiscountConditional(String name) {
+    return 'The discount applies once $name accepts the trip';
+  }
+
+  @override
+  String get favoritePromoNotStacked =>
+      'The promo code was not applied: it cannot be combined with the larger favourite discount';
+
+  @override
+  String get favoriteLostToPromo =>
+      'The favourite discount was not applied: the promo code is larger and cannot be combined';
+
+  @override
+  String get favoriteDeselect => 'Clear favourite captain';
+
+  @override
+  String get favoriteSearchingTitle => 'Contacting your favourite captain...';
+
+  @override
+  String favoriteSearchingCopy(String name) {
+    return 'Your request goes to $name first. If they do not answer we will find the nearest captain.';
+  }
+
+  @override
+  String favoriteFallbackNotice(String name) {
+    return '$name could not answer, we are finding you another captain';
+  }
+
+  @override
+  String favoriteUnavailableNotice(String name) {
+    return '$name is unavailable now, we are finding the nearest captain';
+  }
+
+  @override
+  String get receiptFavoriteDiscount => 'Favourite captain discount';
+
+  @override
+  String get favoriteDiscountApplied => 'Applied';
+
+  @override
+  String get favoriteDriverBadge => 'Favourite';
+
+  @override
+  String get offerFavoriteRequest => 'From a passenger who favours you';
+
+  @override
+  String get offerFavoriteExclusive => 'Exclusive to you';
 }

@@ -16,6 +16,9 @@ enum RatingStatus {
   closed,
 }
 
+/// Result of the optional "add to favourites" of the rating form (F16).
+enum RatingFavoriteOutcome { none, added, failed }
+
 /// State of [RatingCubit].
 class RatingState extends Equatable {
   const RatingState({
@@ -29,6 +32,9 @@ class RatingState extends Equatable {
     this.starsMissing = false,
     this.failure,
     this.result,
+    this.addToFavorites = false,
+    this.favoriteOutcome = RatingFavoriteOutcome.none,
+    this.favoriteFailure,
   });
 
   final RatingSubject subject;
@@ -45,6 +51,12 @@ class RatingState extends Equatable {
   final bool starsMissing;
   final Failure? failure;
   final SubmittedRating? result;
+
+  /// "أضف إلى المفضلة" is on (riders only): the driver is added after the
+  /// rating is sent.
+  final bool addToFavorites;
+  final RatingFavoriteOutcome favoriteOutcome;
+  final Failure? favoriteFailure;
 
   bool get hasStars => stars >= RatingDraft.minStars;
 
@@ -67,6 +79,9 @@ class RatingState extends Equatable {
     bool? starsMissing,
     Failure? failure,
     SubmittedRating? result,
+    bool? addToFavorites,
+    RatingFavoriteOutcome? favoriteOutcome,
+    Failure? favoriteFailure,
     bool clearFailure = false,
   }) => RatingState(
     subject: subject,
@@ -79,6 +94,9 @@ class RatingState extends Equatable {
     starsMissing: starsMissing ?? this.starsMissing,
     failure: clearFailure ? null : failure ?? this.failure,
     result: result ?? this.result,
+    addToFavorites: addToFavorites ?? this.addToFavorites,
+    favoriteOutcome: favoriteOutcome ?? this.favoriteOutcome,
+    favoriteFailure: favoriteFailure ?? this.favoriteFailure,
   );
 
   @override
@@ -93,5 +111,8 @@ class RatingState extends Equatable {
     starsMissing,
     failure,
     result,
+    addToFavorites,
+    favoriteOutcome,
+    favoriteFailure,
   ];
 }
