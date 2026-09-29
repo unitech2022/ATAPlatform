@@ -1,6 +1,7 @@
 import type { TranslationKey } from '../i18n'
 import type {
   DriverTier,
+  FavoriteStatus,
   IncentiveListStatus,
   IncentiveProgressStatus,
   PromotionListStatus,
@@ -267,4 +268,13 @@ export const incentiveProgressStatusMeta: Record<IncentiveProgressStatus, Status
 export function metaOf<K extends string>(record: Record<K, StatusMeta>, value: string | null | undefined): StatusMeta | null {
   if (!value) return null
   return (record as Record<string, StatusMeta | undefined>)[value] ?? null
+}
+
+/** `trips.favorite_status` (docs/10 §F16.1). */
+export const favoriteStatusMeta: Record<FavoriteStatus, StatusMeta> = {
+  requested: { tone: 'warning', key: 'fvStatusRequested' },
+  accepted: { tone: 'brand', key: 'fvStatusAccepted' },
+  unavailable: { tone: 'muted', key: 'fvStatusUnavailable' },
+  rejected: { tone: 'danger', key: 'fvStatusRejected' },
+  expired: { tone: 'muted', key: 'fvStatusExpired' },
 }

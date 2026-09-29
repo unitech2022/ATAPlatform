@@ -13,9 +13,11 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { cancellations, dashboard, drivers, live, payments, payouts, promotions, refunds, safety } from '../lib/admin'
+import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety } from '../lib/admin'
+import { favoriteRateShare } from '../lib/favorites'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
 import { daysAgoIso, todayIso } from '../lib/pricing'
+import { formatRatio } from '../lib/rewards'
 import { formatDuration } from '../lib/safety'
 import type { DashboardSummary, SafetySummary } from '../lib/types'
 
@@ -56,9 +58,30 @@ export function DashboardPage() {
   // F15 — each card hides on its own error (403 without the permission, 404 for the assumed redemptions endpoint).
   const activePromotions = useQuery(() => promotions.list({ status: 'active', page: 1, pageSize: 1 }), 'dashboard-promotions')
   const redemptionsToday = useQuery(() => promotions.allRedemptions({ from: today, to: today, page: 1, pageSize: 1 }), `dashboard-redemptions:${today}`)
+  // F16 — favorite booking rate and discount usage over the last 7 days; both cards hide on 403 (`favorites.manage`) / 404.
+  const favoriteStats = useQuery(() => favorites.stats({ from: kpiFrom, to: today }), `dashboard-favorites:${kpiFrom}:${today}`)
+  const favoritePending = favoriteStats.loading && !favoriteStats.data
   const marketingStats: { key: TranslationKey; value: string; icon: IconName; to: string; meta: string }[] = [
     ...(activePromotions.error ? [] : [{ key: 'statActivePromotions' as const, value: countOf(activePromotions), icon: 'gift' as const, to: '/promotions?status=active', meta: t('navGroupMarketing') }]),
     ...(redemptionsToday.error ? [] : [{ key: 'statRedemptionsToday' as const, value: countOf(redemptionsToday), icon: 'tag' as const, to: '/promotions', meta: t('navGroupMarketing') }]),
+    ...(favoriteStats.error
+      ? []
+      : [
+          {
+            key: 'statFavoriteRate' as const,
+            value: favoritePending ? '…' : formatRatio(favoriteRateShare(favoriteStats.data?.favoriteBookingRate)),
+            icon: 'heart' as const,
+            to: '/favorites?tab=stats',
+            meta: t('fvLast7Days'),
+          },
+          {
+            key: 'statFavoriteDiscountUsage' as const,
+            value: favoritePending ? '…' : formatNumber(favoriteStats.data?.discountUsageCount),
+            icon: 'tag' as const,
+            to: '/favorites?tab=stats',
+            meta: favoritePending ? t('fvLast7Days') : `${formatMoney(favoriteStats.data?.discountTotal)} ${t('sar')}`,
+          },
+        ]),
   ]
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
@@ -113,7 +136,7 @@ export function DashboardPage() {
       )}
 
       {marketingStats.length > 0 && (
-        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <div className={`mb-6 grid gap-4 sm:grid-cols-2 ${marketingStats.length > 3 ? 'xl:grid-cols-4' : ''}`}>
           {marketingStats.map((stat) => (
             <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
               <StatCard title={t(stat.key)} icon={stat.icon} value={stat.value} meta={stat.meta} />

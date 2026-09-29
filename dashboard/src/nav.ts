@@ -115,6 +115,8 @@ export const MARKETING_ITEMS: NavItem[] = [
   { key: 'navPromotions', icon: 'gift', to: '/promotions', isActive: (pathname) => pathname.startsWith('/promotions') },
   { key: 'navIncentives', icon: 'target', to: '/incentives', isActive: (pathname) => pathname.startsWith('/incentives') },
   { key: 'navDriverTiers', icon: 'trophy', to: '/driver-tiers', isActive: (pathname) => pathname.startsWith('/driver-tiers') },
+  // F16 — favorite driver discount rules and stats.
+  { key: 'navFavorites', icon: 'heart', to: '/favorites', isActive: (pathname) => pathname.startsWith('/favorites') },
 ]
 
 export interface NavGroup {
@@ -178,6 +180,7 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/driver-tiers')) return 'tierTitle'
   if (/^\/incentives\/[^/]+/.test(pathname)) return 'icDetailTitle'
   if (pathname.startsWith('/incentives')) return 'icTitle'
+  if (pathname.startsWith('/favorites')) return 'fvTitle'
   if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
   if (pathname.startsWith('/reliability')) return 'rlTitle'
   return 'appName'

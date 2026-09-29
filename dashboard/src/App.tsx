@@ -61,7 +61,10 @@ const DriverTiersPage = lazy(() => import('./pages/DriverTiersPage').then((modul
 const IncentivesPage = lazy(() => import('./pages/IncentivesPage').then((module) => ({ default: module.IncentivesPage })))
 const IncentiveDetailPage = lazy(() => import('./pages/IncentiveDetailPage').then((module) => ({ default: module.IncentiveDetailPage })))
 
-/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14) and ratings/marketing (F15) sections. */
+// F16 favorite driver
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage').then((module) => ({ default: module.FavoritesPage })))
+
+/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14), ratings/marketing (F15) and favorites (F16) sections. */
 const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'payments', Page: PaymentsPage },
   { path: 'payments/:id', Page: PaymentDetailPage },
@@ -95,6 +98,7 @@ const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'driver-tiers', Page: DriverTiersPage },
   { path: 'incentives', Page: IncentivesPage },
   { path: 'incentives/:id', Page: IncentiveDetailPage },
+  { path: 'favorites', Page: FavoritesPage },
 ]
 
 /** Short aliases that redirect to the canonical routes from docs/08 §F13.10 and docs/09 "لوحة الإدارة". */

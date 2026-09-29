@@ -334,6 +334,8 @@ export interface TripDetail {
   fareBreakdown?: { discount?: number | null; discounts?: TripDiscountLine[] | null } | null
   discounts?: TripDiscountLine[] | null
   ratings?: TripRatingInfo[] | null
+  /** F16 — favorite driver request on the trip (docs/10 §F16.3 `Trip.favorite`, assumed to be on the admin payload too). */
+  favorite?: TripFavoriteInfo | null
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -1885,4 +1887,68 @@ export interface City {
   id: string
   code: string
   name: string
+}
+
+// ---------------------------------------------------------------------------
+// F16 — favorite driver (docs/10 §F16)
+// ---------------------------------------------------------------------------
+
+/** `trips.favorite_status` (§F16.1). */
+export type FavoriteStatus = 'requested' | 'accepted' | 'unavailable' | 'rejected' | 'expired'
+
+/** `Trip.favorite` (§F16.3); the trailing fields are assumed admin extras. */
+export interface TripFavoriteInfo {
+  driverId?: string | null
+  driverName?: string | null
+  status: FavoriteStatus
+  discountApplied?: boolean | null
+  /** Assumed: the rule pinned at acceptance (`trips.favorite_discount_rule_id`). */
+  discountRuleId?: string | null
+  discountRuleName?: string | null
+}
+
+/** Body of `POST/PUT /admin/favorite-discount-rules` (§F16.3). */
+export interface FavoriteDiscountRuleInput {
+  name: string
+  /** 1..50 (DECIMAL(5,2)). */
+  discountPercent: number
+  maxDiscountAmount: number
+  minFare: number | null
+  stackableWithPromotions: boolean
+  validFrom: string
+  /** null = open ended. */
+  validTo: string | null
+  rideCategoryIds: string[] | null
+  zoneIds: string[] | null
+  bookingTypes: BookingType[] | null
+  priority: number
+  isActive: boolean
+}
+
+/** Row / detail of `/admin/favorite-discount-rules`. */
+export interface FavoriteDiscountRule extends FavoriteDiscountRuleInput {
+  id: string
+  createdByName?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export type FavoriteRuleStatus = 'active' | 'scheduled' | 'expired' | 'inactive'
+
+export interface FavoriteTopDriver {
+  driverId: string
+  name: string | null
+  favoritesCount: number
+  favoriteTrips: number
+}
+
+/** `GET /admin/favorites/stats?from=&to=&cityId=` (§F16.3). */
+export interface FavoriteStats {
+  favoriteRequests: number
+  accepted: number
+  fallback: number
+  favoriteBookingRate: number
+  discountUsageCount: number
+  discountTotal: number
+  topDrivers: FavoriteTopDriver[]
 }

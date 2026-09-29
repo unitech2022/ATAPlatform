@@ -45,6 +45,7 @@ export type IconName =
   | 'gift'
   | 'trophy'
   | 'flag'
+  | 'heart'
   | 'card'
   | 'bank'
   | 'receipt'
@@ -320,6 +321,7 @@ const paths: Record<IconName, ReactNode> = {
   gift: <path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" />,
   trophy: <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />,
   flag: <path d="M4 22V4M4 4h13l-2 4 2 4H4" />,
+  heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />,
 }
 
 export function Icon({ name, className = 'size-5' }: { name: IconName; className?: string }) {

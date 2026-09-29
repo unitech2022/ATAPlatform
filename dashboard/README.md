@@ -1,6 +1,6 @@
 # ATA — لوحة الإدارة (dashboard)
 
-واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10)، والمالية (F11: المدفوعات، الاستردادات، السحوبات، التسويات، المحافظ، الدفتر) والإشعارات (F13: القوالب، الحملات، سجل الإرسال)، والسلامة (F12: مركز الحالات مع تنبيه SOS حيّ، التنبيهات الآلية، المفقودات، قراءة محادثة الرحلة المُدقَّقة) والإلغاء والموثوقية (F14: الأسباب، القواعد مع المحاكي، مراجعة الأعذار، سجل الإلغاءات ومؤشراته، ملفات الموثوقية وسلّم العتبات)، والتقييم والتسويق (F15: التقييمات وبلاغاتها، العروض وأكواد الخصم وحجوزاتها، مستويات السائقين، حوافز السائقين).
+واجهة إدارة منصة ATA: تسجيل دخول مؤسسي، لوحة أرقام موجزة، مراجعة طلبات السائقين ومستنداتهم، إدارة الركاب، فئات الرحلات، سجل التدقيق، الرحلات (F8) والخريطة المباشرة، والمناطق وقواعد التسعير والطلب وإعدادات المطابقة (F9/F10)، والمالية (F11: المدفوعات، الاستردادات، السحوبات، التسويات، المحافظ، الدفتر) والإشعارات (F13: القوالب، الحملات، سجل الإرسال)، والسلامة (F12: مركز الحالات مع تنبيه SOS حيّ، التنبيهات الآلية، المفقودات، قراءة محادثة الرحلة المُدقَّقة) والإلغاء والموثوقية (F14: الأسباب، القواعد مع المحاكي، مراجعة الأعذار، سجل الإلغاءات ومؤشراته، ملفات الموثوقية وسلّم العتبات)، والتقييم والتسويق (F15: التقييمات وبلاغاتها، العروض وأكواد الخصم وحجوزاتها، مستويات السائقين، حوافز السائقين)، والسائق المفضل (F16: قواعد الخصم وإحصاءات المفضل).
 
 - React 19 + Vite + TypeScript
 - Tailwind CSS v4 (`@theme` بنفس Tokens نظام التصميم في `docs/01-design-system.md`)
@@ -52,7 +52,8 @@ src/
                            notifications.ts (القنوات والفئات، العناصر النائبة، بيانات المعاينة، أجزاء SMS، تنظيف الجمهور)،
                            safety.ts (أنواع/أولويات/حالات F12، ترتيب الطابور، المؤقتات، المسار المخطط، روابط tel/الخرائط)،
                            cancellation.ts (المراحل والفاعلون وأنواع الرسوم والمستويات، formatRate، التحقق من القاعدة كما في §F14.3)،
-                           rewards.ts (F15: قوائم الحالات والأنواع، حالة العرض/الحافز من الصلاحية، تحقق نماذج العرض/المستوى/الحافز، ملخص التقييمات، formatAvg/formatRatio)
+                           rewards.ts (F15: قوائم الحالات والأنواع، حالة العرض/الحافز من الصلاحية، تحقق نماذج العرض/المستوى/الحافز، ملخص التقييمات، formatAvg/formatRatio)،
+                           favorites.ts (F16: حالات المفضل وقواعد الخصم، التحقق §F16.3 (1–50%)، تحليل القاعدة السارية/المغطّاة/تعادل الأولوية، تطبيع معدل الحجز بالمفضل)
   context/                 اللغة، المصادقة، التنبيهات
   hooks/                   useQuery، useDebouncedValue، useApiErrorMessage (+ رسائل أكواد F11/F13)، useUrlState/useUrlSearch (فلاتر متزامنة مع الرابط)، useLiveSnapshot (استطلاع كل 5 ث + SignalR)،
                            useCurrentDemand (استطلاع كل 30 ث + حدث DemandChanged عبر SignalR)،
@@ -63,7 +64,7 @@ src/
                            RefundModal/RefundActions (الأربع عيون)، MarkPaidModal، CampaignFormModal، DriverFinanceCard، TripPaymentCard، DutyToggle،
                            SosBanner، SafetyCaseCreateModal، TripMessagesPanel، TripSafetyCard، TripCancellationCard، ExcuseReviewModal،
                            CancellationKpis، ReliabilityCard، ChipGroup، FormSection، CityField، ZonePicker (شرائح + خريطة)، Stars، UsageBar،
-                           PromotionFormModal، IncentiveFormModal، DriverTierCard، RatingSummaryCard، DriverIncentivesCard، TripRewardsCard…
+                           PromotionFormModal، IncentiveFormModal، DriverTierCard، RatingSummaryCard، DriverIncentivesCard، TripRewardsCard، FavoriteRuleFormModal، FavoriteStatsPanel…
   layouts/                 RequireAuth (حماية المسارات) + AppLayout (الشريط الجانبي + الشريط العلوي)
   pages/                   Login, Dashboard, Drivers, DriverDetail, Passengers, RideCategories, AuditLogs,
                            Trips, TripDetail, LiveMap, Zones, PricingRules, Demand, MatchingSettings,
@@ -71,7 +72,7 @@ src/
                            SettlementBatchDetail, Wallets, WalletDetail, Ledger, NotificationTemplates, Campaigns,
                            CampaignDetail, NotificationDeliveries, SafetyCases, SafetyCaseDetail, SafetyAlerts, LostItems,
                            CancellationReasons, CancellationRules, CancellationExcuses, CancellationEvents, Reliability, ReliabilityProfile,
-                           Ratings, RatingFlags, Promotions, PromotionDetail, DriverTiers, Incentives, IncentiveDetail
+                           Ratings, RatingFlags, Promotions, PromotionDetail, DriverTiers, Incentives, IncentiveDetail, Favorites
 ```
 
 ## المسارات
@@ -121,12 +122,15 @@ src/
 | `/driver-tiers` | مستويات السائقين (`/admin/driver-tier-rules`): سلّم المستويات الأربعة قابل للتحرير (الشروط: الرحلات، التقييم، القبول، الإلغاء؛ المزايا: خصم العمولة مع مثال الحصة الفعلية، قيمة المطابقة، نص المزايا) مع تنبيه عند سهولة مستوى أعلى، زر إعادة الحساب (`POST /admin/driver-tiers/recalculate` → `202`)، توزيع السائقين إن أعاد الخادم `driversCount` |
 | `/incentives` | حوافز السائقين (`GET /admin/incentives`): تبويبات الحالة (جارٍ/قادم/منتهٍ/معطّل) بعدّادات، بحث، الهدف والمكافأة، الأهلية، الميزانية، المشاركون؛ إنشاء (النوع، المدينة، الفترة، أيام الأسبوع والساعات بتوقيت الرياض، المناطق على الخريطة، الفئات، الهدف والمكافأة وأدنى أجرة، أدنى مستوى/تقييم، الاشتراك، الحد الأقصى للمشاركين، الميزانية، إشعار النشر)، تعطيل |
 | `/incentives/:id` | تفاصيل الحافز: التعريف وخريطة المناطق، تقدم السائقين (`GET …/progress`) بتبويبات الحالة، معامل الموثوقية («مخفّض» عند < 1)، المكافأة المصروفة وتاريخها، إلغاء التقدم قبل الصرف بسبب (`POST /admin/incentive-progress/{id}/void`) |
+| `/favorites` | السائق المفضل (F16، صلاحية `favorites.manage`، تختفي المحتويات عند `403`): تبويب «قواعد الخصم» (`GET/POST /admin/favorite-discount-rules`، `PUT/DELETE …/{id}`): الاسم، نسبة الخصم 1–50%، الحد الأقصى للمبلغ، الحد الأدنى للأجرة، القابلية للجمع مع العروض، فترة السريان (النهاية اختيارية)، الأولوية، قيود الفئات والمناطق ونوع الحجز، التفعيل/التعطيل (`PUT` كامل)، حذف بتأكيد، مع شارات «الفعّالة الآن» (الأعلى أولوية بين المفعّلة السارية)، «مغطّاة بقاعدة أعلى» و«تعادل في الأولوية» وتحذير عند التداخل بنفس الأولوية؛ وتبويب «الإحصاءات» (`GET /admin/favorites/stats?from=&to=&cityId=`، `?tab=stats`): معدل الحجز بالمفضل، الطلبات، القبول، الرجوع للمطابقة العادية، مرات استخدام الخصم، إجمالي الخصم، وأكثر السائقين تفضيلاً (رابط لصفحة السائق) بمدى تاريخ (افتراضي آخر 30 يوماً) والمدينة |
 
 اختصارات تُحوَّل: `/notification-templates`، `/campaigns`، `/notification-deliveries`، `/notifications`، `/safety/cases` → `/safety`، `/safety/lost-items` → `/lost-items`، `/cancellation` و`/cancellations` → `/cancellation/events`، `/reliability-thresholds`، `/rating-flags` → `/ratings/flags`، `/promo-codes` → `/promotions`، `/tiers` → `/driver-tiers`. وفي `/drivers/:id` (المعتمد/الموقوف) بطاقة «المالية» (الرصيد، دين النقد مقابل الحد 500، آخر السحوبات)، وفي `/trips/:id` قسم «الدفع» (الدفعة، الإيصال، استرداد)، وفي `/` بطاقات المالية (المحصّل اليوم، السحوبات والاستردادات المعلّقة، وGMV اليوم إن أعادها الملخص)، وفي الشريط العلوي مفتاح «مناوب» (`/admin/me/duty`) يظهر فقط لمن يستجيب له الخادم.
 
 F12/F14 في الصفحات القائمة: في `/trips/:id` قسم «الإلغاء» (المرحلة، الفاعل، المخطئ، السبب، الرسوم وحالتها، التعويض، النقاط، العذر مع اعتماد/رفض)، قسم «السلامة» (الحالات، التنبيهات، روابط المشاركة)، «محادثة الرحلة» للقراءة، ونافذة الإلغاء الإداري تقبل `atFault` و`chargeFee`؛ في `/drivers/:id` وفي صف كل راكب في `/passengers` بطاقة «الموثوقية» (المستوى، معدل الإلغاء والموثوقية، النقاط، التقييد حتى)؛ وفي `/` بطاقة «السلامة الآن» وبطاقة مؤشرات الإلغاء لآخر 7 أيام (تختفيان عند `403`).
 
 F15 في الصفحات القائمة: في `/drivers` عمودا «المستوى» و«التقييم» (عند تصفية المعتمدين/الموقوفين أو إن أعادتها الصفوف)؛ في `/drivers/:id` شارة المستوى والتقييم في الرأس، وبطاقات «المستوى» (التاريخ مع المؤشرات من `GET /admin/drivers/{id}/tier-history` + تعديل يدوي بسبب `POST /admin/drivers/{id}/tier`)، «ملخص التقييم» (التوزيع، الوسوم +/−، أحدث التعليقات)، «الحوافز»؛ في `/passengers` عمود التقييم وملخص التقييم في الصف الموسّع؛ في `/trips/:id` قسم «التقييم والخصومات» (كود الخصم وحالة حجزه ومبلغه، سطور `discounts[]`، التقييمان)؛ وفي `/` بطاقتا «العروض النشطة» و«استخدامات الأكواد اليوم» (تختفيان عند الخطأ).
+
+F16 في الصفحات القائمة: في `/trips/:id` داخل قسم «التقييم والخصومات» بطاقة «السائق المفضل المطلوب» (الاسم برابط، الحالة `requested/accepted/unavailable/rejected/expired`، نتيجة العرض الحصري، شارة الرجوع للمطابقة العادية، تطبيق الخصم وقاعدته) وشارة مصدر لكل سطر خصم (`promotion` أو `favorite_driver`)؛ وفي `/` بطاقتا «معدل الحجز بالسائق المفضل» و«استخدام خصم المفضل» لآخر 7 أيام (تختفيان عند `403`/`404`). لا يوفّر `docs/10` نقطة إدارية لمفضلة الراكب ولا لعدد مرات تفضيل السائق (`/driver/favorites/count` للسائق نفسه فقط)، فلا قسم لهما في `/passengers` أو `/drivers/:id`؛ عدد من أضافوا السائق يظهر في جدول «أكثر السائقين تفضيلاً».
 
 ## ملاحظات
 
@@ -142,3 +146,4 @@ F15 في الصفحات القائمة: في `/drivers` عمودا «المست�
 - افتراضات F12/F14 غير المنصوص عليها في `docs/09`: `GET /admin/trips/{id}/shares` (بنفس شكل `/safety/trips/{id}/shares`؛ `404` → «غير متاح»)، معامل `tripId` في `/admin/safety/alerts` (مع تصفية محلية)، أسماء حقول `/admin/cancellations/stats` (`passengerCancellationRate`، `driverCancellationRate`، `cancellationFeeRevenue`|`feeRevenue`، …) و`trip`/`liveLocation` في تفاصيل الحالة؛ كلها اختيارية في الأنواع.
 - المالية: حد الاعتماد التلقائي للاسترداد (50) وحد دين النقد (500) قيم افتراضية من `docs/08 §F11.8` تُستخدم للتلميحات فقط؛ الخادم هو المرجع (`409 four_eyes_required`). ملفات CSV تُنزَّل عبر `api.download` (Bearer) مع قراءة `Content-Disposition` إن كشفه الخادم في CORS (`Access-Control-Expose-Headers`)، وإلا يُستخدم رقم الدفعة اسماً للملف.
 - افتراضات F15 غير المنصوص عليها في `docs/10`: `GET /admin/promotion-redemptions?from=&to=` لعدّاد «استخدامات الأكواد اليوم» (تختفي البطاقة عند `404`)، `GET /admin/drivers/{id}/incentives` لبطاقة حوافز السائق (تختفي عند الخطأ)، `Trip.ratings[]` و`Trip.promotion.promotionId` في تفاصيل الرحلة (وإلا يُبحث في `/admin/ratings?search=<رقم الرحلة>` للرحلات المكتملة)، `userId` في `/admin/ratings` يطابق أي طرف (مع `raterRole` للطرف المقابل = التقييمات المستلمة)، معاملات `tag`/`status`/`search` في `/admin/ratings` (تُعاد تصفية الحالة والوسم محلياً)، وحقول عرض اختيارية (`flagged`، `commentHidden`، `hiddenReason`، `userName`/`driverId`/`rating` في البلاغ، `driversCount` في قواعد المستويات، `participantsCount`/`achievedCount`/`paidCount` في الحافز، `tier`/`ratingAvg`/`ratingCount` في قوائم السائقين والركاب). لا نقطة تفعيل للعرض في العقد، فالتفعيل `PUT` كامل بـ`isActive=true`. ملخص التقييم في بطاقات السائق/الراكب يُحسب محلياً من آخر 100 تقييم (لا يوجد ملخص إداري في العقد)، والمتوسط المعروض هو المخزّن المرجّح إن أُعيد.
+- افتراضات F16 غير المنصوص عليها في `docs/10`: شكل `Trip.favorite` في تفاصيل الرحلة الإدارية (`{ driverId, driverName, status, discountApplied }` كما في نسخة الراكب، مع `discountRuleId`/`discountRuleName` اختيارية)، `GET /admin/favorite-discount-rules` قد يعيد مصفوفة أو غلاف صفحات، `favoriteBookingRate` نسبة 0..1 (القيمة الأكبر من 1 تُقرأ نسبةً مئوية)، `topDrivers` مرتّبة محلياً بعدد المفضلين، والأولوية عدد صحيح ≥ 0. الخادم هو المرجع في التحقق (`422 validation_failed`)، ولا يُعرَّف في العقد ما يفعله الخادم عند تعادل الأولوية فتحذّر اللوحة منه.

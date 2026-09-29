@@ -3,6 +3,9 @@ import type {
   AdminRating,
   City,
   DriverIncentiveProgress,
+  FavoriteDiscountRule,
+  FavoriteDiscountRuleInput,
+  FavoriteStats,
   DriverTier,
   DriverTierHistoryEntry,
   DriverTierRule,
@@ -647,4 +650,23 @@ export const incentives = {
   /** Assumed endpoint (not in §F15.10): a driver's progress across incentives; callers hide the section on 404. */
   forDriver: (driverId: string) =>
     api.get<Paginated<DriverIncentiveProgress> | DriverIncentiveProgress[]>(`/admin/drivers/${driverId}/incentives`).then(unwrapList),
+}
+
+// ---------------------------------------------------------------------------
+// F16 — favorite driver discount rules and stats (docs/10 §F16.3, permission `favorites.manage`)
+// ---------------------------------------------------------------------------
+
+export type FavoriteStatsQuery = DateRange & { cityId?: string }
+
+export const favorites = {
+  rules: () =>
+    api.get<Paginated<FavoriteDiscountRule> | FavoriteDiscountRule[]>('/admin/favorite-discount-rules', ALL).then(unwrapList),
+  get: (id: string) => api.get<FavoriteDiscountRule>(`/admin/favorite-discount-rules/${id}`),
+  /** Audited as `favorite_discount_rule.create`. */
+  create: (input: FavoriteDiscountRuleInput) => api.post<FavoriteDiscountRule>('/admin/favorite-discount-rules', input),
+  /** Audited as `favorite_discount_rule.update`; a full replacement body. */
+  update: (id: string, input: FavoriteDiscountRuleInput) => api.put<FavoriteDiscountRule>(`/admin/favorite-discount-rules/${id}`, input),
+  /** Audited as `favorite_discount_rule.delete` (`204`). */
+  remove: (id: string) => api.delete<void>(`/admin/favorite-discount-rules/${id}`),
+  stats: (query: FavoriteStatsQuery) => api.get<FavoriteStats>('/admin/favorites/stats', query),
 }

@@ -3,17 +3,18 @@ import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import { useRatingTags } from '../hooks/useRatingTags'
 import { ratings } from '../lib/admin'
+import { DISCOUNT_SOURCE_KEY, FAVORITE_FALLBACK_STATUSES, FAVORITE_OUTCOME_KEY } from '../lib/favorites'
 import { RATING_DIRECTION_KEY } from '../lib/rewards'
-import { redemptionStatusMeta } from '../lib/status'
-import type { TripDetail, TripRatingInfo } from '../lib/types'
+import { favoriteStatusMeta, redemptionStatusMeta } from '../lib/status'
+import type { TripDetail, TripFavoriteInfo, TripRatingInfo } from '../lib/types'
 import { Badge, MetaBadge } from './Badge'
 import { Card } from './Card'
 import { Money } from './Money'
 import { Stars } from './Stars'
 
 /**
- * F15 on the trip page: the promo reservation (`Trip.promotion`), the stored discount lines
- * (`fare_breakdown.discounts[]`, docs/08 §F11.6) and both ratings. Ratings come from the assumed admin
+ * F15/F16 on the trip page: the promo reservation (`Trip.promotion`), the favorite driver request (`Trip.favorite`,
+ * docs/10 §F16.3), the stored discount lines (`fare_breakdown.discounts[]`, docs/08 §F11.6, each with its source) and both ratings. Ratings come from the assumed admin
  * `Trip.ratings[]`; when the trip does not embed them, completed trips look them up in `GET /admin/ratings`
  * by trip number. Renders nothing for trips with no promotion, no discounts and no chance of ratings.
  */
@@ -22,7 +23,7 @@ export function TripRewardsCard({ trip }: { trip: TripDetail }) {
   const discounts = trip.fareBreakdown?.discounts ?? trip.discounts ?? []
   const discountTotal = trip.fareBreakdown?.discount ?? null
   const completed = trip.status === 'completed'
-  if (!trip.promotion && discounts.length === 0 && !trip.ratings?.length && !completed) return null
+  if (!trip.promotion && !trip.favorite && discounts.length === 0 && !trip.ratings?.length && !completed) return null
 
   return (
     <Card title={t('tripRewardsTitle')} className="mb-6">
@@ -47,13 +48,17 @@ export function TripRewardsCard({ trip }: { trip: TripDetail }) {
           ) : (
             <p className="rounded-2xl bg-cloud px-4 py-3 text-sm text-muted">{t('tripNoPromotion')}</p>
           )}
+          {trip.favorite && <FavoriteInfo favorite={trip.favorite} discounts={discounts} />}
           {discounts.length > 0 && (
             <div className="rounded-2xl border border-line px-4 py-3">
               <p className="mb-2 text-xs font-bold text-muted">{t('tripDiscounts')}</p>
               <ul className="space-y-1.5 text-sm">
                 {discounts.map((line, index) => (
                   <li key={`${line.source}-${index}`} className="flex items-center justify-between gap-2">
-                    <span className="min-w-0 truncate">{line.label || line.reference || line.source}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate">{line.label || line.reference || line.source}</span>
+                      {DISCOUNT_SOURCE_KEY[line.source] && <Badge tone={line.source === 'favorite_driver' ? 'brand' : 'ink'}>{t(DISCOUNT_SOURCE_KEY[line.source])}</Badge>}
+                    </span>
                     <Money value={-Math.abs(line.amount)} signed />
                   </li>
                 ))}
@@ -72,6 +77,42 @@ export function TripRewardsCard({ trip }: { trip: TripDetail }) {
         </div>
       </div>
     </Card>
+  )
+}
+
+/** F16: requested favorite driver, exclusive-offer outcome, fallback to normal matching and the favorite discount line. */
+function FavoriteInfo({ favorite, discounts }: { favorite: TripFavoriteInfo; discounts: NonNullable<TripDetail['discounts']> }) {
+  const { t } = useLang()
+  const fallback = FAVORITE_FALLBACK_STATUSES.includes(favorite.status)
+  const line = discounts.find((item) => item.source === 'favorite_driver')
+  const applied = favorite.discountApplied === true || Boolean(line)
+  return (
+    <div className="rounded-2xl border border-line px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="min-w-0">
+          <span className="block text-xs font-bold text-muted">{t('tripFavorite')}</span>
+          {favorite.driverId ? (
+            <Link to={`/drivers/${favorite.driverId}`} className="font-bold text-brand hover:underline">
+              {favorite.driverName || t('unnamed')}
+            </Link>
+          ) : (
+            <span className="font-bold">{favorite.driverName || t('unnamed')}</span>
+          )}
+        </span>
+        <MetaBadge record={favoriteStatusMeta} value={favorite.status} />
+      </div>
+      <p className="mt-2 text-sm text-muted">{t(FAVORITE_OUTCOME_KEY[favorite.status] ?? 'fvOutcomeRequested')}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+        {fallback && <Badge tone="warning">{t('tripFavoriteFallback')}</Badge>}
+        <Badge tone={applied ? 'brand' : 'muted'}>{applied ? t('tripFavoriteDiscountApplied') : t('tripFavoriteNoDiscount')}</Badge>
+        {line && <Money value={-Math.abs(line.amount)} signed strong />}
+        {favorite.discountRuleId && (
+          <Link to="/favorites" className="font-bold text-brand hover:underline">
+            {t('tripFavoriteRule')}: {favorite.discountRuleName || favorite.discountRuleId}
+          </Link>
+        )}
+      </div>
+    </div>
   )
 }
 
