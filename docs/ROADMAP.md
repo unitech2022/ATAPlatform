@@ -42,7 +42,7 @@
 | F12 | **السلامة** (مشاركة الرحلة، جهات موثوقة، طوارئ، كشف التوقف/الانحراف، البلاغات) | safety | `safety` | — | Safety Cases | ✅ مُسلَّم |
 | F13 | **الإشعارات الفورية** (OneSignal عبر External ID، Tags للدور واللغة، SMS للحالات الحرجة، قوالب) | notifications | تكامل FCM | — | القوالب | ✅ مُسلَّم (المفاتيح الحقيقية تُضاف عند الإطلاق) |
 | F14 | **الإلغاء والموثوقية** (قواعد، أسباب، أحداث، عقوبات الطرفين، ReliabilityProfiles) | cancellation | إلغاء بسبب + رسوم | — | قواعد الإلغاء | ✅ مُسلَّم |
-| F15 | **التقييم والعروض** (Ratings، Promo Codes، مستويات السائق، الحوافز) | ratings + promotions + incentives | `rating`, `promotions` | — | Promotions / Incentives | ⏳ |
+| F15 | **التقييم والعروض** (Ratings، Promo Codes، مستويات السائق، الحوافز) | ratings + promotions + incentives | `rating`, `promotions` | — | Promotions / Incentives | ✅ مُسلَّم |
 | F16 | **السائق المفضل** (المفضلة، الاختيار بالاسم، الخصم، قواعد عدم الجمع) | favorites | `favorite_drivers` | — | قواعد خصم المفضل | ⏳ |
 | F17 | **الرحلات المجدولة والمطار** (نافذة 7 أيام، تذكيرات، سياسات إلغاء، Terminal/Pickup Zone) | scheduling + airport | الجدولة + المطار | — | قواعد الجدولة | ⏳ |
 | F18 | **الدعم** (مركز المساعدة، البلاغات، المفقودات، النزاعات) | support | `support` | صفحة المساعدة | Support Tickets | ⏳ |
