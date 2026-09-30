@@ -3645,4 +3645,386 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reservationNotConfirmableExpiredError => 'انتهت مهلة التأكيد';
+
+  @override
+  String get supportEyebrow => 'المساعدة';
+
+  @override
+  String get supportTitle => 'المساعدة والدعم';
+
+  @override
+  String get supportCopy => 'ابحث عن إجابتك أو تواصل مع فريق الدعم';
+
+  @override
+  String get supportRowCopy => 'مركز المساعدة وتذاكرك';
+
+  @override
+  String get helpSearchHint => 'ابحث في المساعدة';
+
+  @override
+  String get helpTopicsTitle => 'المواضيع';
+
+  @override
+  String helpArticlesCount(int count) {
+    return '$count مقال';
+  }
+
+  @override
+  String get helpNoResults => 'لا توجد مقالات مطابقة';
+
+  @override
+  String get helpNoResultsCopy => 'جرّب كلمات أخرى أو افتح تذكرة وسنساعدك';
+
+  @override
+  String get helpAllTopics => 'كل المواضيع';
+
+  @override
+  String get helpLoadMore => 'عرض المزيد';
+
+  @override
+  String helpArticleUpdated(String date) {
+    return 'آخر تحديث $date';
+  }
+
+  @override
+  String get helpRelatedTitle => 'مقالات ذات صلة';
+
+  @override
+  String get helpFeedbackTitle => 'هل كان المقال مفيداً؟';
+
+  @override
+  String get helpFeedbackYes => 'نعم';
+
+  @override
+  String get helpFeedbackNo => 'لا';
+
+  @override
+  String get helpFeedbackThanks => 'شكراً على رأيك';
+
+  @override
+  String get helpFeedbackNoCopy =>
+      'آسفون لذلك. يمكنك فتح تذكرة ليساعدك فريق الدعم.';
+
+  @override
+  String get helpStillNeedTitle => 'لم تجد إجابتك؟';
+
+  @override
+  String get helpStillNeedCopy => 'افتح تذكرة وسيرد عليك فريق الدعم';
+
+  @override
+  String get supportMyTickets => 'تذاكري';
+
+  @override
+  String get supportMyTicketsCopy => 'تابع طلباتك وردود الفريق';
+
+  @override
+  String supportUnreadBadge(int count) {
+    return '$count جديد';
+  }
+
+  @override
+  String get supportContactUs => 'تواصل معنا';
+
+  @override
+  String get supportContactUsCopy => 'افتح تذكرة جديدة وسيرد عليك الفريق';
+
+  @override
+  String get ticketsEyebrow => 'الدعم';
+
+  @override
+  String get ticketsTitle => 'تذاكري';
+
+  @override
+  String get ticketsCopy => 'طلباتك إلى فريق الدعم وحالتها';
+
+  @override
+  String get ticketsTabOpen => 'المفتوحة';
+
+  @override
+  String get ticketsTabClosed => 'المغلقة';
+
+  @override
+  String get ticketsEmpty => 'لا توجد تذاكر هنا';
+
+  @override
+  String get ticketsEmptyCopy => 'عند التواصل مع الدعم ستظهر تذكرتك هنا';
+
+  @override
+  String get ticketsNew => 'تذكرة جديدة';
+
+  @override
+  String ticketNumberAndTrip(String number, String trip) {
+    return '$number · رحلة $trip';
+  }
+
+  @override
+  String get ticketTypeTripIssue => 'مشكلة في رحلة';
+
+  @override
+  String get ticketTypePaymentIssue => 'الدفع والأجرة';
+
+  @override
+  String get ticketTypeLostItem => 'غرض مفقود';
+
+  @override
+  String get ticketTypeSafety => 'السلامة';
+
+  @override
+  String get ticketTypeAccount => 'الحساب';
+
+  @override
+  String get ticketTypeOther => 'أخرى';
+
+  @override
+  String get ticketStatusOpen => 'مفتوحة';
+
+  @override
+  String get ticketStatusPendingUser => 'بانتظار ردك';
+
+  @override
+  String get ticketStatusInProgress => 'قيد المعالجة';
+
+  @override
+  String get ticketStatusResolved => 'تم الحل';
+
+  @override
+  String get ticketStatusClosed => 'مغلقة';
+
+  @override
+  String get ticketBannerOpen => 'استلمنا تذكرتك وسيراجعها الفريق';
+
+  @override
+  String get ticketBannerPendingUser => 'الفريق ينتظر ردك لمتابعة الطلب';
+
+  @override
+  String get ticketBannerInProgress => 'فريق الدعم يعمل على طلبك';
+
+  @override
+  String get ticketBannerResolved =>
+      'تم حل طلبك. إن بقيت المشكلة يمكنك الرد هنا.';
+
+  @override
+  String get ticketBannerClosed => 'أُغلقت هذه التذكرة';
+
+  @override
+  String get newTicketEyebrow => 'تذكرة جديدة';
+
+  @override
+  String get newTicketTitle => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get newTicketCopy => 'اختر نوع الطلب واشرح ما حدث';
+
+  @override
+  String get newTicketTypeLabel => 'نوع الطلب';
+
+  @override
+  String get newTicketTripLabel => 'الرحلة المتعلقة';
+
+  @override
+  String get newTicketTripRequired => 'اختر الرحلة التي يخصها طلبك';
+
+  @override
+  String get newTicketTripOptional => 'اختياري';
+
+  @override
+  String get newTicketNoTrip => 'بدون رحلة';
+
+  @override
+  String get newTicketNoTrips => 'لا توجد رحلات حديثة';
+
+  @override
+  String get newTicketSubjectLabel => 'الموضوع';
+
+  @override
+  String get newTicketMessageLabel => 'تفاصيل الطلب';
+
+  @override
+  String get newTicketSubmit => 'إرسال التذكرة';
+
+  @override
+  String newTicketCreated(String number) {
+    return 'تم إرسال تذكرتك رقم $number';
+  }
+
+  @override
+  String get attachmentsTitle => 'المرفقات';
+
+  @override
+  String get attachmentsAdd => 'إضافة مرفق';
+
+  @override
+  String get attachmentsHint => 'صور أو PDF حتى 10 ميغابايت، بحد أقصى 5 مرفقات';
+
+  @override
+  String get attachmentUploading => 'جارٍ الرفع…';
+
+  @override
+  String get attachmentFailedRetry => 'فشل الرفع · اضغط للإعادة';
+
+  @override
+  String get attachmentRemove => 'إزالة المرفق';
+
+  @override
+  String get attachmentLimitError => 'الحد الأقصى 5 مرفقات';
+
+  @override
+  String get unsupportedFileTypeError =>
+      'نوع الملف غير مدعوم (صور JPG / PNG أو PDF فقط)';
+
+  @override
+  String get fileTooLargeError => 'حجم الملف أكبر من 10 ميغابايت';
+
+  @override
+  String get ticketClosedError => 'التذكرة مغلقة، أنشئ تذكرة جديدة';
+
+  @override
+  String get disputeExistsError => 'يوجد اعتراض سابق على هذه الرحلة';
+
+  @override
+  String get disputeWindowClosedError => 'انتهت مدة الاعتراض على الأجرة';
+
+  @override
+  String get disputeToggleTitle => 'اعتراض على الأجرة';
+
+  @override
+  String get disputeToggleCopy => 'اطلب مراجعة المبلغ المحتسب على هذه الرحلة';
+
+  @override
+  String get disputeWindowNote =>
+      'يمكن الاعتراض خلال مدة محددة بعد اكتمال الرحلة، ويُقبل اعتراض واحد لكل رحلة.';
+
+  @override
+  String get disputeReasonLabel => 'سبب الاعتراض';
+
+  @override
+  String get disputeReasonOvercharged => 'تم احتساب مبلغ أعلى من المتوقع';
+
+  @override
+  String get disputeReasonRouteLonger => 'المسار كان أطول من اللازم';
+
+  @override
+  String get disputeReasonWaitingCharged => 'رسوم انتظار غير صحيحة';
+
+  @override
+  String get disputeReasonCancellationFee => 'رسوم إلغاء غير مستحقة';
+
+  @override
+  String get disputeReasonPromoNotApplied => 'لم يُطبَّق الخصم';
+
+  @override
+  String get disputeReasonOther => 'سبب آخر';
+
+  @override
+  String get disputeRefundLabel => 'المبلغ المطلوب استرداده (اختياري)';
+
+  @override
+  String get disputeRefundHint => 'مثال: 12.00';
+
+  @override
+  String get disputeRefundInvalid => 'أدخل مبلغاً صحيحاً';
+
+  @override
+  String get disputeDefaultSubject => 'اعتراض على أجرة الرحلة';
+
+  @override
+  String get disputeCardTitle => 'الاعتراض على الأجرة';
+
+  @override
+  String get disputeStatusOpen => 'مفتوح';
+
+  @override
+  String get disputeStatusUnderReview => 'قيد المراجعة';
+
+  @override
+  String get disputeStatusApproved => 'تمت الموافقة';
+
+  @override
+  String get disputeStatusPartiallyApproved => 'موافقة جزئية';
+
+  @override
+  String get disputeStatusRejected => 'مرفوض';
+
+  @override
+  String disputeCharged(String amount) {
+    return 'المبلغ المحتسب: $amount';
+  }
+
+  @override
+  String disputeRequested(String amount) {
+    return 'المبلغ المطلوب: $amount';
+  }
+
+  @override
+  String disputeApproved(String amount) {
+    return 'المبلغ المسترد: $amount';
+  }
+
+  @override
+  String get disputeNoRefund => 'لا يوجد استرداد';
+
+  @override
+  String get threadAgentName => 'فريق دعم ATA';
+
+  @override
+  String get threadYou => 'أنت';
+
+  @override
+  String get threadReplyHint => 'اكتب ردك…';
+
+  @override
+  String get threadSend => 'إرسال';
+
+  @override
+  String get threadClosedTitle => 'هذه التذكرة مغلقة';
+
+  @override
+  String get threadClosedCopy =>
+      'لا يمكن إضافة ردود جديدة. أنشئ تذكرة جديدة إن احتجت مساعدة.';
+
+  @override
+  String get threadCreateNew => 'إنشاء تذكرة جديدة';
+
+  @override
+  String threadRelatedTrip(String trip) {
+    return 'الرحلة $trip';
+  }
+
+  @override
+  String get threadAttachmentOpen => 'فتح / مشاركة';
+
+  @override
+  String get threadAttachmentLoading => 'جارٍ تحميل المرفق…';
+
+  @override
+  String get csatTitle => 'كيف كانت تجربتك مع الدعم؟';
+
+  @override
+  String get csatCommentHint => 'أضف تعليقاً (اختياري)';
+
+  @override
+  String get csatSubmit => 'إرسال التقييم';
+
+  @override
+  String get csatThanks => 'شكراً لتقييمك';
+
+  @override
+  String csatStar(int n) {
+    return '$n من 5';
+  }
+
+  @override
+  String get tripHelpIssueTitle => 'مشكلة في الرحلة؟';
+
+  @override
+  String get tripHelpIssueCopy => 'أخبر فريق الدعم وسنساعدك';
+
+  @override
+  String get tripHelpFareTitle => 'مشكلة في الأجرة';
+
+  @override
+  String get tripHelpFareCopy => 'اعترض على المبلغ المحتسب لهذه الرحلة';
+
+  @override
+  String get supportFollowTicket => 'متابعة مع الدعم';
 }

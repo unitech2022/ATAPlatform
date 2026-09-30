@@ -3,6 +3,7 @@ import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/core/localization/rewards_failure_text.dart';
 import 'package:ata_app/core/localization/safety_failure_text.dart';
 import 'package:ata_app/core/localization/scheduling_failure_text.dart';
+import 'package:ata_app/core/localization/support_failure_text.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 
@@ -67,6 +68,12 @@ abstract final class ErrorCodes {
   static const String airportCategoryNotApplicable =
       'airport_category_not_applicable';
   static const String notInAirportWaitingArea = 'not_in_airport_waiting_area';
+  static const String ticketClosed = 'ticket_closed';
+  static const String disputeExists = 'dispute_exists';
+  static const String disputeWindowClosed = 'dispute_window_closed';
+  static const String attachmentLimit = 'attachment_limit';
+  static const String unsupportedFileType = 'unsupported_file_type';
+  static const String fileTooLarge = 'file_too_large';
   static const String maxScheduledAt = 'maxScheduledAt';
   static const String minScheduledAt = 'minScheduledAt';
   static const String max = 'max';
@@ -136,6 +143,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       rewardsFailureText(failure, l10n) ??
       favoritesFailureText(failure, l10n) ??
       schedulingFailureText(failure, l10n) ??
+      supportFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

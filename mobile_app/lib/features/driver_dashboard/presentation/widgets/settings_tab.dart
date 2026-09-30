@@ -55,7 +55,12 @@ class SettingsTab extends StatelessWidget {
               syncRemote: true,
             ),
           ),
-          (AtaIcons.shield, l10n.driverSupport, l10n.driverSupportCopy, null),
+          (
+            AtaIcons.shield,
+            l10n.driverSupport,
+            l10n.driverSupportCopy,
+            () => context.push(AppRoutes.driverSupport),
+          ),
         ];
     return AtaCard(
       padding: const EdgeInsets.all(AtaSpacing.lg),

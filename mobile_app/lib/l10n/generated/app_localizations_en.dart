@@ -3698,4 +3698,398 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reservationNotConfirmableExpiredError =>
       'The confirmation window has ended';
+
+  @override
+  String get supportEyebrow => 'Help';
+
+  @override
+  String get supportTitle => 'Help & support';
+
+  @override
+  String get supportCopy => 'Find an answer or contact the support team';
+
+  @override
+  String get supportRowCopy => 'Help center and your tickets';
+
+  @override
+  String get helpSearchHint => 'Search help';
+
+  @override
+  String get helpTopicsTitle => 'Topics';
+
+  @override
+  String helpArticlesCount(int count) {
+    return '$count articles';
+  }
+
+  @override
+  String get helpNoResults => 'No matching articles';
+
+  @override
+  String get helpNoResultsCopy =>
+      'Try other words or open a ticket and we will help';
+
+  @override
+  String get helpAllTopics => 'All topics';
+
+  @override
+  String get helpLoadMore => 'Show more';
+
+  @override
+  String helpArticleUpdated(String date) {
+    return 'Updated $date';
+  }
+
+  @override
+  String get helpRelatedTitle => 'Related articles';
+
+  @override
+  String get helpFeedbackTitle => 'Was this article helpful?';
+
+  @override
+  String get helpFeedbackYes => 'Yes';
+
+  @override
+  String get helpFeedbackNo => 'No';
+
+  @override
+  String get helpFeedbackThanks => 'Thanks for your feedback';
+
+  @override
+  String get helpFeedbackNoCopy =>
+      'Sorry about that. You can open a ticket and the support team will help.';
+
+  @override
+  String get helpStillNeedTitle => 'Did not find your answer?';
+
+  @override
+  String get helpStillNeedCopy =>
+      'Open a ticket and the support team will reply';
+
+  @override
+  String get supportMyTickets => 'My tickets';
+
+  @override
+  String get supportMyTicketsCopy =>
+      'Follow your requests and the team replies';
+
+  @override
+  String supportUnreadBadge(int count) {
+    return '$count new';
+  }
+
+  @override
+  String get supportContactUs => 'Contact us';
+
+  @override
+  String get supportContactUsCopy =>
+      'Open a new ticket and the team will reply';
+
+  @override
+  String get ticketsEyebrow => 'Support';
+
+  @override
+  String get ticketsTitle => 'My tickets';
+
+  @override
+  String get ticketsCopy =>
+      'Your requests to the support team and their status';
+
+  @override
+  String get ticketsTabOpen => 'Open';
+
+  @override
+  String get ticketsTabClosed => 'Closed';
+
+  @override
+  String get ticketsEmpty => 'No tickets here';
+
+  @override
+  String get ticketsEmptyCopy =>
+      'When you contact support your ticket shows up here';
+
+  @override
+  String get ticketsNew => 'New ticket';
+
+  @override
+  String ticketNumberAndTrip(String number, String trip) {
+    return '$number · trip $trip';
+  }
+
+  @override
+  String get ticketTypeTripIssue => 'Trip issue';
+
+  @override
+  String get ticketTypePaymentIssue => 'Payment and fare';
+
+  @override
+  String get ticketTypeLostItem => 'Lost item';
+
+  @override
+  String get ticketTypeSafety => 'Safety';
+
+  @override
+  String get ticketTypeAccount => 'Account';
+
+  @override
+  String get ticketTypeOther => 'Other';
+
+  @override
+  String get ticketStatusOpen => 'Open';
+
+  @override
+  String get ticketStatusPendingUser => 'Waiting for you';
+
+  @override
+  String get ticketStatusInProgress => 'In progress';
+
+  @override
+  String get ticketStatusResolved => 'Resolved';
+
+  @override
+  String get ticketStatusClosed => 'Closed';
+
+  @override
+  String get ticketBannerOpen =>
+      'We received your ticket and the team will review it';
+
+  @override
+  String get ticketBannerPendingUser =>
+      'The team is waiting for your reply to continue';
+
+  @override
+  String get ticketBannerInProgress =>
+      'The support team is working on your request';
+
+  @override
+  String get ticketBannerResolved =>
+      'Your request was resolved. If the problem remains you can reply here.';
+
+  @override
+  String get ticketBannerClosed => 'This ticket is closed';
+
+  @override
+  String get newTicketEyebrow => 'New ticket';
+
+  @override
+  String get newTicketTitle => 'How can we help?';
+
+  @override
+  String get newTicketCopy =>
+      'Choose the request type and tell us what happened';
+
+  @override
+  String get newTicketTypeLabel => 'Request type';
+
+  @override
+  String get newTicketTripLabel => 'Related trip';
+
+  @override
+  String get newTicketTripRequired => 'Choose the trip your request is about';
+
+  @override
+  String get newTicketTripOptional => 'Optional';
+
+  @override
+  String get newTicketNoTrip => 'No trip';
+
+  @override
+  String get newTicketNoTrips => 'No recent trips';
+
+  @override
+  String get newTicketSubjectLabel => 'Subject';
+
+  @override
+  String get newTicketMessageLabel => 'Details';
+
+  @override
+  String get newTicketSubmit => 'Send ticket';
+
+  @override
+  String newTicketCreated(String number) {
+    return 'Your ticket $number was sent';
+  }
+
+  @override
+  String get attachmentsTitle => 'Attachments';
+
+  @override
+  String get attachmentsAdd => 'Add attachment';
+
+  @override
+  String get attachmentsHint =>
+      'Images or PDF up to 10 MB, at most 5 attachments';
+
+  @override
+  String get attachmentUploading => 'Uploading…';
+
+  @override
+  String get attachmentFailedRetry => 'Upload failed · tap to retry';
+
+  @override
+  String get attachmentRemove => 'Remove attachment';
+
+  @override
+  String get attachmentLimitError => 'At most 5 attachments';
+
+  @override
+  String get unsupportedFileTypeError =>
+      'Unsupported file type (JPG / PNG images or PDF only)';
+
+  @override
+  String get fileTooLargeError => 'The file is larger than 10 MB';
+
+  @override
+  String get ticketClosedError => 'The ticket is closed, create a new one';
+
+  @override
+  String get disputeExistsError => 'There is already a dispute for this trip';
+
+  @override
+  String get disputeWindowClosedError => 'The fare dispute period has ended';
+
+  @override
+  String get disputeToggleTitle => 'Dispute the fare';
+
+  @override
+  String get disputeToggleCopy =>
+      'Ask us to review the amount charged for this trip';
+
+  @override
+  String get disputeWindowNote =>
+      'You can dispute within a limited period after the trip, one dispute per trip.';
+
+  @override
+  String get disputeReasonLabel => 'Reason';
+
+  @override
+  String get disputeReasonOvercharged => 'Charged more than expected';
+
+  @override
+  String get disputeReasonRouteLonger => 'The route was longer than needed';
+
+  @override
+  String get disputeReasonWaitingCharged => 'Incorrect waiting charge';
+
+  @override
+  String get disputeReasonCancellationFee => 'Undue cancellation fee';
+
+  @override
+  String get disputeReasonPromoNotApplied => 'Discount not applied';
+
+  @override
+  String get disputeReasonOther => 'Other reason';
+
+  @override
+  String get disputeRefundLabel => 'Refund you ask for (optional)';
+
+  @override
+  String get disputeRefundHint => 'Example: 12.00';
+
+  @override
+  String get disputeRefundInvalid => 'Enter a valid amount';
+
+  @override
+  String get disputeDefaultSubject => 'Fare dispute';
+
+  @override
+  String get disputeCardTitle => 'Fare dispute';
+
+  @override
+  String get disputeStatusOpen => 'Open';
+
+  @override
+  String get disputeStatusUnderReview => 'Under review';
+
+  @override
+  String get disputeStatusApproved => 'Approved';
+
+  @override
+  String get disputeStatusPartiallyApproved => 'Partially approved';
+
+  @override
+  String get disputeStatusRejected => 'Rejected';
+
+  @override
+  String disputeCharged(String amount) {
+    return 'Amount charged: $amount';
+  }
+
+  @override
+  String disputeRequested(String amount) {
+    return 'Requested: $amount';
+  }
+
+  @override
+  String disputeApproved(String amount) {
+    return 'Refunded: $amount';
+  }
+
+  @override
+  String get disputeNoRefund => 'No refund';
+
+  @override
+  String get threadAgentName => 'ATA support team';
+
+  @override
+  String get threadYou => 'You';
+
+  @override
+  String get threadReplyHint => 'Write your reply…';
+
+  @override
+  String get threadSend => 'Send';
+
+  @override
+  String get threadClosedTitle => 'This ticket is closed';
+
+  @override
+  String get threadClosedCopy =>
+      'New replies cannot be added. Create a new ticket if you need help.';
+
+  @override
+  String get threadCreateNew => 'Create a new ticket';
+
+  @override
+  String threadRelatedTrip(String trip) {
+    return 'Trip $trip';
+  }
+
+  @override
+  String get threadAttachmentOpen => 'Open / share';
+
+  @override
+  String get threadAttachmentLoading => 'Loading the attachment…';
+
+  @override
+  String get csatTitle => 'How was your support experience?';
+
+  @override
+  String get csatCommentHint => 'Add a comment (optional)';
+
+  @override
+  String get csatSubmit => 'Send rating';
+
+  @override
+  String get csatThanks => 'Thanks for your rating';
+
+  @override
+  String csatStar(int n) {
+    return '$n of 5';
+  }
+
+  @override
+  String get tripHelpIssueTitle => 'A problem with the trip?';
+
+  @override
+  String get tripHelpIssueCopy => 'Tell the support team and we will help';
+
+  @override
+  String get tripHelpFareTitle => 'A problem with the fare';
+
+  @override
+  String get tripHelpFareCopy => 'Dispute the amount charged for this trip';
+
+  @override
+  String get supportFollowTicket => 'Follow up with support';
 }

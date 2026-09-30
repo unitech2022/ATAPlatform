@@ -16,7 +16,9 @@ trip ratings, promo codes, the driver tier and driver incentives (quests);
 F16 adds favourite drivers (add after a trip, request them first with the
 favourite discount). F17 adds scheduled rides (book up to 7 days ahead, the
 driver marketplace, reservations and confirmations) and airport trips
-(pickup zone, terminal, flight number, the driver airport queue).
+(pickup zone, terminal, flight number, the driver airport queue). F18 adds
+support (the help center, tickets with attachments and a CSAT rating, fare
+disputes, links from safety cases and lost items).
 Google Maps arrives with the Maps integration (the map is still the painted canvas).
 
 ## Run
@@ -382,8 +384,8 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
 ### Scheduled rides and airport (F17)
 
 `docs/11` §F17 (rider + driver), `docs/08` §F13.2 / §F13.7 (`scheduled.*`
-events and links) and `docs/09` (cancellation fee preview). Support (F18) is
-a separate step.
+events and links) and `docs/09` (cancellation fee preview). Support (F18) has its
+own section below.
 
 - New `TripStage.scheduled`: a booking waiting for its time. It never counts
   as the rider's active trip: `ActiveTripCubit` ignores scheduled trips (feed
@@ -483,6 +485,88 @@ a separate step.
   no time parameter); the exact release penalty is not exposed before
   releasing, so the dialog warns without a number.
 
+### Support (F18)
+
+`docs/11` §F18 (help center, tickets, fare disputes, CSAT), `docs/08` §F13.2 /
+§F13.7 (`support.reply`, `support.status`, `lost_item.update` and their
+links) and `docs/09` (`supportTicketId` of lost items and safety cases).
+
+- `support` feature. Help center (rider `/support`, driver `/driver/support`):
+  `HelpCenterCubit` lists `GET /help/categories?audience=passenger|driver`
+  and, for a chosen topic or a search text, `GET /help/articles?categoryId&q&
+  audience&page` (400 ms debounce, injectable; a stale answer never overwrites
+  a newer search; "عرض المزيد" paging). `HelpArticleCubit` opens `GET
+  /help/articles/{slug}`: the Markdown body goes through `MarkdownParser` (own
+  small reader, no dependency) — headings, lists, quotes, code, bold / italic
+  and links; `<script>` / `<style>` / `<iframe>` blocks are dropped, every
+  other HTML tag is stripped, images become their alt text and only `http`,
+  `https`, `mailto` and `tel` links stay tappable; `MarkdownView` draws plain
+  `Text` widgets. "هل كان المقال مفيداً؟" sends `POST …/{id}/feedback` once
+  (`rate_limited` / `conflict` = already answered today = thanks), a "no"
+  offers to open a ticket.
+- Tickets. `/support/tickets` (`TicketsCubit`): open / closed tabs (`status=
+  open|closed`, open = everything not closed), status chips (open, waiting for
+  you, in progress, resolved, closed — plain text, no promised response
+  time), the unread badge (`unread`, cleared when a ticket is opened and by
+  the server) and a total on the help center's "تذاكري" card; refreshed by the
+  hub's `SupportTicketUpdated`. `/support/tickets/new?type=&tripId=&dispute=1`
+  (`NewTicketCubit`): type chips, the related trip picked from the recent
+  finished trips of the role (`GetSupportTrips` over the rides / driver trips
+  lists; mandatory for `trip_issue`, `payment_issue` and `lost_item`,
+  optional otherwise), subject (≤ 160), details (≤ 4000) and up to five
+  attachments; on `201` the thread opens. `AttachmentsCubit` picks jpg / png /
+  pdf files (`file_picker`, the only new dependency), checks type (≤ 10 MB,
+  `unsupported_file_type`, `file_too_large`, `attachment_limit` locally before
+  the API says it) and uploads each at once (`POST /support/attachments`,
+  multipart `file`) so sending only carries the `fileIds`; a failed upload is
+  retried with a tap. `/support/tickets/:ticketId` (`TicketDetailCubit`,
+  `ata://support/tickets/{id}`): chat-style thread (your messages, the agent's
+  with the agent name, system notes), status banner, dispute card, reply box
+  with attachments, refreshed by the hub and a 15 s poll while open. A closed
+  ticket (or `409 ticket_closed`, or `canReply: false`) replaces the reply box
+  by "إنشاء تذكرة جديدة". Attachments are fetched with the session token
+  (`GET /files/{id}` through `ApiClient.getBytes`): images inline (tap to
+  enlarge), PDFs on tap and handed to the share sheet. After `resolved` /
+  `closed` the thread shows the CSAT prompt once (`CsatCubit`: 1–5 stars +
+  comment, `POST …/csat`, `409 conflict` = already rated).
+- Fare dispute. The receipt (`/rides/:tripId`, `TripHelpActions`) has "مشكلة
+  في الرحلة؟" (`type=trip_issue`) and "مشكلة في الأجرة" (`type=payment_issue&
+  dispute=1`). For a payment issue of a trip the form shows `FareDisputeCubit`:
+  the switch, the reason (`overcharged`, `route_longer`, `waiting_charged`,
+  `cancellation_fee`, `promo_not_applied`, `other`) and the optional requested
+  refund (must be a positive number); it travels as `dispute { reason,
+  requestedRefundAmount }`. `422 dispute_window_closed` and `409
+  dispute_exists` are shown inline and the form stays. The thread shows
+  `DisputeCard`: reason, amounts charged / requested and the status (open,
+  under review, approved, partially approved, rejected) with the approved
+  refund once decided.
+- Entries: the rider header menu and the account settings ("المساعدة
+  والدعم"), the driver settings tab, the receipt, and the F12 screens: a lost
+  item report or a safety case with a `supportTicketId` shows "متابعة مع
+  الدعم" (`TicketLinkButton`; lost items list, report result pages, case
+  detail). Rider pages live inside the passenger shell (a ticket thread hides
+  the bottom navigation), the driver copies under `/driver/support/*` so the
+  driver redirect keeps them reachable.
+- Deep links: `ata://support/tickets/{id}` → `/support/tickets/{id}` (rider) or
+  `/driver/support/tickets/{id}` (driver), `ata://support` → the help center;
+  inbox rows without `data.deepLink` derive the link from `data.ticketId` for
+  `support.*` and `lost_item.update`; `support.*` rows use the `support`
+  category (document icon).
+- Errors (`core/localization/support_failure_text.dart`): `ticket_closed`,
+  `dispute_exists`, `dispute_window_closed`, `attachment_limit`,
+  `unsupported_file_type`, `file_too_large`.
+- Assumptions beyond the spec: list endpoints may answer a bare array or a
+  `{ items, page, pageSize, total }` page (`PageResult.fromAny`); the message
+  `authorRole` is `user` (mine), `agent` or `system`; `canReply` defaults to
+  "not closed" and `canRate` to `false` when absent; help category `icon` is
+  a free key (`car`, `wallet`, `shield`, `user`, …) with the category `code`
+  as fallback; the reply answers the created `Message` (`{ id, authorRole,
+  body, attachments, createdAt }`); `GET /files/{id}` answers the raw bytes
+  with an error envelope as JSON bytes; the hub event `SupportTicketUpdated`
+  carries `ticketId`; `file_too_large` is the local code for the 10 MB limit
+  (the API code for it is not in the spec). `file_picker` needs no extra
+  Android / iOS setup for jpg / png / pdf from the document picker.
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -516,7 +600,7 @@ lib/
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
 `pricing`, `payments`, `driver_wallet`, `trip_chat`, `rating`, `promotions`,
-`driver_rewards`, `favorite_drivers`, `scheduled_rides`, `airport`.
+`driver_rewards`, `favorite_drivers`, `scheduled_rides`, `airport`, `support`.
 
 ### Rules
 
@@ -533,7 +617,7 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 - Dependency injection: `core/di/injector.dart` registers infrastructure,
   `data_module.dart` registers repositories, `use_case_module.dart` registers
   use cases (with `payments_module.dart`, `safety_module.dart`,
-  `rewards_module.dart` and `scheduling_module.dart` for F11/F13, F12/F14,
+  `rewards_module.dart`, `scheduling_module.dart` and `support_module.dart` for F11/F13, F12/F14,
   F15/F16 and F17). Tests register fake
   repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
@@ -622,6 +706,15 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `ScheduledTabCubit`      | scheduled_rides    | market / mine tab                                 |
 | `AirportPickupCubit`     | airport            | airports catalog, resolve, airport / direction / zone / terminal / flight number |
 | `AirportQueueCubit`      | airport            | driver queue status, join / leave, hub + 30 s poll |
+| `HelpCenterCubit`        | support            | help topics, debounced search, category articles, paging |
+| `HelpArticleCubit`       | support            | one article, helpful yes / no feedback            |
+| `TicketsCubit`           | support            | my tickets (open / closed), unread badges, hub refresh |
+| `NewTicketCubit`         | support            | type, related trip, subject, details, create ticket |
+| `FareDisputeCubit`       | support            | dispute switch, reason, optional requested refund |
+| `AttachmentsCubit`       | support            | pick (max 5, jpg / png / pdf, 10 MB) + upload, retry, remove |
+| `TicketDetailCubit`      | support            | thread, reply, closed handling, hub + 15 s poll   |
+| `CsatCubit`              | support            | one-time 1–5 rating + comment                     |
+| `AttachmentFileCubit`    | support            | authenticated attachment download                 |
 
 ## API
 
@@ -630,7 +723,7 @@ endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
 endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
 driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` and
 `docs/09-feature-f12-f14-safety-cancellation.md` and the F15 / F16 endpoints of
-`docs/10-feature-f15-f16-ratings-promotions-favorites.md` and the F17 endpoints of
+`docs/10-feature-f15-f16-ratings-promotions-favorites.md` and the F17 / F18 endpoints of
 `docs/11-feature-f17-f18-scheduled-airport-support.md` live in each feature's
 `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token

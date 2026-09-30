@@ -12,6 +12,7 @@ import 'package:ata_app/features/safety/presentation/cubit/report_form_cubits.da
 import 'package:ata_app/features/safety/presentation/widgets/choice_wrap.dart';
 import 'package:ata_app/features/safety/presentation/widgets/safety_subpage.dart';
 import 'package:ata_app/features/safety/presentation/widgets/safety_text.dart';
+import 'package:ata_app/features/support/presentation/widgets/ticket_link_button.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,6 +50,10 @@ class SafetyReportPage extends StatelessWidget {
                         style: AtaText.small,
                       ),
                       const SizedBox(height: AtaSpacing.md),
+                      if (result.supportTicketId != null) ...<Widget>[
+                        TicketLinkButton(ticketId: result.supportTicketId!),
+                        const SizedBox(height: AtaSpacing.sm),
+                      ],
                       AtaButton(
                         label: l10n.myReportsTitle,
                         height: AtaSizes.buttonCompact,

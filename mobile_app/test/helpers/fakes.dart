@@ -204,13 +204,26 @@ class FakeNotificationsRepository implements NotificationsRepository {
 }
 
 class FakeRidesRepository implements RidesRepository {
+  /// The rider's trips (empty by default) and an optional failure.
+  List<TripSummary> trips = <TripSummary>[];
+  Failure? failure;
+
   @override
   Future<Either<Failure, PageResult<TripSummary>>> getTrips({
     String status = 'all',
     int page = 1,
-  }) async => const Right<Failure, PageResult<TripSummary>>(
-    PageResult<TripSummary>.empty(),
-  );
+  }) async {
+    final Failure? error = failure;
+    if (error != null) return Left<Failure, PageResult<TripSummary>>(error);
+    return Right<Failure, PageResult<TripSummary>>(
+      PageResult<TripSummary>(
+        items: trips,
+        page: 1,
+        pageSize: trips.length,
+        total: trips.length,
+      ),
+    );
+  }
 }
 
 class FakeWalletRepository implements WalletRepository {

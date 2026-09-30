@@ -33,6 +33,10 @@ abstract interface class TripRealtimeDataSource {
   /// (driver, F17).
   Stream<Map<String, dynamic>> get airportQueueUpdated;
 
+  /// `SupportTicketUpdated({ ticketId, status, lastMessageAt, unread })`
+  /// (both roles, F18).
+  Stream<Map<String, dynamic>> get supportTicketUpdated;
+
   /// True while the hub socket is connected (polling can back off).
   bool get isConnected;
 
@@ -50,4 +54,5 @@ abstract final class TripHubEvents {
   static const String tripMessage = 'TripMessage';
   static const String tripMessagesRead = 'TripMessagesRead';
   static const String airportQueueUpdated = 'AirportQueueUpdated';
+  static const String supportTicketUpdated = 'SupportTicketUpdated';
 }

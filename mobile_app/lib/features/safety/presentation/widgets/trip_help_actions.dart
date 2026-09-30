@@ -26,6 +26,18 @@ class TripHelpActions extends StatelessWidget {
         children: <Widget>[
           Text(l10n.tripHelpTitle, style: AtaText.section),
           SettingRow(
+            leading: const IconBox.cloud(icon: AtaIcons.document),
+            title: l10n.tripHelpIssueTitle,
+            subtitle: l10n.tripHelpIssueCopy,
+            onTap: () => context.push(AppRoutes.tripIssueTicket(tripId)),
+          ),
+          SettingRow(
+            leading: const IconBox.cloud(icon: AtaIcons.wallet),
+            title: l10n.tripHelpFareTitle,
+            subtitle: l10n.tripHelpFareCopy,
+            onTap: () => context.push(AppRoutes.fareDisputeTicket(tripId)),
+          ),
+          SettingRow(
             leading: const IconBox.cloud(icon: AtaIcons.search),
             title: l10n.lostItemTitle,
             subtitle: l10n.lostItemRowCopy,

@@ -5,6 +5,7 @@ import 'package:ata_app/app/router/rewards_routes.dart';
 import 'package:ata_app/app/router/router_refresh.dart';
 import 'package:ata_app/app/router/safety_routes.dart';
 import 'package:ata_app/app/router/scheduled_routes.dart';
+import 'package:ata_app/app/router/support_routes.dart';
 import 'package:ata_app/app/shell/passenger_shell.dart';
 import 'package:ata_app/app/splash_page.dart';
 import 'package:ata_app/features/account/presentation/pages/account_contact_page.dart';
@@ -118,6 +119,7 @@ GoRouter createAppRouter(SessionCubit session, TripCubits trips) {
           safetyRoute,
           ...riderRewardsRoutes,
           ...riderScheduledRoutes,
+          riderSupportRoute,
           GoRoute(
             path: AppRoutes.account,
             builder: (_, _) => const AccountPage(),

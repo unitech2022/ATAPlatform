@@ -116,6 +116,7 @@ class _NotificationRow extends StatelessWidget {
     'trips' || 'offers' => AtaIcons.car,
     'wallet' => AtaIcons.wallet,
     'safety' => AtaIcons.shield,
+    'support' => AtaIcons.document,
     _ => AtaIcons.bell,
   };
 

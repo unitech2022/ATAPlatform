@@ -53,7 +53,7 @@ class _HeaderMenu extends StatelessWidget {
         AtaIcons.heart,
         AppRoutes.accountFavoriteDrivers,
       ),
-      (l10n.menuContact, AtaIcons.phone, AppRoutes.accountContact),
+      (l10n.supportTitle, AtaIcons.phone, AppRoutes.support),
     ];
     return SafeArea(
       child: Align(

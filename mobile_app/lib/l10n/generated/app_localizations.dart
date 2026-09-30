@@ -6498,6 +6498,720 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'انتهت مهلة التأكيد'**
   String get reservationNotConfirmableExpiredError;
+
+  /// No description provided for @supportEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعدة'**
+  String get supportEyebrow;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعدة والدعم'**
+  String get supportTitle;
+
+  /// No description provided for @supportCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن إجابتك أو تواصل مع فريق الدعم'**
+  String get supportCopy;
+
+  /// No description provided for @supportRowCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز المساعدة وتذاكرك'**
+  String get supportRowCopy;
+
+  /// No description provided for @helpSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في المساعدة'**
+  String get helpSearchHint;
+
+  /// No description provided for @helpTopicsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواضيع'**
+  String get helpTopicsTitle;
+
+  /// No description provided for @helpArticlesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مقال'**
+  String helpArticlesCount(int count);
+
+  /// No description provided for @helpNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مقالات مطابقة'**
+  String get helpNoResults;
+
+  /// No description provided for @helpNoResultsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب كلمات أخرى أو افتح تذكرة وسنساعدك'**
+  String get helpNoResultsCopy;
+
+  /// No description provided for @helpAllTopics.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المواضيع'**
+  String get helpAllTopics;
+
+  /// No description provided for @helpLoadMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المزيد'**
+  String get helpLoadMore;
+
+  /// No description provided for @helpArticleUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحديث {date}'**
+  String helpArticleUpdated(String date);
+
+  /// No description provided for @helpRelatedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقالات ذات صلة'**
+  String get helpRelatedTitle;
+
+  /// No description provided for @helpFeedbackTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل كان المقال مفيداً؟'**
+  String get helpFeedbackTitle;
+
+  /// No description provided for @helpFeedbackYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'نعم'**
+  String get helpFeedbackYes;
+
+  /// No description provided for @helpFeedbackNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا'**
+  String get helpFeedbackNo;
+
+  /// No description provided for @helpFeedbackThanks.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً على رأيك'**
+  String get helpFeedbackThanks;
+
+  /// No description provided for @helpFeedbackNoCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'آسفون لذلك. يمكنك فتح تذكرة ليساعدك فريق الدعم.'**
+  String get helpFeedbackNoCopy;
+
+  /// No description provided for @helpStillNeedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تجد إجابتك؟'**
+  String get helpStillNeedTitle;
+
+  /// No description provided for @helpStillNeedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح تذكرة وسيرد عليك فريق الدعم'**
+  String get helpStillNeedCopy;
+
+  /// No description provided for @supportMyTickets.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذاكري'**
+  String get supportMyTickets;
+
+  /// No description provided for @supportMyTicketsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع طلباتك وردود الفريق'**
+  String get supportMyTicketsCopy;
+
+  /// No description provided for @supportUnreadBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} جديد'**
+  String supportUnreadBadge(int count);
+
+  /// No description provided for @supportContactUs.
+  ///
+  /// In ar, this message translates to:
+  /// **'تواصل معنا'**
+  String get supportContactUs;
+
+  /// No description provided for @supportContactUsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح تذكرة جديدة وسيرد عليك الفريق'**
+  String get supportContactUsCopy;
+
+  /// No description provided for @ticketsEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدعم'**
+  String get ticketsEyebrow;
+
+  /// No description provided for @ticketsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذاكري'**
+  String get ticketsTitle;
+
+  /// No description provided for @ticketsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلباتك إلى فريق الدعم وحالتها'**
+  String get ticketsCopy;
+
+  /// No description provided for @ticketsTabOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفتوحة'**
+  String get ticketsTabOpen;
+
+  /// No description provided for @ticketsTabClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'المغلقة'**
+  String get ticketsTabClosed;
+
+  /// No description provided for @ticketsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تذاكر هنا'**
+  String get ticketsEmpty;
+
+  /// No description provided for @ticketsEmptyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'عند التواصل مع الدعم ستظهر تذكرتك هنا'**
+  String get ticketsEmptyCopy;
+
+  /// No description provided for @ticketsNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكرة جديدة'**
+  String get ticketsNew;
+
+  /// No description provided for @ticketNumberAndTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'{number} · رحلة {trip}'**
+  String ticketNumberAndTrip(String number, String trip);
+
+  /// No description provided for @ticketTypeTripIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشكلة في رحلة'**
+  String get ticketTypeTripIssue;
+
+  /// No description provided for @ticketTypePaymentIssue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفع والأجرة'**
+  String get ticketTypePaymentIssue;
+
+  /// No description provided for @ticketTypeLostItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرض مفقود'**
+  String get ticketTypeLostItem;
+
+  /// No description provided for @ticketTypeSafety.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلامة'**
+  String get ticketTypeSafety;
+
+  /// No description provided for @ticketTypeAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get ticketTypeAccount;
+
+  /// No description provided for @ticketTypeOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخرى'**
+  String get ticketTypeOther;
+
+  /// No description provided for @ticketStatusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوحة'**
+  String get ticketStatusOpen;
+
+  /// No description provided for @ticketStatusPendingUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار ردك'**
+  String get ticketStatusPendingUser;
+
+  /// No description provided for @ticketStatusInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد المعالجة'**
+  String get ticketStatusInProgress;
+
+  /// No description provided for @ticketStatusResolved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحل'**
+  String get ticketStatusResolved;
+
+  /// No description provided for @ticketStatusClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغلقة'**
+  String get ticketStatusClosed;
+
+  /// No description provided for @ticketBannerOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلمنا تذكرتك وسيراجعها الفريق'**
+  String get ticketBannerOpen;
+
+  /// No description provided for @ticketBannerPendingUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفريق ينتظر ردك لمتابعة الطلب'**
+  String get ticketBannerPendingUser;
+
+  /// No description provided for @ticketBannerInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'فريق الدعم يعمل على طلبك'**
+  String get ticketBannerInProgress;
+
+  /// No description provided for @ticketBannerResolved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حل طلبك. إن بقيت المشكلة يمكنك الرد هنا.'**
+  String get ticketBannerResolved;
+
+  /// No description provided for @ticketBannerClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُغلقت هذه التذكرة'**
+  String get ticketBannerClosed;
+
+  /// No description provided for @newTicketEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكرة جديدة'**
+  String get newTicketEyebrow;
+
+  /// No description provided for @newTicketTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف يمكننا مساعدتك؟'**
+  String get newTicketTitle;
+
+  /// No description provided for @newTicketCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر نوع الطلب واشرح ما حدث'**
+  String get newTicketCopy;
+
+  /// No description provided for @newTicketTypeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الطلب'**
+  String get newTicketTypeLabel;
+
+  /// No description provided for @newTicketTripLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة المتعلقة'**
+  String get newTicketTripLabel;
+
+  /// No description provided for @newTicketTripRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الرحلة التي يخصها طلبك'**
+  String get newTicketTripRequired;
+
+  /// No description provided for @newTicketTripOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري'**
+  String get newTicketTripOptional;
+
+  /// No description provided for @newTicketNoTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون رحلة'**
+  String get newTicketNoTrip;
+
+  /// No description provided for @newTicketNoTrips.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلات حديثة'**
+  String get newTicketNoTrips;
+
+  /// No description provided for @newTicketSubjectLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموضوع'**
+  String get newTicketSubjectLabel;
+
+  /// No description provided for @newTicketMessageLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الطلب'**
+  String get newTicketMessageLabel;
+
+  /// No description provided for @newTicketSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال التذكرة'**
+  String get newTicketSubmit;
+
+  /// No description provided for @newTicketCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال تذكرتك رقم {number}'**
+  String newTicketCreated(String number);
+
+  /// No description provided for @attachmentsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرفقات'**
+  String get attachmentsTitle;
+
+  /// No description provided for @attachmentsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مرفق'**
+  String get attachmentsAdd;
+
+  /// No description provided for @attachmentsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'صور أو PDF حتى 10 ميغابايت، بحد أقصى 5 مرفقات'**
+  String get attachmentsHint;
+
+  /// No description provided for @attachmentUploading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ الرفع…'**
+  String get attachmentUploading;
+
+  /// No description provided for @attachmentFailedRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل الرفع · اضغط للإعادة'**
+  String get attachmentFailedRetry;
+
+  /// No description provided for @attachmentRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة المرفق'**
+  String get attachmentRemove;
+
+  /// No description provided for @attachmentLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى 5 مرفقات'**
+  String get attachmentLimitError;
+
+  /// No description provided for @unsupportedFileTypeError.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الملف غير مدعوم (صور JPG / PNG أو PDF فقط)'**
+  String get unsupportedFileTypeError;
+
+  /// No description provided for @fileTooLargeError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الملف أكبر من 10 ميغابايت'**
+  String get fileTooLargeError;
+
+  /// No description provided for @ticketClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكرة مغلقة، أنشئ تذكرة جديدة'**
+  String get ticketClosedError;
+
+  /// No description provided for @disputeExistsError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجد اعتراض سابق على هذه الرحلة'**
+  String get disputeExistsError;
+
+  /// No description provided for @disputeWindowClosedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة الاعتراض على الأجرة'**
+  String get disputeWindowClosedError;
+
+  /// No description provided for @disputeToggleTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتراض على الأجرة'**
+  String get disputeToggleTitle;
+
+  /// No description provided for @disputeToggleCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب مراجعة المبلغ المحتسب على هذه الرحلة'**
+  String get disputeToggleCopy;
+
+  /// No description provided for @disputeWindowNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكن الاعتراض خلال مدة محددة بعد اكتمال الرحلة، ويُقبل اعتراض واحد لكل رحلة.'**
+  String get disputeWindowNote;
+
+  /// No description provided for @disputeReasonLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الاعتراض'**
+  String get disputeReasonLabel;
+
+  /// No description provided for @disputeReasonOvercharged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم احتساب مبلغ أعلى من المتوقع'**
+  String get disputeReasonOvercharged;
+
+  /// No description provided for @disputeReasonRouteLonger.
+  ///
+  /// In ar, this message translates to:
+  /// **'المسار كان أطول من اللازم'**
+  String get disputeReasonRouteLonger;
+
+  /// No description provided for @disputeReasonWaitingCharged.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم انتظار غير صحيحة'**
+  String get disputeReasonWaitingCharged;
+
+  /// No description provided for @disputeReasonCancellationFee.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسوم إلغاء غير مستحقة'**
+  String get disputeReasonCancellationFee;
+
+  /// No description provided for @disputeReasonPromoNotApplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُطبَّق الخصم'**
+  String get disputeReasonPromoNotApplied;
+
+  /// No description provided for @disputeReasonOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب آخر'**
+  String get disputeReasonOther;
+
+  /// No description provided for @disputeRefundLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المطلوب استرداده (اختياري)'**
+  String get disputeRefundLabel;
+
+  /// No description provided for @disputeRefundHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: 12.00'**
+  String get disputeRefundHint;
+
+  /// No description provided for @disputeRefundInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل مبلغاً صحيحاً'**
+  String get disputeRefundInvalid;
+
+  /// No description provided for @disputeDefaultSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعتراض على أجرة الرحلة'**
+  String get disputeDefaultSubject;
+
+  /// No description provided for @disputeCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاعتراض على الأجرة'**
+  String get disputeCardTitle;
+
+  /// No description provided for @disputeStatusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوح'**
+  String get disputeStatusOpen;
+
+  /// No description provided for @disputeStatusUnderReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد المراجعة'**
+  String get disputeStatusUnderReview;
+
+  /// No description provided for @disputeStatusApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الموافقة'**
+  String get disputeStatusApproved;
+
+  /// No description provided for @disputeStatusPartiallyApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافقة جزئية'**
+  String get disputeStatusPartiallyApproved;
+
+  /// No description provided for @disputeStatusRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرفوض'**
+  String get disputeStatusRejected;
+
+  /// No description provided for @disputeCharged.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المحتسب: {amount}'**
+  String disputeCharged(String amount);
+
+  /// No description provided for @disputeRequested.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المطلوب: {amount}'**
+  String disputeRequested(String amount);
+
+  /// No description provided for @disputeApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المسترد: {amount}'**
+  String disputeApproved(String amount);
+
+  /// No description provided for @disputeNoRefund.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد استرداد'**
+  String get disputeNoRefund;
+
+  /// No description provided for @threadAgentName.
+  ///
+  /// In ar, this message translates to:
+  /// **'فريق دعم ATA'**
+  String get threadAgentName;
+
+  /// No description provided for @threadYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت'**
+  String get threadYou;
+
+  /// No description provided for @threadReplyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب ردك…'**
+  String get threadReplyHint;
+
+  /// No description provided for @threadSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get threadSend;
+
+  /// No description provided for @threadClosedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه التذكرة مغلقة'**
+  String get threadClosedTitle;
+
+  /// No description provided for @threadClosedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن إضافة ردود جديدة. أنشئ تذكرة جديدة إن احتجت مساعدة.'**
+  String get threadClosedCopy;
+
+  /// No description provided for @threadCreateNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء تذكرة جديدة'**
+  String get threadCreateNew;
+
+  /// No description provided for @threadRelatedTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة {trip}'**
+  String threadRelatedTrip(String trip);
+
+  /// No description provided for @threadAttachmentOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح / مشاركة'**
+  String get threadAttachmentOpen;
+
+  /// No description provided for @threadAttachmentLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحميل المرفق…'**
+  String get threadAttachmentLoading;
+
+  /// No description provided for @csatTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف كانت تجربتك مع الدعم؟'**
+  String get csatTitle;
+
+  /// No description provided for @csatCommentHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف تعليقاً (اختياري)'**
+  String get csatCommentHint;
+
+  /// No description provided for @csatSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال التقييم'**
+  String get csatSubmit;
+
+  /// No description provided for @csatThanks.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً لتقييمك'**
+  String get csatThanks;
+
+  /// No description provided for @csatStar.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} من 5'**
+  String csatStar(int n);
+
+  /// No description provided for @tripHelpIssueTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشكلة في الرحلة؟'**
+  String get tripHelpIssueTitle;
+
+  /// No description provided for @tripHelpIssueCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخبر فريق الدعم وسنساعدك'**
+  String get tripHelpIssueCopy;
+
+  /// No description provided for @tripHelpFareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشكلة في الأجرة'**
+  String get tripHelpFareTitle;
+
+  /// No description provided for @tripHelpFareCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعترض على المبلغ المحتسب لهذه الرحلة'**
+  String get tripHelpFareCopy;
+
+  /// No description provided for @supportFollowTicket.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة مع الدعم'**
+  String get supportFollowTicket;
 }
 
 class _AppLocalizationsDelegate

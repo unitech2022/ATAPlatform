@@ -87,8 +87,14 @@ class ParseDeepLink {
         return p.isDriver ? '$_driver/reliability' : '/account/reliability';
       case 'safety' when n == 3 && (id == 'check' || id == 'cases'):
         return '/safety/$id/${s[2]}';
+      case 'support' when n == 1:
+        return p.isDriver ? '$_driver/support' : '/support';
       case 'support' when n == 3 && id == 'tickets':
-        return '/support/tickets/${s[2]}';
+        // `support.reply` / `support.status` / `lost_item.update` reach both
+        // roles; the driver's copy lives under `/driver`.
+        return p.isDriver
+            ? '$_driver/support/tickets/${s[2]}'
+            : '/support/tickets/${s[2]}';
       case 'corporate' when n == 2 && id == 'invitations':
         return '/account/corporate';
       case 'account' when n == 1:

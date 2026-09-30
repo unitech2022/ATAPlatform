@@ -75,6 +75,16 @@ abstract final class AppRoutes {
   static const String accountReliability = '/account/reliability';
   static const String accountFavoriteDrivers = '/account/favorite-drivers';
 
+  /// F18 support: the rider paths (inside the shell) and their driver twins.
+  static const String support = '/support';
+  static const String driverSupport = '/driver/support';
+
+  /// Path parameters / query parameters of the support routes.
+  static const String slugParam = 'slug';
+  static const String ticketIdParam = 'ticketId';
+  static const String ticketTypeParam = 'type';
+  static const String disputeParam = 'dispute';
+
   /// Query parameter carrying the chosen role to the phone screen.
   static const String roleParam = 'role';
 
@@ -126,13 +136,62 @@ abstract final class AppRoutes {
       ? driverTopUp
       : '$driverTopUp?$amountParam=${amount.ceil()}';
 
+  /// `/support` or `/driver/support` (F18 help center).
+  static String supportRoot({bool driver = false}) =>
+      driver ? driverSupport : support;
+
+  /// `/support/articles/{slug}`.
+  static String supportArticle(String slug, {bool driver = false}) =>
+      '${supportRoot(driver: driver)}/articles/${Uri.encodeComponent(slug)}';
+
+  /// `/support/tickets` (my tickets).
+  static String supportTickets({bool driver = false}) =>
+      '${supportRoot(driver: driver)}/tickets';
+
+  /// `/support/tickets/{ticketId}` (`ata://support/tickets/{ticketId}`).
+  static String supportTicket(String ticketId, {bool driver = false}) =>
+      '${supportTickets(driver: driver)}/$ticketId';
+
+  /// `/support/tickets/new?type=&tripId=&dispute=1`.
+  static String newSupportTicket({
+    bool driver = false,
+    String? type,
+    String? tripId,
+    bool dispute = false,
+  }) {
+    final Map<String, String> query = <String, String>{
+      ticketTypeParam: ?type,
+      tripIdParam: ?tripId,
+      if (dispute) disputeParam: '1',
+    };
+    return Uri(
+      path: '${supportTickets(driver: driver)}/new',
+      queryParameters: query.isEmpty ? null : query,
+    ).toString();
+  }
+
+  /// The receipt's "مشكلة في الرحلة؟" (`trip_issue` about [tripId]).
+  static String tripIssueTicket(String tripId) =>
+      newSupportTicket(type: 'trip_issue', tripId: tripId);
+
+  /// The receipt's "مشكلة في الأجرة" (a fare dispute about [tripId]).
+  static String fareDisputeTicket(String tripId) =>
+      newSupportTicket(type: 'payment_issue', tripId: tripId, dispute: true);
+
+  /// A ticket thread hides the bottom navigation (reply box at the bottom).
+  static bool isSupportThread(String location) {
+    if (!location.startsWith('$support/tickets/')) return false;
+    final String rest = location.substring('$support/tickets/'.length);
+    return rest.isNotEmpty && !rest.startsWith('new') && !rest.contains('/');
+  }
+
   /// Full-screen map pages of the rider (no bottom navigation).
   static bool isMapPage(String location) =>
       location == home || location == trip;
 
   /// Rider pages without the floating bottom navigation.
   static bool hidesBottomNav(String location) =>
-      isMapPage(location) || location == tripChat;
+      isMapPage(location) || location == tripChat || isSupportThread(location);
 
   /// Tabs of the floating bottom navigation, in order.
   static const List<String> passengerTabs = <String>[
@@ -146,6 +205,8 @@ abstract final class AppRoutes {
   static int? tabIndexFor(String location) {
     // Scheduled rides belong to the rides tab.
     if (location == scheduled || location.startsWith('$scheduled/')) return 1;
+    // Help and support is reached from the account page.
+    if (location == support || location.startsWith('$support/')) return 3;
     for (int i = 0; i < passengerTabs.length; i++) {
       if (location == passengerTabs[i] ||
           location.startsWith('${passengerTabs[i]}/')) {

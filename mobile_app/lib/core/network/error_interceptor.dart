@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ata_app/core/errors/app_exception.dart';
 import 'package:dio/dio.dart';
 
@@ -38,6 +40,14 @@ class ErrorInterceptor extends Interceptor {
   }
 
   Map<String, dynamic>? _envelope(dynamic data) {
+    if (data is List<int>) {
+      // Binary downloads (`responseType: bytes`) carry the error as JSON bytes.
+      try {
+        return _envelope(jsonDecode(utf8.decode(data)));
+      } on Object {
+        return null;
+      }
+    }
     if (data is Map<String, dynamic>) {
       final Object? error = data['error'];
       if (error is Map<String, dynamic>) return error;

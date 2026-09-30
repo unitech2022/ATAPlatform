@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:ata_app/core/errors/app_exception.dart';
 import 'package:ata_app/core/network/auth_interceptor.dart';
 import 'package:ata_app/core/network/error_interceptor.dart';
@@ -72,6 +74,54 @@ class ApiClient {
       options: Options(headers: headers),
     ),
   );
+
+  /// `multipart/form-data` upload of one file under [field] (from [filePath]
+  /// or [bytes]).
+  Future<dynamic> uploadFile(
+    String path, {
+    required String field,
+    required String fileName,
+    String? filePath,
+    Uint8List? bytes,
+    String? contentType,
+  }) async {
+    final DioMediaType? type = contentType == null
+        ? null
+        : DioMediaType.parse(contentType);
+    final MultipartFile file = filePath != null
+        ? await MultipartFile.fromFile(
+            filePath,
+            filename: fileName,
+            contentType: type,
+          )
+        : MultipartFile.fromBytes(
+            bytes ?? Uint8List(0),
+            filename: fileName,
+            contentType: type,
+          );
+    return _run(
+      () => _dio.post<dynamic>(
+        path,
+        data: FormData.fromMap(<String, dynamic>{field: file}),
+      ),
+    );
+  }
+
+  /// Authenticated binary download (`GET /files/{id}`).
+  Future<Uint8List> getBytes(String path) async {
+    final Object? body = await _run(
+      () => _dio.get<dynamic>(
+        path,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: <String, dynamic>{'Accept': '*/*'},
+        ),
+      ),
+    );
+    return body is Uint8List
+        ? body
+        : Uint8List.fromList((body as List<dynamic>? ?? const <int>[]).cast());
+  }
 
   Future<dynamic> put(String path, {Object? body}) =>
       _run(() => _dio.put<dynamic>(path, data: body));

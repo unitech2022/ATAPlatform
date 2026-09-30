@@ -56,6 +56,9 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
   final StreamController<Map<String, dynamic>> _airportQueue =
       StreamController<Map<String, dynamic>>.broadcast();
 
+  final StreamController<Map<String, dynamic>> _support =
+      StreamController<Map<String, dynamic>>.broadcast();
+
   HubConnection? _hub;
   int _refCount = 0;
   bool _connecting = false;
@@ -79,6 +82,9 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
 
   @override
   Stream<Map<String, dynamic>> get airportQueueUpdated => _airportQueue.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get supportTicketUpdated => _support.stream;
 
   @override
   bool get isConnected => _hub?.state == HubConnectionState.Connected;
@@ -162,6 +168,10 @@ class SignalRTripRealtimeDataSource implements TripRealtimeDataSource {
       ..on(TripHubEvents.airportQueueUpdated, (List<Object?>? args) {
         final Map<String, dynamic>? json = _firstObject(args);
         if (json != null) _airportQueue.add(json);
+      })
+      ..on(TripHubEvents.supportTicketUpdated, (List<Object?>? args) {
+        final Map<String, dynamic>? json = _firstObject(args);
+        if (json != null) _support.add(json);
       })
       ..onclose(({Exception? error}) => _scheduleReconnect());
   }

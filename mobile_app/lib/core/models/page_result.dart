@@ -25,6 +25,28 @@ class PageResult<T> extends Equatable {
     );
   }
 
+  /// Tolerant reader: a bare array, or the `{ items, page, pageSize, total }`
+  /// envelope. Anything else is an empty page.
+  factory PageResult.fromAny(
+    Object? body,
+    T Function(Map<String, dynamic> item) parseItem,
+  ) {
+    if (body is Map<String, dynamic>) {
+      return PageResult.fromJson(body, parseItem);
+    }
+    if (body is! List<dynamic>) return PageResult<T>.empty();
+    final List<T> items = body
+        .whereType<Map<String, dynamic>>()
+        .map(parseItem)
+        .toList(growable: false);
+    return PageResult<T>(
+      items: items,
+      page: 1,
+      pageSize: items.length,
+      total: items.length,
+    );
+  }
+
   const PageResult.empty()
     : items = const [],
       page = 1,

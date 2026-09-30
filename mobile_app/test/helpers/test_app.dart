@@ -9,6 +9,7 @@ import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/airport/domain/repositories/airport_repository.dart';
 import 'package:ata_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:ata_app/features/driver_dashboard/domain/repositories/driver_dashboard_repository.dart';
 import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewards_repository.dart';
 import 'package:ata_app/features/favorite_drivers/domain/repositories/favorite_drivers_repository.dart';
 import 'package:ata_app/features/notifications/domain/repositories/notifications_repository.dart';
@@ -19,6 +20,7 @@ import 'package:ata_app/features/rating/domain/repositories/rating_repository.da
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
 import 'package:ata_app/features/safety/domain/repositories/safety_repository.dart';
 import 'package:ata_app/features/scheduled_rides/domain/repositories/scheduled_repository.dart';
+import 'package:ata_app/features/support/domain/repositories/support_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/cancellation_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
@@ -34,6 +36,7 @@ import 'pricing_fakes.dart';
 import 'rewards_fakes.dart';
 import 'safety_fakes.dart';
 import 'scheduling_fakes.dart';
+import 'support_fakes.dart';
 import 'trip_fakes.dart';
 
 /// Registers in-memory storage and fake repositories, then the real use cases.
@@ -66,7 +69,10 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     )
     ..registerSingleton<DriverRewardsRepository>(FakeDriverRewardsRepository())
     ..registerSingleton<ScheduledRepository>(FakeScheduledRepository())
-    ..registerSingleton<AirportRepository>(FakeAirportRepository());
+    ..registerSingleton<AirportRepository>(FakeAirportRepository())
+    ..registerSingleton<DriverDashboardRepository>(FakeDriverTripsRepository())
+    ..registerSingleton<SupportRepository>(FakeSupportRepository())
+    ..registerSingleton<AttachmentPicker>(FakeAttachmentPicker());
   registerUseCases();
 }
 

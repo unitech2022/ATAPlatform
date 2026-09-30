@@ -83,6 +83,12 @@ class SettingsList extends StatelessWidget {
           ),
           SettingRow(
             leading: const IconBox.cloud(icon: AtaIcons.phone),
+            title: l10n.supportTitle,
+            subtitle: l10n.supportRowCopy,
+            onTap: () => context.go(AppRoutes.support),
+          ),
+          SettingRow(
+            leading: const IconBox.cloud(icon: AtaIcons.user),
             title: l10n.contactRow,
             subtitle: l10n.contactRowCopy,
             onTap: () => context.go(AppRoutes.accountContact),

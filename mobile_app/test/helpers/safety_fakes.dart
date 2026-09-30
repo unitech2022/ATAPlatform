@@ -31,6 +31,10 @@ class FakeSafetyRepository implements SafetyRepository {
       StreamController<SafetyAlert>.broadcast();
   final List<TrustedContact> contacts = <TrustedContact>[];
 
+  /// The rider's safety cases and lost item reports (empty by default).
+  List<SafetyCaseSummary> cases = <SafetyCaseSummary>[];
+  List<LostItemReport> lostItems = <LostItemReport>[];
+
   @override
   Future<Either<Failure, List<TrustedContact>>> getTrustedContacts() async =>
       _ok(List<TrustedContact>.of(contacts));
@@ -104,11 +108,20 @@ class FakeSafetyRepository implements SafetyRepository {
   @override
   Future<Either<Failure, PageResult<SafetyCaseSummary>>> getCases({
     int page = 1,
-  }) async => _ok(const PageResult<SafetyCaseSummary>.empty());
+  }) async => _ok(
+    PageResult<SafetyCaseSummary>(
+      items: cases,
+      page: 1,
+      pageSize: cases.length,
+      total: cases.length,
+    ),
+  );
 
   @override
-  Future<Either<Failure, SafetyCaseSummary>> getCase(String id) async =>
-      _ok(SafetyCaseSummary(id: id, caseNumber: 'SC-1'));
+  Future<Either<Failure, SafetyCaseSummary>> getCase(String id) async => _ok(
+    cases.where((SafetyCaseSummary c) => c.id == id).firstOrNull ??
+        SafetyCaseSummary(id: id, caseNumber: 'SC-1'),
+  );
 
   @override
   Future<Either<Failure, SafetyAlert?>> getPendingAlert() async =>
@@ -132,7 +145,14 @@ class FakeSafetyRepository implements SafetyRepository {
   @override
   Future<Either<Failure, PageResult<LostItemReport>>> getMyLostItems({
     int page = 1,
-  }) async => _ok(const PageResult<LostItemReport>.empty());
+  }) async => _ok(
+    PageResult<LostItemReport>(
+      items: lostItems,
+      page: 1,
+      pageSize: lostItems.length,
+      total: lostItems.length,
+    ),
+  );
 
   @override
   Future<Either<Failure, PageResult<LostItemReport>>> getDriverLostItems({

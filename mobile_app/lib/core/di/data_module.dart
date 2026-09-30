@@ -58,6 +58,10 @@ import 'package:ata_app/features/safety/domain/repositories/safety_repository.da
 import 'package:ata_app/features/scheduled_rides/data/datasources/scheduled_remote_data_source.dart';
 import 'package:ata_app/features/scheduled_rides/data/repositories/scheduled_repository_impl.dart';
 import 'package:ata_app/features/scheduled_rides/domain/repositories/scheduled_repository.dart';
+import 'package:ata_app/features/support/data/datasources/support_remote_data_source.dart';
+import 'package:ata_app/features/support/data/pickers/file_picker_attachment_picker.dart';
+import 'package:ata_app/features/support/data/repositories/support_repository_impl.dart';
+import 'package:ata_app/features/support/domain/repositories/support_repository.dart';
 import 'package:ata_app/features/trip/data/datasources/cancellation_remote_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/signalr_trip_realtime_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/trip_realtime_data_source.dart';
@@ -190,6 +194,15 @@ void registerData({
         remote: AirportRemoteDataSource(getIt()),
         realtime: getIt(),
       ),
+    )
+    ..registerLazySingleton<SupportRepository>(
+      () => SupportRepositoryImpl(
+        remote: SupportRemoteDataSource(getIt()),
+        realtime: getIt(),
+      ),
+    )
+    ..registerLazySingleton<AttachmentPicker>(
+      () => const FilePickerAttachmentPicker(),
     )
     ..registerLazySingleton<LocationRepository>(
       () => simulateLocation

@@ -1,6 +1,7 @@
 import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/app/router/rewards_routes.dart';
 import 'package:ata_app/app/router/scheduled_routes.dart';
+import 'package:ata_app/app/router/support_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_tabs_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/pages/driver_dashboard_page.dart';
@@ -98,4 +99,5 @@ List<RouteBase> get driverRoutes => <RouteBase>[
   ),
   ...driverRewardsRoutes,
   ...driverScheduledRoutes,
+  driverSupportRoute,
 ];

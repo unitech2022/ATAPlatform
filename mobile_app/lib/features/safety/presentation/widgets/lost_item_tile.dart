@@ -6,6 +6,7 @@ import 'package:ata_app/design/widgets/ata_card.dart';
 import 'package:ata_app/features/safety/domain/entities/lost_item.dart';
 import 'package:ata_app/features/safety/presentation/widgets/safety_text.dart';
 import 'package:ata_app/features/safety/presentation/widgets/status_badge.dart';
+import 'package:ata_app/features/support/presentation/widgets/ticket_link_button.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 
@@ -58,6 +59,10 @@ class LostItemTile extends StatelessWidget {
               ].join(' · '),
               style: AtaText.caption,
             ),
+            if (report.supportTicketId != null) ...<Widget>[
+              const SizedBox(height: AtaSpacing.sm),
+              TicketLinkButton(ticketId: report.supportTicketId!),
+            ],
             if (actions != null) ...<Widget>[
               const SizedBox(height: AtaSpacing.sm),
               actions!,

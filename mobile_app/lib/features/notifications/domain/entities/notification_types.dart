@@ -20,6 +20,11 @@ abstract final class NotificationTypes {
   static const String scheduledConfirmRequest = 'scheduled.confirm_request';
   static const String scheduledFavoriteRequest = 'scheduled.favorite_request';
 
+  /// F18 support (`support.reply`, `support.status`) and the lost item
+  /// updates that open their ticket.
+  static const String supportPrefix = 'support.';
+  static const String lostItemUpdate = 'lost_item.update';
+
   static const Map<String, String> _legacy = <String, String>{
     'driver_application_approved': 'driver.application.approved',
     'driver_application_rejected': 'driver.application.rejected',
@@ -37,7 +42,7 @@ abstract final class NotificationTypes {
   static String normalize(String type) => _legacy[type] ?? type;
 
   /// Category of a code (`trips`, `wallet`, `safety`, `promotions`,
-  /// `system`), used when the API row has none.
+  /// `support`, `system`), used when the API row has none.
   static String categoryOf(String code) {
     if (code == incentiveAchieved) return 'wallet';
     final String prefix = code.split('.').first;
@@ -50,6 +55,7 @@ abstract final class NotificationTypes {
       'settlement' ||
       'cancellation' => 'wallet',
       'safety' => 'safety',
+      'support' => 'support',
       'promo' || 'incentive' => 'promotions',
       _ => 'system',
     };
@@ -64,6 +70,11 @@ abstract final class NotificationTypes {
     if (code == tripNoDrivers) return 'ata://home';
     if (code == ratingReminder && tripId != null) return 'ata://rate/$tripId';
     if (code == promoNew) return 'ata://promotions';
+    final String? ticketId = data?['ticketId']?.toString();
+    if ((code.startsWith(supportPrefix) || code == lostItemUpdate) &&
+        ticketId != null) {
+      return 'ata://support/tickets/$ticketId';
+    }
     final String? incentiveId = data?['incentiveId']?.toString();
     if (code.startsWith(incentivePrefix)) {
       return incentiveId == null

@@ -13,6 +13,7 @@ import 'package:ata_app/features/safety/presentation/cubit/safety_list_state.dar
 import 'package:ata_app/features/safety/presentation/widgets/safety_subpage.dart';
 import 'package:ata_app/features/safety/presentation/widgets/safety_text.dart';
 import 'package:ata_app/features/safety/presentation/widgets/status_badge.dart';
+import 'package:ata_app/features/support/presentation/widgets/ticket_link_button.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -119,6 +120,10 @@ class _CaseCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: AtaSpacing.xs),
                     child: Text(note.body, style: AtaText.body),
                   ),
+              if (item.supportTicketId != null) ...<Widget>[
+                const SizedBox(height: AtaSpacing.sm),
+                TicketLinkButton(ticketId: item.supportTicketId!),
+              ],
             ],
           ],
         ),

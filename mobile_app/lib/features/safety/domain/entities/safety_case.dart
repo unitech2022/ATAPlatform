@@ -24,6 +24,7 @@ class SafetyCaseSummary extends Equatable {
     this.openedAt,
     this.resolvedAt,
     this.publicNotes = const <SafetyCaseNote>[],
+    this.supportTicketId,
   });
 
   final String id;
@@ -42,6 +43,9 @@ class SafetyCaseSummary extends Equatable {
   final DateTime? resolvedAt;
   final List<SafetyCaseNote> publicNotes;
 
+  /// The F18 support ticket linked to this case, when the API sends one.
+  final String? supportTicketId;
+
   bool get isResolved => status == 'resolved';
 
   @override
@@ -56,6 +60,7 @@ class SafetyCaseSummary extends Equatable {
     openedAt,
     resolvedAt,
     publicNotes,
+    supportTicketId,
   ];
 }
 

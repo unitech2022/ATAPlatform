@@ -18,6 +18,7 @@ abstract final class SafetyCaseModel {
         tripNumber: JsonReaders.optionalString(json, 'tripNumber'),
         openedAt: JsonReaders.date(json, 'openedAt'),
         resolvedAt: JsonReaders.date(json, 'resolvedAt'),
+        supportTicketId: JsonReaders.optionalString(json, 'supportTicketId'),
         publicNotes: JsonReaders.objects(json, 'publicNotes')
             .map(
               (Map<String, dynamic> n) => SafetyCaseNote(

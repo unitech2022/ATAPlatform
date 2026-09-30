@@ -58,6 +58,9 @@ class AuthInterceptor extends QueuedInterceptor {
     await _tokens.save(fresh);
     request.extra[_retriedFlag] = true;
     request.headers['Authorization'] = 'Bearer ${fresh.accessToken}';
+    final Object? data = request.data;
+    // A multipart body can only be streamed once.
+    if (data is FormData && data.isFinalized) request.data = data.clone();
     try {
       final Response<dynamic> response = await _dio.fetch<dynamic>(request);
       handler.resolve(response);
