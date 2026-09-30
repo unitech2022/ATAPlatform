@@ -45,7 +45,9 @@ class PromoCodeRow extends StatelessWidget {
                   home.favoritePromoOutcome ==
                   FavoritePromoOutcome.promoNotApplied;
               final String subtitle = !home.canUsePromo
-                  ? l10n.promoNotWithOffer
+                  ? (home.isCorporate
+                        ? l10n.corpPromoDisabled
+                        : l10n.promoNotWithOffer)
                   : code != null && notApplied
                   ? l10n.favoritePromoNotStacked
                   : code == null

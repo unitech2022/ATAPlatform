@@ -3,6 +3,9 @@ import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_cubit.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
+import 'package:ata_app/features/corporate/domain/entities/eligibility_draft.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_membership_cubit.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_payment_cubit.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
@@ -71,6 +74,18 @@ class HomePage extends StatelessWidget {
                   TripPlaces.currentLocation,
                   dropoff: TripPlaces.defaultDestination,
                 ),
+        ),
+        BlocProvider<CorporatePaymentCubit>(
+          create: (BuildContext context) =>
+              CorporatePaymentCubit(checkEligibility: getIt())..sync(
+                EligibilityDraft(
+                  profile: context
+                      .read<CorporateMembershipCubit>()
+                      .state
+                      .profile,
+                ),
+                selected: false,
+              ),
         ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(

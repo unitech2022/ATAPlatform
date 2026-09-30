@@ -10,6 +10,7 @@ import 'package:ata_app/features/account/presentation/widgets/profile_card.dart'
 import 'package:ata_app/features/account/presentation/widgets/settings_list.dart';
 import 'package:ata_app/features/auth/domain/entities/user.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
+import 'package:ata_app/features/corporate/presentation/widgets/corporate_company_card.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/presentation/cubit/reliability_cubit.dart';
 import 'package:ata_app/features/trip/presentation/widgets/reliability_card.dart';
@@ -52,6 +53,7 @@ class AccountPage extends StatelessWidget {
               const SizedBox(height: AtaSpacing.xxl),
               ProfileCard(name: name, passenger: state.profile?.passenger),
               const SizedBox(height: AtaSpacing.xl),
+              const CorporateCompanyCard(),
               ReliabilityCard(
                 onDetails: () => context.push(AppRoutes.accountReliability),
               ),

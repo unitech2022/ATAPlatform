@@ -5,11 +5,10 @@ import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
-import 'package:ata_app/design/widgets/selectable_tile.dart';
-import 'package:ata_app/design/widgets/sheet_handle.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/payment_method_sheet.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,6 +19,7 @@ String paymentLabel(AppLocalizations l10n, PaymentOption option) =>
       PaymentOption.cash => l10n.paymentCash,
       PaymentOption.wallet => l10n.paymentWallet,
       PaymentOption.card => l10n.paymentCard,
+      PaymentOption.corporate => l10n.paymentCorporate,
     };
 
 /// Payment-method row that opens a chooser sheet.
@@ -36,7 +36,7 @@ class PaymentRow extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             borderRadius: AtaRadii.smallRadius,
-            onTap: () => _choose(context),
+            onTap: () => PaymentMethodSheet.show(context),
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AtaSpacing.md,
@@ -73,47 +73,6 @@ class PaymentRow extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Future<void> _choose(BuildContext context) {
-    final HomeCubit cubit = context.read<HomeCubit>();
-    return showModalBottomSheet<void>(
-      context: context,
-      builder: (BuildContext sheetContext) => Padding(
-        padding: const EdgeInsets.all(AtaSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const SheetHandle(),
-            Text(context.l10n.paymentMethod, style: AtaText.section),
-            const SizedBox(height: AtaSpacing.md),
-            for (final PaymentOption option
-                in PaymentOption.values) ...<Widget>[
-              SelectableTile(
-                selected: option == cubit.state.payment,
-                onTap: () {
-                  cubit.selectPayment(option);
-                  Navigator.of(sheetContext).pop();
-                },
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        paymentLabel(context.l10n, option),
-                        style: AtaText.bodyStrong,
-                      ),
-                    ),
-                    RadioDot(selected: option == cubit.state.payment),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AtaSpacing.xs),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

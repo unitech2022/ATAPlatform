@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/data/models/corporate_check_model.dart';
 import 'package:ata_app/features/payments/domain/entities/receipt.dart';
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
 
@@ -39,6 +40,7 @@ abstract final class ReceiptModel {
       ),
       refundedTotal: refunded,
       netPaid: JsonReaders.optionalNumber(json, 'netPaid'),
+      corporate: CorporateCheckModel.trip(json),
     );
   }
 

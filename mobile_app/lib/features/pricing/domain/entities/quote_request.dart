@@ -16,6 +16,9 @@ class QuoteRequest extends Equatable {
     this.airportPickupZoneId,
     this.airportTerminalCode,
     this.flightNumber,
+    this.paymentMethod,
+    this.tripPurpose,
+    this.costCenterId,
   });
 
   final GeoPoint pickup;
@@ -36,6 +39,12 @@ class QuoteRequest extends Equatable {
   final String? airportTerminalCode;
   final String? flightNumber;
 
+  /// `corporate` asks the API to evaluate the company policy (F19); the
+  /// other methods do not change the price and are not sent.
+  final String? paymentMethod;
+  final String? tripPurpose;
+  final String? costCenterId;
+
   @override
   List<Object?> get props => <Object?>[
     pickup,
@@ -49,5 +58,8 @@ class QuoteRequest extends Equatable {
     airportPickupZoneId,
     airportTerminalCode,
     flightNumber,
+    paymentMethod,
+    tripPurpose,
+    costCenterId,
   ];
 }

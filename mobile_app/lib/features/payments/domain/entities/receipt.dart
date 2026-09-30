@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/domain/entities/trip_corporate.dart';
 import 'package:equatable/equatable.dart';
 
 /// One line of a receipt (`base_fare`, `discount`, `rounding`, …); the
@@ -105,6 +106,7 @@ class Receipt extends Equatable {
     this.vatIncluded = 0,
     this.refundedTotal = 0,
     this.netPaid,
+    this.corporate,
   });
 
   final String tripId;
@@ -129,6 +131,11 @@ class Receipt extends Equatable {
   final ReceiptPayment payment;
   final double refundedTotal;
   final double? netPaid;
+
+  /// Company, purpose and cost center of a corporate trip (F19).
+  final TripCorporate? corporate;
+
+  bool get isCorporate => payment.method == 'corporate' || corporate != null;
 
   bool get hasRefunds => refundedTotal > 0;
 
@@ -156,5 +163,6 @@ class Receipt extends Equatable {
     payment,
     refundedTotal,
     netPaid,
+    corporate,
   ];
 }

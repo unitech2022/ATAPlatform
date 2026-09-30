@@ -28,5 +28,7 @@ abstract final class TripRequestMapper {
         'airportPickupZoneId': ?request.airportPickupZoneId,
         'airportTerminalCode': ?request.airportTerminalCode,
         'flightNumber': ?request.flightNumber,
+        'tripPurpose': ?request.tripPurpose,
+        'costCenterId': ?request.costCenterId,
       };
 }

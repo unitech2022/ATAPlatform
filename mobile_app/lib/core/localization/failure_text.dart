@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/corporate_failure_text.dart';
 import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/core/localization/rewards_failure_text.dart';
 import 'package:ata_app/core/localization/safety_failure_text.dart';
@@ -74,6 +75,16 @@ abstract final class ErrorCodes {
   static const String attachmentLimit = 'attachment_limit';
   static const String unsupportedFileType = 'unsupported_file_type';
   static const String fileTooLarge = 'file_too_large';
+  static const String corporateNotMember = 'corporate_not_member';
+  static const String corporateAccountInactive = 'corporate_account_inactive';
+  static const String corporateMemberElsewhere = 'corporate_member_elsewhere';
+  static const String corporatePolicyViolation = 'corporate_policy_violation';
+  static const String corporateBudgetExceeded = 'corporate_budget_exceeded';
+  static const String corporateCreditLimitExceeded =
+      'corporate_credit_limit_exceeded';
+  static const String invitationExpired = 'invitation_expired';
+  static const String violations = 'violations';
+  static const String remaining = 'remaining';
   static const String maxScheduledAt = 'maxScheduledAt';
   static const String minScheduledAt = 'minScheduledAt';
   static const String max = 'max';
@@ -144,6 +155,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       favoritesFailureText(failure, l10n) ??
       schedulingFailureText(failure, l10n) ??
       supportFailureText(failure, l10n) ??
+      corporateFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

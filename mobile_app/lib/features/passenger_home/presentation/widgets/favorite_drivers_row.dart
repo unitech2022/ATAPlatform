@@ -62,7 +62,12 @@ class FavoriteDriversRow extends StatelessWidget {
   ) {
     if (!home.canUseFavorite) {
       return <Widget>[
-        Text(l10n.favoriteRowNotWithOffer, style: AtaText.caption),
+        Text(
+          home.isCorporate
+              ? l10n.corpFavoriteDisabled
+              : l10n.favoriteRowNotWithOffer,
+          style: AtaText.caption,
+        ),
       ];
     }
     final FavoriteSelection? selected = home.favorite;

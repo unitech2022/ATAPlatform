@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/data/models/corporate_check_model.dart';
 import 'package:ata_app/features/trip/data/models/cancellation_models.dart';
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
 import 'package:ata_app/features/trip/data/models/trip_parties_model.dart';
@@ -46,6 +47,7 @@ class TripModel extends Trip {
     super.favorite,
     super.scheduling,
     super.airport,
+    super.corporate,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -129,6 +131,7 @@ class TripModel extends Trip {
       favorite: TripRewardsModel.favorite(json),
       scheduling: TripSchedulingModel.scheduling(json),
       airport: TripSchedulingModel.airport(json),
+      corporate: CorporateCheckModel.trip(json),
     );
   }
 
@@ -215,5 +218,6 @@ class TripModel extends Trip {
     'favorite': TripRewardsModel.favoriteJson(favorite),
     'scheduling': TripSchedulingModel.schedulingJson(scheduling),
     'airport': TripSchedulingModel.airportJson(airport),
+    'corporate': CorporateCheckModel.tripJson(corporate),
   };
 }

@@ -5,7 +5,10 @@ enum RideTime { now, scheduled }
 enum PaymentOption {
   cash('cash'),
   wallet('wallet'),
-  card('card');
+  card('card'),
+
+  /// The company account (F19): offered to active members only.
+  corporate('corporate');
 
   const PaymentOption(this.apiValue);
 

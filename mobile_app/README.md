@@ -18,7 +18,9 @@ favourite discount). F17 adds scheduled rides (book up to 7 days ahead, the
 driver marketplace, reservations and confirmations) and airport trips
 (pickup zone, terminal, flight number, the driver airport queue). F18 adds
 support (the help center, tickets with attachments and a CSAT rating, fare
-disputes, links from safety cases and lost items).
+disputes, links from safety cases and lost items). F19 adds the employee side
+of corporate accounts (the company payment option with the trip purpose and
+cost center, the policy / budget checks, invitations, the "شركتي" card).
 Google Maps arrives with the Maps integration (the map is still the painted canvas).
 
 ## Run
@@ -567,6 +569,81 @@ links) and `docs/09` (`supportTicketId` of lost items and safety cases).
   (the API code for it is not in the spec). `file_picker` needs no extra
   Android / iOS setup for jpg / png / pdf from the document picker.
 
+### Corporate accounts, employee side (F19)
+
+`corporate` feature (`docs/12` §F19.2 / §F19.4 / §F19.5). The API endpoints
+used are the employee-facing ones only (`GET /passenger/corporate`,
+`GET /passenger/corporate/invitations`, `POST …/invitations/{id}/accept` and
+`/decline`, `paymentMethod: corporate` + `tripPurpose` + `costCenterId` on
+`POST /pricing/quote` and `POST /passenger/trips`, `corporate` on the quote,
+the trip and the receipt). The company admin portal, invoices and reports are
+web / dashboard features and are not in the app.
+
+- Membership: `CorporateMembershipCubit` is app-wide (`CorporateCubits` in
+  `app/`, provided above the router like `SafetyCubits`). It loads
+  `GET /passenger/corporate` after a rider signs in (riders that accepted the
+  terms; drivers never), reloads after an invitation is accepted and on any
+  `corporate.*` foreground push, and keeps the last profile when a reload
+  fails. A `null` body, an object without `membership` or
+  `403 corporate_not_member` mean "not a member". Empty restriction lists
+  (`allowedRideCategoryCodes`, `timeWindows`, `allowedDays`) mean "no
+  restriction"; an unknown `membership.status` counts as `disabled`.
+- Payment option: `PaymentOption.corporate` ("حساب الشركة") is listed in
+  `PaymentMethodSheet` only while `membership.status = active`. The tile shows
+  the company, the monthly budget left and the per-trip limit. It is disabled
+  with the reason (and the allowed options, e.g. "الفئات المسموحة: اقتصادي")
+  when the company policy does not allow the current category / day / time /
+  booking type / fare / budget.
+- Eligibility: `CheckCorporateEligibility` (a sync use case with an injectable
+  clock, like `EstimateFare`) pre-checks on the device what the profile
+  exposes (category code, day with Sunday = 0, time windows in Riyadh time
+  UTC+3, `allowScheduled`, `maxFarePerTrip` against the quoted total, the
+  remaining budget) and merges the API's own evaluation, the `corporate:
+  { allowed, violations, remainingBudget }` of a quote priced with
+  `paymentMethod: corporate` (which also knows the zones and the credit
+  limit). The API wins on a rule both report; `purpose_required` /
+  `cost_center_required` are enforced by the form instead.
+- Request sheet: `CorporatePaymentCubit` (provided by `HomePage`) holds the
+  typed purpose, the cost center and the verdict. `HomeSync` feeds it the
+  draft (category, time, quote) and hands its `CorporateBooking`
+  (`tripPurpose`, `costCenterId`, `ready`) to `HomeCubit`, which uses it in
+  `buildTripRequest` / `buildQuoteRequest` and in `canRequest`. The
+  `CorporatePaymentSection` under the payment row shows the company, the
+  budget left, the required "غرض الرحلة" (`*` when the policy demands it) and
+  "مركز التكلفة" chips, and the violations list. The quote is re-priced when
+  the payment switches to / from the company account or the cost center
+  changes (not on every keystroke of the purpose).
+- Promo / favourite / offer: the company account disables the promo code and
+  the favourite-driver discount (`docs/10` §1) and the rows say why ("لا
+  تُطبّق أكواد الخصم مع حساب الشركة"); both come back with another method.
+  "Offer your price" and scheduled rides stay available (scheduling only when
+  the policy says `allowScheduled`).
+- Errors: `corporate_not_member`, `corporate_account_inactive`,
+  `corporate_member_elsewhere`, `corporate_policy_violation` (one line per
+  broken rule with the allowed options), `corporate_budget_exceeded`
+  (`details.remaining`), `corporate_credit_limit_exceeded`,
+  `invitation_expired` have localized texts (`corporate_failure_text.dart`,
+  rule texts in `CorporateText`). A policy refusal re-prices the quote so the
+  violations panel is up to date; losing the membership reloads it and goes
+  back to cash.
+- Receipts and the end-of-trip view: a corporate trip / receipt shows
+  "مدفوعة من حساب الشركة" (`CorporatePaidCard`) with the company, the purpose
+  and the cost center, and "المبلغ على حساب الشركة"; it never shows wallet or
+  card charge lines. `Trip.corporate` and `Receipt.corporate` are the
+  `corporate` object; a receipt whose `payment.method` is `corporate` says it
+  even without the object.
+- Account: `CorporateCompanyCard` ("شركتي": company, role, monthly budget
+  used / limit) opens `/account/corporate` (`CorporatePage`: membership,
+  status, policy, budget, invitations). While an invitation is pending and the
+  rider is not a member the account page shows `InvitationPromptCard`.
+  `CorporateInvitationsCubit` (app-wide, also provided by `CorporateCubits`)
+  accepts / declines; an expired invitation is dropped with its error.
+- Deep link `ata://corporate/invitations` → `/account/corporate`; the inbox
+  row of an older `corporate.invitation` notification gets the same link.
+- Not built (the docs do not define them for the app): leaving a company, an
+  employee booking for a guest (guest trips are booked by the company admin in
+  the portal), a corporate filter on the rides list.
+
 ### Fonts and assets
 
 IBM Plex Sans Arabic (400/500/600/700, OFL) is bundled in `assets/fonts/` and
@@ -600,7 +677,8 @@ lib/
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
 `pricing`, `payments`, `driver_wallet`, `trip_chat`, `rating`, `promotions`,
-`driver_rewards`, `favorite_drivers`, `scheduled_rides`, `airport`, `support`.
+`driver_rewards`, `favorite_drivers`, `scheduled_rides`, `airport`, `support`,
+`corporate`.
 
 ### Rules
 
@@ -617,8 +695,8 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 - Dependency injection: `core/di/injector.dart` registers infrastructure,
   `data_module.dart` registers repositories, `use_case_module.dart` registers
   use cases (with `payments_module.dart`, `safety_module.dart`,
-  `rewards_module.dart`, `scheduling_module.dart` and `support_module.dart` for F11/F13, F12/F14,
-  F15/F16 and F17). Tests register fake
+  `rewards_module.dart`, `scheduling_module.dart`, `support_module.dart` and
+  `corporate_module.dart` for F11/F13, F12/F14, F15/F16, F17, F18 and F19). Tests register fake
   repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
   splash, signed-out → `/auth/*`, new rider → terms, driver not approved →
@@ -715,6 +793,10 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `TicketDetailCubit`      | support            | thread, reply, closed handling, hub + 15 s poll   |
 | `CsatCubit`              | support            | one-time 1–5 rating + comment                     |
 | `AttachmentFileCubit`    | support            | authenticated attachment download                 |
+| `CorporateMembershipCubit` | corporate (app-wide) | company membership, policy, budget, cost centers (`GET /passenger/corporate`) |
+| `CorporateInvitationsCubit` | corporate (app-wide) | pending company invitations, accept / decline |
+| `CorporatePaymentCubit`  | corporate          | request sheet: trip purpose, cost center, policy verdict for the company account |
+| `CorporateCatalogCubit`  | corporate          | ride categories, to name the allowed categories on the company page |
 
 ## API
 
@@ -724,7 +806,8 @@ endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
 driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` and
 `docs/09-feature-f12-f14-safety-cancellation.md` and the F15 / F16 endpoints of
 `docs/10-feature-f15-f16-ratings-promotions-favorites.md` and the F17 / F18 endpoints of
-`docs/11-feature-f17-f18-scheduled-airport-support.md` live in each feature's
+`docs/11-feature-f17-f18-scheduled-airport-support.md` and the employee endpoints of
+`docs/12-feature-f19-f21-corporate-reports-ops.md` §F19.4 live in each feature's
 `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope

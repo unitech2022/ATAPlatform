@@ -75,6 +75,10 @@ abstract final class AppRoutes {
   static const String accountReliability = '/account/reliability';
   static const String accountFavoriteDrivers = '/account/favorite-drivers';
 
+  /// F19: the company membership, policy, budget and invitations
+  /// (`ata://corporate/invitations`).
+  static const String accountCorporate = '/account/corporate';
+
   /// F18 support: the rider paths (inside the shell) and their driver twins.
   static const String support = '/support';
   static const String driverSupport = '/driver/support';

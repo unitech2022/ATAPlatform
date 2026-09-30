@@ -81,7 +81,10 @@ enum AtaIcons {
     paths: <String>['M4 21c1-5 4-7 8-7s7 2 8 7'],
     circles: <IconCircle>[IconCircle(12, 8, 4)],
   ),
-  wallet(paths: <String>['M3 6h17v13H3zM3 9h17', 'M15 13h5v3h-5z']);
+  wallet(paths: <String>['M3 6h17v13H3zM3 9h17', 'M15 13h5v3h-5z']),
+  building(
+    paths: <String>['M5 21V4h9v17M14 9h5v12M3 21h18', 'M8 8h3M8 12h3M8 16h3'],
+  );
 
   const AtaIcons({required this.paths, this.circles = const <IconCircle>[]});
 

@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/domain/entities/corporate_quote_check.dart';
 import 'package:ata_app/features/pricing/domain/entities/demand_level.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
 import 'package:equatable/equatable.dart';
@@ -44,6 +45,7 @@ class FareQuote extends Equatable {
     this.categories = const <QuoteCategory>[],
     this.promotion,
     this.favoriteDiscountConditional = false,
+    this.corporate,
   });
 
   final String quoteId;
@@ -58,6 +60,10 @@ class FareQuote extends Equatable {
   /// The favourite-driver discount in the totals assumes the driver
   /// accepts (`favoriteDiscountConditional`, F16).
   final bool favoriteDiscountConditional;
+
+  /// The company policy evaluation of a `paymentMethod: corporate` quote
+  /// (F19); `null` for the other payment methods.
+  final CorporateQuoteCheck? corporate;
 
   QuoteCategory? forCategory(String? rideCategoryId) {
     for (final QuoteCategory category in categories) {
@@ -79,5 +85,6 @@ class FareQuote extends Equatable {
     categories,
     promotion,
     favoriteDiscountConditional,
+    corporate,
   ];
 }

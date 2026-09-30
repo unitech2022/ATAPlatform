@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/domain/entities/trip_corporate.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_airport.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_cancellation.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
@@ -62,6 +63,7 @@ class Trip extends Equatable {
     this.favorite,
     this.scheduling,
     this.airport,
+    this.corporate,
   });
 
   /// Trip event recorded when a card capture failed and the fare moved to
@@ -119,7 +121,13 @@ class Trip extends Equatable {
   /// Airport pickup / dropoff details (F17); `null` otherwise.
   final TripAirport? airport;
 
+  /// Who paid and why when the trip is on a company account (F19).
+  final TripCorporate? corporate;
+
   bool get isScheduled => bookingType == 'scheduled';
+
+  /// Paid from the company account (`paymentMethod: corporate`, F19).
+  bool get isCorporate => paymentMethod == 'corporate' || corporate != null;
 
   /// The assigned driver is one of my favourites: the API flag
   /// (`driver.isFavorite`) or the accepted favourite request.
@@ -176,6 +184,7 @@ class Trip extends Equatable {
     favorite: favorite,
     scheduling: scheduling,
     airport: airport,
+    corporate: corporate,
   );
 
   @override
@@ -215,5 +224,6 @@ class Trip extends Equatable {
     favorite,
     scheduling,
     airport,
+    corporate,
   ];
 }

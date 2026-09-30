@@ -9,6 +9,7 @@ import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
 import 'package:ata_app/features/airport/domain/repositories/airport_repository.dart';
 import 'package:ata_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:ata_app/features/corporate/domain/repositories/corporate_repository.dart';
 import 'package:ata_app/features/driver_dashboard/domain/repositories/driver_dashboard_repository.dart';
 import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewards_repository.dart';
 import 'package:ata_app/features/favorite_drivers/domain/repositories/favorite_drivers_repository.dart';
@@ -30,6 +31,7 @@ import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'corporate_fakes.dart';
 import 'fakes.dart';
 import 'favorites_fakes.dart';
 import 'pricing_fakes.dart';
@@ -72,7 +74,8 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     ..registerSingleton<AirportRepository>(FakeAirportRepository())
     ..registerSingleton<DriverDashboardRepository>(FakeDriverTripsRepository())
     ..registerSingleton<SupportRepository>(FakeSupportRepository())
-    ..registerSingleton<AttachmentPicker>(FakeAttachmentPicker());
+    ..registerSingleton<AttachmentPicker>(FakeAttachmentPicker())
+    ..registerSingleton<CorporateRepository>(FakeCorporateRepository());
   registerUseCases();
 }
 

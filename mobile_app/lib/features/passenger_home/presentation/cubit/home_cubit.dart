@@ -2,6 +2,7 @@ import 'package:ata_app/core/usecases/use_case.dart';
 import 'package:ata_app/features/airport/domain/entities/airport_selection.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/catalog/domain/usecases/get_ride_categories.dart';
+import 'package:ata_app/features/corporate/domain/entities/corporate_booking.dart';
 import 'package:ata_app/features/favorite_drivers/domain/entities/available_favorite.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
@@ -91,6 +92,11 @@ class HomeCubit extends Cubit<HomeState> {
 
   void selectPayment(PaymentOption option) =>
       emit(state.copyWith(payment: option));
+
+  /// Applies the purpose / cost center / readiness of the company account
+  /// form (F19, from `CorporatePaymentCubit`).
+  void applyCorporate(CorporateBooking booking) =>
+      emit(state.copyWith(corporate: booking));
 
   Future<void> togglePreferFemaleDriver() async {
     final bool next = !state.preferFemaleDriver;

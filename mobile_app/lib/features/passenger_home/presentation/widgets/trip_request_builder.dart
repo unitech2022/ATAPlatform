@@ -12,7 +12,9 @@ import 'package:ata_app/l10n/generated/app_localizations.dart';
 /// as `quoteId`, the applied promo code as `promoCode` and the selected
 /// favourite driver as `favoriteDriverId` (F16). A scheduled ride carries
 /// `scheduledAt` (F17) and an airport trip the airport zone / terminal and
-/// the flight number (the airport replaces the pickup or the dropoff).
+/// the flight number (the airport replaces the pickup or the dropoff). A
+/// company-account trip (F19) carries `tripPurpose` and `costCenterId`;
+/// its quote asks the API to evaluate the company policy.
 TripRequest buildTripRequest(HomeState state, AppLocalizations l10n) =>
     TripRequest(
       pickup: TripStop(
@@ -41,6 +43,8 @@ TripRequest buildTripRequest(HomeState state, AppLocalizations l10n) =>
       airportPickupZoneId: state.airport?.pickupZoneId,
       airportTerminalCode: state.airport?.dropoffTerminal,
       flightNumber: state.airport?.flightNumber,
+      tripPurpose: state.corporateBooking?.tripPurpose,
+      costCenterId: state.corporateBooking?.costCenterId,
     );
 
 /// Name of the pickup row: the airport (and zone) or "my location".
@@ -70,6 +74,9 @@ QuoteRequest buildQuoteRequest(HomeState state, AppLocalizations l10n) =>
       airportPickupZoneId: state.airport?.pickupZoneId,
       airportTerminalCode: state.airport?.dropoffTerminal,
       flightNumber: state.airport?.flightNumber,
+      paymentMethod: state.isCorporate ? state.payment.apiValue : null,
+      tripPurpose: state.corporateBooking?.tripPurpose,
+      costCenterId: state.corporateBooking?.costCenterId,
     );
 
 /// Context of `POST /passenger/promotions/validate` for the current draft.

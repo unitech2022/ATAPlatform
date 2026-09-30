@@ -25,6 +25,10 @@ abstract final class NotificationTypes {
   static const String supportPrefix = 'support.';
   static const String lostItemUpdate = 'lost_item.update';
 
+  /// F19 corporate accounts (`corporate.invitation`, `.guest_trip`,
+  /// `.invoice_issued`); the invitation opens `/account/corporate`.
+  static const String corporateInvitation = 'corporate.invitation';
+
   static const Map<String, String> _legacy = <String, String>{
     'driver_application_approved': 'driver.application.approved',
     'driver_application_rejected': 'driver.application.rejected',
@@ -70,6 +74,7 @@ abstract final class NotificationTypes {
     if (code == tripNoDrivers) return 'ata://home';
     if (code == ratingReminder && tripId != null) return 'ata://rate/$tripId';
     if (code == promoNew) return 'ata://promotions';
+    if (code == corporateInvitation) return 'ata://corporate/invitations';
     final String? ticketId = data?['ticketId']?.toString();
     if ((code.startsWith(supportPrefix) || code == lostItemUpdate) &&
         ticketId != null) {

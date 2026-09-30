@@ -4092,4 +4092,322 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportFollowTicket => 'Follow up with support';
+
+  @override
+  String get paymentCorporate => 'Company account';
+
+  @override
+  String get corpSectionTitle => 'Company account';
+
+  @override
+  String get corpPaidByCompany => 'Paid by the company account';
+
+  @override
+  String get corpBillingNote => 'This trip is billed to your company account';
+
+  @override
+  String get corpBilledAmount => 'Billed to the company';
+
+  @override
+  String corpOptionBudget(String amount) {
+    return 'Left this month: $amount';
+  }
+
+  @override
+  String corpOptionTripLimit(String amount) {
+    return 'Max per trip: $amount';
+  }
+
+  @override
+  String corpOptionUnavailable(String reason) {
+    return 'Unavailable: $reason';
+  }
+
+  @override
+  String get corpPurposeLabel => 'Trip purpose';
+
+  @override
+  String get corpPurposeHint => 'For example: client meeting';
+
+  @override
+  String get corpPurposeRequired => 'The trip purpose is required';
+
+  @override
+  String get corpCostCenterLabel => 'Cost center';
+
+  @override
+  String get corpCostCenterRequired => 'Choose a cost center';
+
+  @override
+  String get corpCostCenterNone => 'No cost center';
+
+  @override
+  String corpCostCenterItem(String code, String name) {
+    return '$code · $name';
+  }
+
+  @override
+  String corpRemainingBudget(String amount) {
+    return 'Left in your monthly budget: $amount';
+  }
+
+  @override
+  String get corpPromoDisabled =>
+      'Promo codes do not apply to the company account';
+
+  @override
+  String get corpFavoriteDisabled =>
+      'The favourite-driver discount does not apply to the company account';
+
+  @override
+  String get corpViolationsTitle =>
+      'This trip does not match your company policy';
+
+  @override
+  String get corpViolationsHint =>
+      'Change the category or time, or pick another payment method';
+
+  @override
+  String get corpViolationCategory =>
+      'This category is not allowed by your company policy';
+
+  @override
+  String corpViolationCategoryAllowed(String list) {
+    return 'Allowed categories: $list';
+  }
+
+  @override
+  String get corpViolationDay => 'Trips are not allowed on this day';
+
+  @override
+  String corpViolationDayAllowed(String list) {
+    return 'Allowed days: $list';
+  }
+
+  @override
+  String get corpViolationTime => 'The trip time is outside the allowed hours';
+
+  @override
+  String corpViolationTimeAllowed(String list) {
+    return 'Allowed hours: $list';
+  }
+
+  @override
+  String get corpViolationZone => 'The pickup or drop-off zone is not allowed';
+
+  @override
+  String corpViolationZoneAllowed(String list) {
+    return 'Allowed zones: $list';
+  }
+
+  @override
+  String corpViolationMaxFare(String limit) {
+    return 'The fare exceeds the per-trip limit ($limit)';
+  }
+
+  @override
+  String get corpViolationScheduled =>
+      'Scheduled rides are not allowed by your company policy';
+
+  @override
+  String get corpViolationBudget =>
+      'You have exceeded your available monthly budget';
+
+  @override
+  String corpViolationBudgetLeft(String amount) {
+    return 'You have exceeded your available monthly budget, $amount left';
+  }
+
+  @override
+  String get corpViolationCredit =>
+      'The company account exceeded its credit limit';
+
+  @override
+  String get corpViolationUnknown => 'The trip violates your company policy';
+
+  @override
+  String get corpListSeparator => ', ';
+
+  @override
+  String corpTimeWindow(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get corporateNotMemberError =>
+      'You are not a member of a company account';
+
+  @override
+  String get corporateAccountInactiveError =>
+      'The company account is not active';
+
+  @override
+  String get corporateMemberElsewhereError =>
+      'This number is linked to another company account';
+
+  @override
+  String get corporatePolicyViolationError =>
+      'The trip violates your company policy';
+
+  @override
+  String get corporateBudgetExceededError =>
+      'You have exceeded your available monthly budget';
+
+  @override
+  String corporateBudgetExceededLeftError(String amount) {
+    return 'You have exceeded your available monthly budget, SAR $amount left';
+  }
+
+  @override
+  String get corporateCreditLimitError =>
+      'The company account exceeded its credit limit, contact your company admin';
+
+  @override
+  String get invitationExpiredError =>
+      'The invitation has expired, ask your company to send it again';
+
+  @override
+  String get corpMyCompany => 'My company';
+
+  @override
+  String get corpMyCompanyCopy =>
+      'The company account linked to your number, its trip policy and budget';
+
+  @override
+  String get corpRoleEmployee => 'Employee';
+
+  @override
+  String get corpRoleAdmin => 'Company admin';
+
+  @override
+  String get corpStatusActive => 'Active';
+
+  @override
+  String get corpStatusInvited => 'Invitation pending';
+
+  @override
+  String get corpStatusDisabled => 'Disabled';
+
+  @override
+  String get corpStatusDisabledCopy =>
+      'Your company membership is disabled, contact your company admin';
+
+  @override
+  String corpEmployeeNumber(String number) {
+    return 'Employee no.: $number';
+  }
+
+  @override
+  String corpDepartment(String name) {
+    return 'Department: $name';
+  }
+
+  @override
+  String get corpBudgetTitle => 'Monthly budget';
+
+  @override
+  String corpBudgetUsed(String spent, String limit) {
+    return '$spent of $limit used';
+  }
+
+  @override
+  String corpBudgetLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String get corpBudgetNone => 'No monthly limit';
+
+  @override
+  String corpTripLimit(String amount) {
+    return 'Max per trip $amount';
+  }
+
+  @override
+  String get corpPolicyTitle => 'Company policy';
+
+  @override
+  String corpPolicyCategories(String list) {
+    return 'Categories: $list';
+  }
+
+  @override
+  String get corpPolicyAllCategories => 'Categories: all';
+
+  @override
+  String corpPolicyDays(String list) {
+    return 'Days: $list';
+  }
+
+  @override
+  String corpPolicyHours(String list) {
+    return 'Hours: $list';
+  }
+
+  @override
+  String get corpPolicyPurposeRequired => 'The trip purpose is required';
+
+  @override
+  String get corpPolicyCostCenterRequired => 'A cost center is required';
+
+  @override
+  String get corpPolicyScheduledAllowed => 'Scheduled rides: allowed';
+
+  @override
+  String get corpPolicyScheduledBlocked => 'Scheduled rides: not allowed';
+
+  @override
+  String get corpNoMembership => 'You are not a member of a company account';
+
+  @override
+  String get corpNoMembershipCopy =>
+      'When your company invites you, the invitation will show here';
+
+  @override
+  String get corpInvitationsTitle => 'Company invitations';
+
+  @override
+  String corpInvitationFrom(String company) {
+    return '$company invited you to join';
+  }
+
+  @override
+  String corpInvitationRole(String role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String corpInvitationExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get corpInvitationExpired => 'Expired';
+
+  @override
+  String get corpAccept => 'Accept';
+
+  @override
+  String get corpDecline => 'Decline';
+
+  @override
+  String corpInvitationAccepted(String company) {
+    return 'You joined $company';
+  }
+
+  @override
+  String get corpInvitationDeclined => 'Invitation declined';
+
+  @override
+  String get corpPromptTitle => 'You have a company invitation';
+
+  @override
+  String get corpPromptCopy =>
+      'Accept it to pay your rides from the company account';
+
+  @override
+  String get corpPromptAction => 'View invitation';
+
+  @override
+  String get corpMembershipError => 'Could not load the company account';
 }

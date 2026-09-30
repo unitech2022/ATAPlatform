@@ -1,6 +1,7 @@
 import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/features/airport/domain/entities/airport_selection.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
+import 'package:ata_app/features/corporate/domain/entities/corporate_booking.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/fare_estimate.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
@@ -29,6 +30,7 @@ class HomeState extends Equatable {
     this.favorite,
     this.scheduledAt,
     this.airport,
+    this.corporate = const CorporateBooking(),
   });
 
   /// Lowest price a rider may ever offer, and the fallback offer range used
@@ -66,6 +68,10 @@ class HomeState extends Equatable {
 
   /// Airport pickup / dropoff chosen for this request (F17).
   final AirportSelection? airport;
+
+  /// Purpose / cost center of the company account (F19), applied from
+  /// `CorporatePaymentCubit`; only used while [isCorporate].
+  final CorporateBooking corporate;
 
   bool get isScheduled => rideTime == RideTime.scheduled;
 
@@ -117,18 +123,27 @@ class HomeState extends Equatable {
   bool get canRequest =>
       selectedCategory != null &&
       (!isScheduled || scheduledAt != null) &&
-      (airport?.isComplete ?? true);
+      (airport?.isComplete ?? true) &&
+      (!isCorporate || corporate.ready);
   bool get hasOfferedPrice => offeredPrice != null;
   bool get hasQuote => quote != null;
 
-  /// Promo codes are not offered with "offer your price" (`docs/10` §1).
-  bool get canUsePromo => !hasOfferedPrice;
+  /// The trip is paid from the company account (F19).
+  bool get isCorporate => payment == PaymentOption.corporate;
+
+  /// The purpose / cost center sent with a corporate trip, else `null`.
+  CorporateBooking? get corporateBooking => isCorporate ? corporate : null;
+
+  /// Promo codes are not offered with "offer your price" nor with the
+  /// company account (`docs/10` §1).
+  bool get canUsePromo => !hasOfferedPrice && !isCorporate;
 
   /// The promo code sent with the quote and the request.
   String? get effectivePromoCode => canUsePromo ? promoCode : null;
 
-  /// Favourite drivers are not offered with "offer your price" (`docs/10` §1).
-  bool get canUseFavorite => !hasOfferedPrice;
+  /// Favourite drivers are not offered with "offer your price" nor with the
+  /// company account (`docs/10` §1).
+  bool get canUseFavorite => !hasOfferedPrice && !isCorporate;
 
   /// The favourite driver sent with the quote and the request.
   String? get effectiveFavoriteDriverId =>
@@ -177,6 +192,7 @@ class HomeState extends Equatable {
     FavoriteSelection? favorite,
     DateTime? scheduledAt,
     AirportSelection? airport,
+    CorporateBooking? corporate,
     bool clearFailure = false,
     bool clearOfferedPrice = false,
     bool clearQuote = false,
@@ -202,6 +218,7 @@ class HomeState extends Equatable {
     favorite: clearFavorite ? null : favorite ?? this.favorite,
     scheduledAt: clearScheduledAt ? null : scheduledAt ?? this.scheduledAt,
     airport: clearAirport ? null : airport ?? this.airport,
+    corporate: corporate ?? this.corporate,
   );
 
   @override
@@ -221,5 +238,6 @@ class HomeState extends Equatable {
     favorite,
     scheduledAt,
     airport,
+    corporate,
   ];
 }

@@ -7212,6 +7212,504 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'متابعة مع الدعم'**
   String get supportFollowTicket;
+
+  /// No description provided for @paymentCorporate.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشركة'**
+  String get paymentCorporate;
+
+  /// No description provided for @corpSectionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشركة'**
+  String get corpSectionTitle;
+
+  /// No description provided for @corpPaidByCompany.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوعة من حساب الشركة'**
+  String get corpPaidByCompany;
+
+  /// No description provided for @corpBillingNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُحاسَب هذه الرحلة على حساب شركتك'**
+  String get corpBillingNote;
+
+  /// No description provided for @corpBilledAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ على حساب الشركة'**
+  String get corpBilledAmount;
+
+  /// No description provided for @corpOptionBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي هذا الشهر: {amount}'**
+  String corpOptionBudget(String amount);
+
+  /// No description provided for @corpOptionTripLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى للرحلة: {amount}'**
+  String corpOptionTripLimit(String amount);
+
+  /// No description provided for @corpOptionUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاح: {reason}'**
+  String corpOptionUnavailable(String reason);
+
+  /// No description provided for @corpPurposeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرض الرحلة'**
+  String get corpPurposeLabel;
+
+  /// No description provided for @corpPurposeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: اجتماع عميل'**
+  String get corpPurposeHint;
+
+  /// No description provided for @corpPurposeRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرض الرحلة مطلوب'**
+  String get corpPurposeRequired;
+
+  /// No description provided for @corpCostCenterLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز التكلفة'**
+  String get corpCostCenterLabel;
+
+  /// No description provided for @corpCostCenterRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مركز التكلفة'**
+  String get corpCostCenterRequired;
+
+  /// No description provided for @corpCostCenterNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مركز تكلفة'**
+  String get corpCostCenterNone;
+
+  /// No description provided for @corpCostCenterItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'{code} · {name}'**
+  String corpCostCenterItem(String code, String name);
+
+  /// No description provided for @corpRemainingBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي من ميزانيتك الشهرية: {amount}'**
+  String corpRemainingBudget(String amount);
+
+  /// No description provided for @corpPromoDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تُطبّق أكواد الخصم مع حساب الشركة'**
+  String get corpPromoDisabled;
+
+  /// No description provided for @corpFavoriteDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يُطبّق خصم السائق المفضل مع حساب الشركة'**
+  String get corpFavoriteDisabled;
+
+  /// No description provided for @corpViolationsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الرحلة لا تتوافق مع سياسة شركتك'**
+  String get corpViolationsTitle;
+
+  /// No description provided for @corpViolationsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'غيّر الفئة أو الوقت، أو اختر وسيلة دفع أخرى'**
+  String get corpViolationsHint;
+
+  /// No description provided for @corpViolationCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الفئة غير مسموحة في سياسة شركتك'**
+  String get corpViolationCategory;
+
+  /// No description provided for @corpViolationCategoryAllowed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئات المسموحة: {list}'**
+  String corpViolationCategoryAllowed(String list);
+
+  /// No description provided for @corpViolationDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلات غير مسموحة في هذا اليوم'**
+  String get corpViolationDay;
+
+  /// No description provided for @corpViolationDayAllowed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام المسموحة: {list}'**
+  String corpViolationDayAllowed(String list);
+
+  /// No description provided for @corpViolationTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت الرحلة خارج الساعات المسموحة'**
+  String get corpViolationTime;
+
+  /// No description provided for @corpViolationTimeAllowed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الساعات المسموحة: {list}'**
+  String corpViolationTimeAllowed(String list);
+
+  /// No description provided for @corpViolationZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقة الالتقاط أو الوجهة غير مسموحة'**
+  String get corpViolationZone;
+
+  /// No description provided for @corpViolationZoneAllowed.
+  ///
+  /// In ar, this message translates to:
+  /// **'المناطق المسموحة: {list}'**
+  String corpViolationZoneAllowed(String list);
+
+  /// No description provided for @corpViolationMaxFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجرة تتجاوز الحد الأقصى للرحلة ({limit})'**
+  String corpViolationMaxFare(String limit);
+
+  /// No description provided for @corpViolationScheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجز المجدول غير مسموح في سياسة شركتك'**
+  String get corpViolationScheduled;
+
+  /// No description provided for @corpViolationBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت الميزانية الشهرية المتاحة'**
+  String get corpViolationBudget;
+
+  /// No description provided for @corpViolationBudgetLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت الميزانية الشهرية المتاحة، المتبقي {amount}'**
+  String corpViolationBudgetLeft(String amount);
+
+  /// No description provided for @corpViolationCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوز حساب الشركة الحد الائتماني'**
+  String get corpViolationCredit;
+
+  /// No description provided for @corpViolationUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة تخالف سياسة شركتك'**
+  String get corpViolationUnknown;
+
+  /// No description provided for @corpListSeparator.
+  ///
+  /// In ar, this message translates to:
+  /// **'، '**
+  String get corpListSeparator;
+
+  /// No description provided for @corpTimeWindow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{from} – {to}'**
+  String corpTimeWindow(String from, String to);
+
+  /// No description provided for @corporateNotMemberError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لست عضواً في حساب شركة'**
+  String get corporateNotMemberError;
+
+  /// No description provided for @corporateAccountInactiveError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشركة غير نشط'**
+  String get corporateAccountInactiveError;
+
+  /// No description provided for @corporateMemberElsewhereError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم مرتبط بحساب شركة آخر'**
+  String get corporateMemberElsewhereError;
+
+  /// No description provided for @corporatePolicyViolationError.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة تخالف سياسة شركتك'**
+  String get corporatePolicyViolationError;
+
+  /// No description provided for @corporateBudgetExceededError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت الميزانية الشهرية المتاحة'**
+  String get corporateBudgetExceededError;
+
+  /// No description provided for @corporateBudgetExceededLeftError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوزت الميزانية الشهرية المتاحة، المتبقي {amount} ر.س'**
+  String corporateBudgetExceededLeftError(String amount);
+
+  /// No description provided for @corporateCreditLimitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاوز حساب الشركة الحد الائتماني، تواصل مع مسؤول الشركة'**
+  String get corporateCreditLimitError;
+
+  /// No description provided for @invitationExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت صلاحية الدعوة، اطلب من شركتك إعادة إرسالها'**
+  String get invitationExpiredError;
+
+  /// No description provided for @corpMyCompany.
+  ///
+  /// In ar, this message translates to:
+  /// **'شركتي'**
+  String get corpMyCompany;
+
+  /// No description provided for @corpMyCompanyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشركة المرتبط برقمك وسياسة الرحلات والميزانية'**
+  String get corpMyCompanyCopy;
+
+  /// No description provided for @corpRoleEmployee.
+  ///
+  /// In ar, this message translates to:
+  /// **'موظف'**
+  String get corpRoleEmployee;
+
+  /// No description provided for @corpRoleAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسؤول الشركة'**
+  String get corpRoleAdmin;
+
+  /// No description provided for @corpStatusActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّال'**
+  String get corpStatusActive;
+
+  /// No description provided for @corpStatusInvited.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوة معلّقة'**
+  String get corpStatusInvited;
+
+  /// No description provided for @corpStatusDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'معطّل'**
+  String get corpStatusDisabled;
+
+  /// No description provided for @corpStatusDisabledCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل حسابك في الشركة، تواصل مع مسؤول الشركة'**
+  String get corpStatusDisabledCopy;
+
+  /// No description provided for @corpEmployeeNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم الوظيفي: {number}'**
+  String corpEmployeeNumber(String number);
+
+  /// No description provided for @corpDepartment.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسم: {name}'**
+  String corpDepartment(String name);
+
+  /// No description provided for @corpBudgetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية'**
+  String get corpBudgetTitle;
+
+  /// No description provided for @corpBudgetUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'استُخدم {spent} من {limit}'**
+  String corpBudgetUsed(String spent, String limit);
+
+  /// No description provided for @corpBudgetLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي {amount}'**
+  String corpBudgetLeft(String amount);
+
+  /// No description provided for @corpBudgetNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون حد شهري'**
+  String get corpBudgetNone;
+
+  /// No description provided for @corpTripLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى للرحلة {amount}'**
+  String corpTripLimit(String amount);
+
+  /// No description provided for @corpPolicyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الشركة'**
+  String get corpPolicyTitle;
+
+  /// No description provided for @corpPolicyCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئات: {list}'**
+  String corpPolicyCategories(String list);
+
+  /// No description provided for @corpPolicyAllCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئات: كل الفئات'**
+  String get corpPolicyAllCategories;
+
+  /// No description provided for @corpPolicyDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام: {list}'**
+  String corpPolicyDays(String list);
+
+  /// No description provided for @corpPolicyHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'الساعات: {list}'**
+  String corpPolicyHours(String list);
+
+  /// No description provided for @corpPolicyPurposeRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'غرض الرحلة مطلوب'**
+  String get corpPolicyPurposeRequired;
+
+  /// No description provided for @corpPolicyCostCenterRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز التكلفة مطلوب'**
+  String get corpPolicyCostCenterRequired;
+
+  /// No description provided for @corpPolicyScheduledAllowed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجز المجدول: مسموح'**
+  String get corpPolicyScheduledAllowed;
+
+  /// No description provided for @corpPolicyScheduledBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجز المجدول: غير مسموح'**
+  String get corpPolicyScheduledBlocked;
+
+  /// No description provided for @corpNoMembership.
+  ///
+  /// In ar, this message translates to:
+  /// **'لست عضواً في حساب شركة'**
+  String get corpNoMembership;
+
+  /// No description provided for @corpNoMembershipCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندما تدعوك شركتك ستظهر الدعوة هنا لتقبلها'**
+  String get corpNoMembershipCopy;
+
+  /// No description provided for @corpInvitationsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوات الشركات'**
+  String get corpInvitationsTitle;
+
+  /// No description provided for @corpInvitationFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعتك {company} للانضمام'**
+  String corpInvitationFrom(String company);
+
+  /// No description provided for @corpInvitationRole.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدور: {role}'**
+  String corpInvitationRole(String role);
+
+  /// No description provided for @corpInvitationExpires.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي {date}'**
+  String corpInvitationExpires(String date);
+
+  /// No description provided for @corpInvitationExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهية الصلاحية'**
+  String get corpInvitationExpired;
+
+  /// No description provided for @corpAccept.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبول'**
+  String get corpAccept;
+
+  /// No description provided for @corpDecline.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get corpDecline;
+
+  /// No description provided for @corpInvitationAccepted.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الانضمام إلى {company}'**
+  String corpInvitationAccepted(String company);
+
+  /// No description provided for @corpInvitationDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض الدعوة'**
+  String get corpInvitationDeclined;
+
+  /// No description provided for @corpPromptTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديك دعوة للانضمام إلى شركة'**
+  String get corpPromptTitle;
+
+  /// No description provided for @corpPromptCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقبل الدعوة لتدفع رحلاتك من حساب الشركة'**
+  String get corpPromptCopy;
+
+  /// No description provided for @corpPromptAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الدعوة'**
+  String get corpPromptAction;
+
+  /// No description provided for @corpMembershipError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل بيانات حساب الشركة'**
+  String get corpMembershipError;
 }
 
 class _AppLocalizationsDelegate

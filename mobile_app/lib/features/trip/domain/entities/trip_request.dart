@@ -31,6 +31,8 @@ class TripRequest extends Equatable {
     this.airportPickupZoneId,
     this.airportTerminalCode,
     this.flightNumber,
+    this.tripPurpose,
+    this.costCenterId,
   });
 
   final TripStop pickup;
@@ -65,6 +67,10 @@ class TripRequest extends Equatable {
   /// Optional, normalized flight number (`^[A-Z0-9]{2}[0-9]{1,4}[A-Z]?$`).
   final String? flightNumber;
 
+  /// Purpose and cost center of a `corporate` payment (F19).
+  final String? tripPurpose;
+  final String? costCenterId;
+
   TripRequest copyWith({
     PricingMode? pricingMode,
     double? offeredPrice,
@@ -90,6 +96,8 @@ class TripRequest extends Equatable {
     airportPickupZoneId: airportPickupZoneId,
     airportTerminalCode: airportTerminalCode,
     flightNumber: flightNumber,
+    tripPurpose: tripPurpose,
+    costCenterId: costCenterId,
   );
 
   @override
@@ -111,5 +119,7 @@ class TripRequest extends Equatable {
     airportPickupZoneId,
     airportTerminalCode,
     flightNumber,
+    tripPurpose,
+    costCenterId,
   ];
 }

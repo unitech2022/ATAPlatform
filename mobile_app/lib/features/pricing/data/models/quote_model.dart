@@ -1,3 +1,4 @@
+import 'package:ata_app/features/corporate/data/models/corporate_check_model.dart';
 import 'package:ata_app/features/pricing/data/models/demand_model.dart';
 import 'package:ata_app/features/pricing/data/models/quote_category_model.dart';
 import 'package:ata_app/features/pricing/domain/entities/demand_level.dart';
@@ -18,6 +19,7 @@ class QuoteModel extends FareQuote {
     super.categories,
     super.promotion,
     super.favoriteDiscountConditional,
+    super.corporate,
   });
 
   /// Fallback validity when the API omits `expiresAt`.
@@ -58,6 +60,7 @@ class QuoteModel extends FareQuote {
               reason: JsonReaders.optionalString(promotion, 'reason'),
             ),
       favoriteDiscountConditional: json['favoriteDiscountConditional'] == true,
+      corporate: CorporateCheckModel.quoteCheck(json),
     );
   }
 
@@ -86,6 +89,7 @@ class QuoteModel extends FareQuote {
             'reason': promotion!.reason,
           },
     'favoriteDiscountConditional': favoriteDiscountConditional,
+    'corporate': CorporateCheckModel.quoteCheckJson(corporate),
   };
 }
 
@@ -103,6 +107,9 @@ abstract final class QuoteRequestMapper {
     'airportPickupZoneId': ?request.airportPickupZoneId,
     'airportTerminalCode': ?request.airportTerminalCode,
     'flightNumber': ?request.flightNumber,
+    'paymentMethod': ?request.paymentMethod,
+    'tripPurpose': ?request.tripPurpose,
+    'costCenterId': ?request.costCenterId,
   };
 
   static Map<String, dynamic> _point(GeoPoint point) => <String, dynamic>{

@@ -15,11 +15,12 @@ abstract final class PaymentText {
   static String card(AppLocalizations l10n, SavedCard card) =>
       l10n.cardMasked(brand(l10n, card.brand), card.last4);
 
-  /// `cash` / `wallet` / `card` of a receipt or trip.
+  /// `cash` / `wallet` / `card` / `corporate` of a receipt or trip.
   static String method(AppLocalizations l10n, String method) =>
       switch (method) {
         'wallet' => l10n.paymentWallet,
         'card' => l10n.paymentCard,
+        'corporate' => l10n.paymentCorporate,
         _ => l10n.paymentCash,
       };
 }

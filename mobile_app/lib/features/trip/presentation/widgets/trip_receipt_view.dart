@@ -6,6 +6,7 @@ import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
+import 'package:ata_app/features/corporate/presentation/widgets/corporate_paid_card.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/widgets/add_favorite_button.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/widgets/favorite_heart_badge.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
@@ -104,6 +105,10 @@ class TripReceiptView extends StatelessWidget {
             ],
           ),
         ),
+        if (trip.isCorporate) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          CorporatePaidCard(corporate: trip.corporate),
+        ],
         if (trip.paymentFellBackToCash) ...<Widget>[
           const SizedBox(height: AtaSpacing.sm),
           Container(

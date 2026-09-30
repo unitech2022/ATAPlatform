@@ -1,4 +1,5 @@
 import 'package:ata_app/app/app.dart';
+import 'package:ata_app/app/corporate_cubits.dart';
 import 'package:ata_app/app/push/push_session_binder.dart';
 import 'package:ata_app/app/rating_prompt_binder.dart';
 import 'package:ata_app/app/router/app_router.dart';
@@ -35,6 +36,8 @@ AtaApp bootstrapApp() {
         ..start();
   final SafetyCubits safety = SafetyCubits.fromInjector()
     ..bind(session: session, trips: trips, deepLinks: deepLinks);
+  final CorporateCubits corporate = CorporateCubits.fromInjector()
+    ..bind(session);
   final PendingRatingCubit pendingRating = PendingRatingCubit(
     getPending: getIt(),
   );
@@ -51,6 +54,7 @@ AtaApp bootstrapApp() {
     localeCubit: locale,
     tripCubits: trips,
     safetyCubits: safety,
+    corporateCubits: corporate,
     deepLinkCubit: deepLinks,
     pendingRatingCubit: pendingRating,
     router: router,

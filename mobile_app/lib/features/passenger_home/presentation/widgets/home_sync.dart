@@ -2,7 +2,13 @@ import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_cubit.dart';
 import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_state.dart';
+import 'package:ata_app/features/corporate/domain/entities/eligibility_draft.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_membership_cubit.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_membership_state.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_payment_cubit.dart';
+import 'package:ata_app/features/corporate/presentation/cubit/corporate_payment_state.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
+import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
@@ -39,6 +45,10 @@ import 'package:go_router/go_router.dart';
 ///   change re-reads the available favourites; `not_favorite` on the request
 ///   clears the selection. A `not_stacked` promo stays applied (only
 ///   explained in the sheet).
+/// * company account (F19): the request draft (category, time, quote with its
+///   `corporate` evaluation) goes to [CorporatePaymentCubit], whose purpose /
+///   cost center / readiness go back to [HomeCubit]; a lost membership
+///   returns the payment to cash and a policy refusal re-prices the quote.
 class HomeSync extends StatelessWidget {
   const HomeSync({super.key, required this.child});
 
@@ -55,10 +65,34 @@ class HomeSync extends StatelessWidget {
               p.scheduledAt != c.scheduledAt ||
               p.airport != c.airport ||
               p.effectivePromoCode != c.effectivePromoCode ||
-              p.effectiveFavoriteDriverId != c.effectiveFavoriteDriverId,
+              p.effectiveFavoriteDriverId != c.effectiveFavoriteDriverId ||
+              p.isCorporate != c.isCorporate ||
+              p.corporateBooking?.quoteKey != c.corporateBooking?.quoteKey,
           listener: (BuildContext context, HomeState state) => context
               .read<QuoteCubit>()
               .update(buildQuoteRequest(state, context.l10n)),
+        ),
+        BlocListener<HomeCubit, HomeState>(
+          listenWhen: (HomeState p, HomeState c) =>
+              p.selectedCategoryId != c.selectedCategoryId ||
+              p.scheduledAt != c.scheduledAt ||
+              p.rideTime != c.rideTime ||
+              p.quote != c.quote ||
+              p.payment != c.payment ||
+              p.categories != c.categories,
+          listener: _syncCorporate,
+        ),
+        BlocListener<CorporateMembershipCubit, CorporateMembershipState>(
+          listenWhen:
+              (CorporateMembershipState p, CorporateMembershipState c) =>
+                  p.profile != c.profile,
+          listener: _onMembership,
+        ),
+        BlocListener<CorporatePaymentCubit, CorporatePaymentState>(
+          listenWhen: (CorporatePaymentState p, CorporatePaymentState c) =>
+              p.booking != c.booking,
+          listener: (BuildContext context, CorporatePaymentState state) =>
+              context.read<HomeCubit>().applyCorporate(state.booking),
         ),
         BlocListener<ScheduleTimeCubit, ScheduleTimeState>(
           listenWhen: (ScheduleTimeState p, ScheduleTimeState c) =>
@@ -126,6 +160,10 @@ class HomeSync extends StatelessWidget {
               context.read<HomeCubit>().clampOfferedPrice(bounds);
             }
             if (state.isQuoteExpired) context.read<QuoteCubit>().refresh();
+            if (state.isCorporateRefusal) context.read<QuoteCubit>().refresh();
+            if (state.isCorporateMembershipLost) {
+              context.read<CorporateMembershipCubit>().refresh();
+            }
             if (state.isScheduleRejected) {
               context.read<ScheduleTimeCubit>().recheck();
             }
@@ -161,6 +199,29 @@ class HomeSync extends StatelessWidget {
       ],
       child: child,
     );
+  }
+
+  /// Feeds the company-account cubit with the request draft (F19).
+  void _syncCorporate(BuildContext context, HomeState home) =>
+      context.read<CorporatePaymentCubit>().sync(
+        EligibilityDraft(
+          profile: context.read<CorporateMembershipCubit>().state.profile,
+          categoryCode: home.selectedCategory?.code,
+          scheduledAt: home.isScheduled ? home.scheduledAt : null,
+          estimatedFare: home.quoteCategory?.total,
+          serverCheck: home.isCorporate ? home.quote?.corporate : null,
+        ),
+        selected: home.isCorporate,
+      );
+
+  /// A new / lost membership re-evaluates the draft; losing it while the
+  /// company account is chosen goes back to cash.
+  void _onMembership(BuildContext context, CorporateMembershipState state) {
+    final HomeCubit home = context.read<HomeCubit>();
+    if (!state.isActive && home.state.payment == PaymentOption.corporate) {
+      home.selectPayment(PaymentOption.cash);
+    }
+    _syncCorporate(context, home.state);
   }
 
   void _validatePrefilledPromo(BuildContext context, QuoteState _) {

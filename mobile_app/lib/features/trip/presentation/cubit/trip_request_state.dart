@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/core/localization/corporate_failure_text.dart';
 import 'package:ata_app/core/localization/failure_text.dart';
 import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
@@ -68,6 +69,19 @@ class TripRequestState extends Equatable {
     final Failure? failure = this.failure;
     return failure != null && isNotFavorite(failure);
   }
+
+  /// The company policy refused the trip (`corporate_policy_violation`,
+  /// `corporate_budget_exceeded`, `corporate_credit_limit_exceeded`, F19).
+  bool get isCorporateRefusal {
+    final Failure? failure = this.failure;
+    return failure != null && isCorporatePolicyRefusal(failure);
+  }
+
+  /// The membership is gone or disabled (`corporate_not_member`,
+  /// `corporate_account_inactive`): reload it and go back to another method.
+  bool get isCorporateMembershipLost =>
+      failure?.code == ErrorCodes.corporateNotMember ||
+      failure?.code == ErrorCodes.corporateAccountInactive;
 
   /// Amount owed, from `details.amount` (positive).
   double? get outstandingAmount => failure?.numDetail(ErrorCodes.amount)?.abs();

@@ -1,3 +1,4 @@
+import 'package:ata_app/app/corporate_cubits.dart';
 import 'package:ata_app/app/safety_cubits.dart';
 import 'package:ata_app/design/theme/ata_theme.dart';
 import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
@@ -21,6 +22,7 @@ class AtaApp extends StatelessWidget {
     required this.localeCubit,
     required this.tripCubits,
     required this.safetyCubits,
+    required this.corporateCubits,
     required this.deepLinkCubit,
     required this.pendingRatingCubit,
     required this.router,
@@ -30,6 +32,9 @@ class AtaApp extends StatelessWidget {
   final LocaleCubit localeCubit;
   final TripCubits tripCubits;
   final SafetyCubits safetyCubits;
+
+  /// App-wide company membership and invitations (F19).
+  final CorporateCubits corporateCubits;
   final DeepLinkCubit deepLinkCubit;
 
   /// App-wide pending-rating prompt (F15).
@@ -47,14 +52,16 @@ class AtaApp extends StatelessWidget {
       ],
       child: tripCubits.provide(
         child: safetyCubits.provide(
-          child: BlocListener<DeepLinkCubit, DeepLinkState>(
-            listenWhen: (DeepLinkState p, DeepLinkState c) =>
-                c.target != null && p.target != c.target,
-            listener: (BuildContext context, DeepLinkState state) {
-              router.go(state.target!.route);
-              deepLinkCubit.consumed();
-            },
-            child: _localizedApp(),
+          child: corporateCubits.provide(
+            child: BlocListener<DeepLinkCubit, DeepLinkState>(
+              listenWhen: (DeepLinkState p, DeepLinkState c) =>
+                  c.target != null && p.target != c.target,
+              listener: (BuildContext context, DeepLinkState state) {
+                router.go(state.target!.route);
+                deepLinkCubit.consumed();
+              },
+              child: _localizedApp(),
+            ),
           ),
         ),
       ),

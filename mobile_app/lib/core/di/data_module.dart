@@ -1,3 +1,4 @@
+import 'package:ata_app/core/di/corporate_module.dart';
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/env/env.dart';
 import 'package:ata_app/core/storage/preferences_storage.dart';
@@ -209,4 +210,5 @@ void registerData({
           ? const SimulatedLocationRepository()
           : const GeolocatorLocationRepository(),
     );
+  registerCorporateData();
 }

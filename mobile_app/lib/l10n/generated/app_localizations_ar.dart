@@ -4027,4 +4027,310 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get supportFollowTicket => 'متابعة مع الدعم';
+
+  @override
+  String get paymentCorporate => 'حساب الشركة';
+
+  @override
+  String get corpSectionTitle => 'حساب الشركة';
+
+  @override
+  String get corpPaidByCompany => 'مدفوعة من حساب الشركة';
+
+  @override
+  String get corpBillingNote => 'تُحاسَب هذه الرحلة على حساب شركتك';
+
+  @override
+  String get corpBilledAmount => 'المبلغ على حساب الشركة';
+
+  @override
+  String corpOptionBudget(String amount) {
+    return 'المتبقي هذا الشهر: $amount';
+  }
+
+  @override
+  String corpOptionTripLimit(String amount) {
+    return 'الحد الأقصى للرحلة: $amount';
+  }
+
+  @override
+  String corpOptionUnavailable(String reason) {
+    return 'غير متاح: $reason';
+  }
+
+  @override
+  String get corpPurposeLabel => 'غرض الرحلة';
+
+  @override
+  String get corpPurposeHint => 'مثال: اجتماع عميل';
+
+  @override
+  String get corpPurposeRequired => 'غرض الرحلة مطلوب';
+
+  @override
+  String get corpCostCenterLabel => 'مركز التكلفة';
+
+  @override
+  String get corpCostCenterRequired => 'اختر مركز التكلفة';
+
+  @override
+  String get corpCostCenterNone => 'بدون مركز تكلفة';
+
+  @override
+  String corpCostCenterItem(String code, String name) {
+    return '$code · $name';
+  }
+
+  @override
+  String corpRemainingBudget(String amount) {
+    return 'المتبقي من ميزانيتك الشهرية: $amount';
+  }
+
+  @override
+  String get corpPromoDisabled => 'لا تُطبّق أكواد الخصم مع حساب الشركة';
+
+  @override
+  String get corpFavoriteDisabled =>
+      'لا يُطبّق خصم السائق المفضل مع حساب الشركة';
+
+  @override
+  String get corpViolationsTitle => 'هذه الرحلة لا تتوافق مع سياسة شركتك';
+
+  @override
+  String get corpViolationsHint =>
+      'غيّر الفئة أو الوقت، أو اختر وسيلة دفع أخرى';
+
+  @override
+  String get corpViolationCategory => 'هذه الفئة غير مسموحة في سياسة شركتك';
+
+  @override
+  String corpViolationCategoryAllowed(String list) {
+    return 'الفئات المسموحة: $list';
+  }
+
+  @override
+  String get corpViolationDay => 'الرحلات غير مسموحة في هذا اليوم';
+
+  @override
+  String corpViolationDayAllowed(String list) {
+    return 'الأيام المسموحة: $list';
+  }
+
+  @override
+  String get corpViolationTime => 'وقت الرحلة خارج الساعات المسموحة';
+
+  @override
+  String corpViolationTimeAllowed(String list) {
+    return 'الساعات المسموحة: $list';
+  }
+
+  @override
+  String get corpViolationZone => 'منطقة الالتقاط أو الوجهة غير مسموحة';
+
+  @override
+  String corpViolationZoneAllowed(String list) {
+    return 'المناطق المسموحة: $list';
+  }
+
+  @override
+  String corpViolationMaxFare(String limit) {
+    return 'الأجرة تتجاوز الحد الأقصى للرحلة ($limit)';
+  }
+
+  @override
+  String get corpViolationScheduled => 'الحجز المجدول غير مسموح في سياسة شركتك';
+
+  @override
+  String get corpViolationBudget => 'تجاوزت الميزانية الشهرية المتاحة';
+
+  @override
+  String corpViolationBudgetLeft(String amount) {
+    return 'تجاوزت الميزانية الشهرية المتاحة، المتبقي $amount';
+  }
+
+  @override
+  String get corpViolationCredit => 'تجاوز حساب الشركة الحد الائتماني';
+
+  @override
+  String get corpViolationUnknown => 'الرحلة تخالف سياسة شركتك';
+
+  @override
+  String get corpListSeparator => '، ';
+
+  @override
+  String corpTimeWindow(String from, String to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get corporateNotMemberError => 'لست عضواً في حساب شركة';
+
+  @override
+  String get corporateAccountInactiveError => 'حساب الشركة غير نشط';
+
+  @override
+  String get corporateMemberElsewhereError => 'الرقم مرتبط بحساب شركة آخر';
+
+  @override
+  String get corporatePolicyViolationError => 'الرحلة تخالف سياسة شركتك';
+
+  @override
+  String get corporateBudgetExceededError => 'تجاوزت الميزانية الشهرية المتاحة';
+
+  @override
+  String corporateBudgetExceededLeftError(String amount) {
+    return 'تجاوزت الميزانية الشهرية المتاحة، المتبقي $amount ر.س';
+  }
+
+  @override
+  String get corporateCreditLimitError =>
+      'تجاوز حساب الشركة الحد الائتماني، تواصل مع مسؤول الشركة';
+
+  @override
+  String get invitationExpiredError =>
+      'انتهت صلاحية الدعوة، اطلب من شركتك إعادة إرسالها';
+
+  @override
+  String get corpMyCompany => 'شركتي';
+
+  @override
+  String get corpMyCompanyCopy =>
+      'حساب الشركة المرتبط برقمك وسياسة الرحلات والميزانية';
+
+  @override
+  String get corpRoleEmployee => 'موظف';
+
+  @override
+  String get corpRoleAdmin => 'مسؤول الشركة';
+
+  @override
+  String get corpStatusActive => 'فعّال';
+
+  @override
+  String get corpStatusInvited => 'دعوة معلّقة';
+
+  @override
+  String get corpStatusDisabled => 'معطّل';
+
+  @override
+  String get corpStatusDisabledCopy =>
+      'تم تعطيل حسابك في الشركة، تواصل مع مسؤول الشركة';
+
+  @override
+  String corpEmployeeNumber(String number) {
+    return 'الرقم الوظيفي: $number';
+  }
+
+  @override
+  String corpDepartment(String name) {
+    return 'القسم: $name';
+  }
+
+  @override
+  String get corpBudgetTitle => 'الميزانية الشهرية';
+
+  @override
+  String corpBudgetUsed(String spent, String limit) {
+    return 'استُخدم $spent من $limit';
+  }
+
+  @override
+  String corpBudgetLeft(String amount) {
+    return 'المتبقي $amount';
+  }
+
+  @override
+  String get corpBudgetNone => 'بدون حد شهري';
+
+  @override
+  String corpTripLimit(String amount) {
+    return 'الحد الأقصى للرحلة $amount';
+  }
+
+  @override
+  String get corpPolicyTitle => 'سياسة الشركة';
+
+  @override
+  String corpPolicyCategories(String list) {
+    return 'الفئات: $list';
+  }
+
+  @override
+  String get corpPolicyAllCategories => 'الفئات: كل الفئات';
+
+  @override
+  String corpPolicyDays(String list) {
+    return 'الأيام: $list';
+  }
+
+  @override
+  String corpPolicyHours(String list) {
+    return 'الساعات: $list';
+  }
+
+  @override
+  String get corpPolicyPurposeRequired => 'غرض الرحلة مطلوب';
+
+  @override
+  String get corpPolicyCostCenterRequired => 'مركز التكلفة مطلوب';
+
+  @override
+  String get corpPolicyScheduledAllowed => 'الحجز المجدول: مسموح';
+
+  @override
+  String get corpPolicyScheduledBlocked => 'الحجز المجدول: غير مسموح';
+
+  @override
+  String get corpNoMembership => 'لست عضواً في حساب شركة';
+
+  @override
+  String get corpNoMembershipCopy =>
+      'عندما تدعوك شركتك ستظهر الدعوة هنا لتقبلها';
+
+  @override
+  String get corpInvitationsTitle => 'دعوات الشركات';
+
+  @override
+  String corpInvitationFrom(String company) {
+    return 'دعتك $company للانضمام';
+  }
+
+  @override
+  String corpInvitationRole(String role) {
+    return 'الدور: $role';
+  }
+
+  @override
+  String corpInvitationExpires(String date) {
+    return 'تنتهي $date';
+  }
+
+  @override
+  String get corpInvitationExpired => 'منتهية الصلاحية';
+
+  @override
+  String get corpAccept => 'قبول';
+
+  @override
+  String get corpDecline => 'رفض';
+
+  @override
+  String corpInvitationAccepted(String company) {
+    return 'تم الانضمام إلى $company';
+  }
+
+  @override
+  String get corpInvitationDeclined => 'تم رفض الدعوة';
+
+  @override
+  String get corpPromptTitle => 'لديك دعوة للانضمام إلى شركة';
+
+  @override
+  String get corpPromptCopy => 'اقبل الدعوة لتدفع رحلاتك من حساب الشركة';
+
+  @override
+  String get corpPromptAction => 'عرض الدعوة';
+
+  @override
+  String get corpMembershipError => 'تعذر تحميل بيانات حساب الشركة';
 }

@@ -1,3 +1,4 @@
+import 'package:ata_app/core/di/corporate_module.dart';
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/di/payments_module.dart';
 import 'package:ata_app/core/di/rewards_module.dart';
@@ -137,4 +138,5 @@ void registerUseCases() {
   registerRewardsUseCases();
   registerSchedulingUseCases();
   registerSupportUseCases();
+  registerCorporateUseCases();
 }
