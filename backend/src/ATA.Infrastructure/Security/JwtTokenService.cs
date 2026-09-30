@@ -27,6 +27,8 @@ public static class AtaClaims
     public const string Name = "name";
     public const string Language = "lang";
     public const string Permissions = "perm";
+    /// <summary>Corporate portal tokens: the <c>corporate_accounts.id</c> every <c>/corporate/*</c> query is scoped to (F19).</summary>
+    public const string Corporate = "corp";
 }
 
 public sealed record AccessToken(string Token, int ExpiresInSeconds);
@@ -35,7 +37,7 @@ public sealed record OpaqueToken(string Value, string Hash);
 
 public interface IJwtTokenService
 {
-    AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null);
+    AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null);
 
     /// <summary>Creates a cryptographically random opaque refresh token together with its SHA-256 hash.</summary>
     OpaqueToken CreateRefreshToken();
@@ -51,7 +53,11 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
 
     public TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(_options.RefreshTokenDays);
 
-    public AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null)
+    /// <summary>
+    /// A corporate portal token (<paramref name="corporateAccountId"/>, F19) carries only the <c>corporate_admin</c> role and the <c>corp</c> claim, so it can never
+    /// be used against the rider, driver or admin APIs even when the same user also holds those roles.
+    /// </summary>
+    public AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null)
     {
         var now = clock.UtcNow;
         var expires = now.AddMinutes(_options.AccessTokenMinutes);
@@ -67,7 +73,16 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
             claims.Add(new Claim(AtaClaims.Name, user.FullName));
         }
 
-        claims.AddRange(user.Roles.Select(r => new Claim(AtaClaims.Roles, RoleNames.Of(r.Role))));
+        if (corporateAccountId is { } corporate)
+        {
+            claims.Add(new Claim(AtaClaims.Roles, RoleNames.CorporateAdmin));
+            claims.Add(new Claim(AtaClaims.Corporate, corporate.ToString()));
+        }
+        else
+        {
+            claims.AddRange(user.Roles.Select(r => new Claim(AtaClaims.Roles, RoleNames.Of(r.Role))));
+        }
+
         if (permissions is { Count: > 0 })
         {
             claims.AddRange(permissions.Select(p => new Claim(AtaClaims.Permissions, p)));

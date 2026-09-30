@@ -1132,6 +1132,813 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("ride_categories", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("varchar(12)")
+                        .HasColumnName("account_number");
+
+                    b.Property<string>("BillingAddress")
+                        .HasColumnType("json")
+                        .HasColumnName("billing_address");
+
+                    b.Property<string>("BillingCycle")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("billing_cycle");
+
+                    b.Property<string>("BillingEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)")
+                        .HasColumnName("billing_email");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("contact_phone");
+
+                    b.Property<string>("CrNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("cr_number");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("credit_limit");
+
+                    b.Property<Guid?>("DefaultPolicyId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("default_policy_id");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("LegalNameAr")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("legal_name_ar");
+
+                    b.Property<string>("LegalNameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("legal_name_en");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("PaymentTermsDays")
+                        .HasColumnType("int")
+                        .HasColumnName("payment_terms_days");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("VatNumber")
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("vat_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_accounts");
+
+                    b.HasIndex("AccountNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_accounts_account_number");
+
+                    b.HasIndex("CityId")
+                        .HasDatabaseName("ix_corporate_accounts_city_id");
+
+                    b.HasIndex("CrNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_accounts_cr_number");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_corporate_accounts_created_by");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_corporate_accounts_status");
+
+                    b.ToTable("corporate_accounts", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("invoice_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_adjustments");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_corporate_adjustments_created_by");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_corporate_adjustments_invoice_id");
+
+                    b.HasIndex("CorporateAccountId", "InvoiceId")
+                        .HasDatabaseName("ix_corporate_adjustments_corporate_account_id_invoice_id");
+
+                    b.ToTable("corporate_adjustments", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("key_hash")
+                        .IsFixedLength();
+
+                    b.Property<string>("KeyPrefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("char(8)")
+                        .HasColumnName("key_prefix")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("scopes");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_api_keys");
+
+                    b.HasIndex("CorporateAccountId")
+                        .HasDatabaseName("ix_corporate_api_keys_corporate_account_id");
+
+                    b.HasIndex("CreatedBy")
+                        .HasDatabaseName("ix_corporate_api_keys_created_by");
+
+                    b.HasIndex("KeyPrefix")
+                        .HasDatabaseName("ix_corporate_api_keys_key_prefix");
+
+                    b.ToTable("corporate_api_keys", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateCostCenter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("code");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_cost_centers");
+
+                    b.HasIndex("CorporateAccountId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_cost_centers_corporate_account_id_code");
+
+                    b.ToTable("corporate_cost_centers", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("accepted_at");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<Guid>("CorporateUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeclinedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("declined_at");
+
+                    b.Property<DateTime?>("ExpiredAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expired_at");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("token_hash")
+                        .IsFixedLength();
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_invitations");
+
+                    b.HasIndex("CorporateAccountId")
+                        .HasDatabaseName("ix_corporate_invitations_corporate_account_id");
+
+                    b.HasIndex("CorporateUserId")
+                        .HasDatabaseName("ix_corporate_invitations_corporate_user_id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_invitations_token_hash");
+
+                    b.HasIndex("PhoneNumber", "ExpiresAt")
+                        .HasDatabaseName("ix_corporate_invitations_phone_number_expires_at");
+
+                    b.ToTable("corporate_invitations", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BuyerSnapshot")
+                        .HasColumnType("json")
+                        .HasColumnName("buyer_snapshot");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("varchar(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("invoice_number");
+
+                    b.Property<DateOnly>("IssueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("issue_date");
+
+                    b.Property<DateTime?>("IssuedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("issued_at");
+
+                    b.Property<Guid?>("IssuedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("issued_by");
+
+                    b.Property<decimal?>("PaidAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("paid_amount");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("PaymentReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("payment_reference");
+
+                    b.Property<Guid?>("PdfFileId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("pdf_file_id");
+
+                    b.Property<bool?>("PeriodActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("period_active");
+
+                    b.Property<DateOnly>("PeriodEnd")
+                        .HasColumnType("date")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("date")
+                        .HasColumnName("period_start");
+
+                    b.Property<string>("SellerSnapshot")
+                        .HasColumnType("json")
+                        .HasColumnName("seller_snapshot");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("SubtotalExclVat")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("subtotal_excl_vat");
+
+                    b.Property<decimal>("TotalInclVat")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("total_incl_vat");
+
+                    b.Property<int>("TripsCount")
+                        .HasColumnType("int")
+                        .HasColumnName("trips_count");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("vat_amount");
+
+                    b.Property<decimal>("VatRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("vat_rate");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("void_reason");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_invoices");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_invoices_invoice_number");
+
+                    b.HasIndex("IssuedBy")
+                        .HasDatabaseName("ix_corporate_invoices_issued_by");
+
+                    b.HasIndex("PdfFileId")
+                        .HasDatabaseName("ix_corporate_invoices_pdf_file_id");
+
+                    b.HasIndex("Status", "DueDate")
+                        .HasDatabaseName("ix_corporate_invoices_status_due_date");
+
+                    b.HasIndex("CorporateAccountId", "PeriodStart", "PeriodActive")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_invoices_corporate_account_id_period_start_period_active");
+
+                    b.ToTable("corporate_invoices", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvoiceLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AmountExclVat")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount_excl_vat");
+
+                    b.Property<decimal>("AmountInclVat")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("amount_incl_vat");
+
+                    b.Property<string>("CostCenterCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("cost_center_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("department");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DropoffName")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("dropoff_name");
+
+                    b.Property<string>("EmployeeName")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("employee_name");
+
+                    b.Property<string>("EmployeeNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("employee_number");
+
+                    b.Property<string>("GuestName")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("guest_name");
+
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<string>("LineType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("line_type");
+
+                    b.Property<string>("PickupName")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("pickup_name");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("purpose");
+
+                    b.Property<DateTime?>("TripDate")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("trip_date");
+
+                    b.Property<Guid?>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.Property<string>("TripNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("trip_number");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("vat_amount");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_invoice_lines");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_corporate_invoice_lines_invoice_id");
+
+                    b.HasIndex("TripId")
+                        .HasDatabaseName("ix_corporate_invoice_lines_trip_id");
+
+                    b.ToTable("corporate_invoice_lines", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporatePolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowGuestBooking")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("allow_guest_booking");
+
+                    b.Property<bool>("AllowScheduled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("allow_scheduled");
+
+                    b.Property<string>("AllowedDays")
+                        .HasColumnType("json")
+                        .HasColumnName("allowed_days");
+
+                    b.Property<string>("AllowedRideCategoryIds")
+                        .HasColumnType("json")
+                        .HasColumnName("allowed_ride_category_ids");
+
+                    b.Property<string>("AllowedZoneIds")
+                        .HasColumnType("json")
+                        .HasColumnName("allowed_zone_ids");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_default");
+
+                    b.Property<decimal?>("MaxFarePerTrip")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("max_fare_per_trip");
+
+                    b.Property<decimal?>("MonthlyBudgetPerEmployee")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("monthly_budget_per_employee");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name");
+
+                    b.Property<bool>("RequireCostCenter")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("require_cost_center");
+
+                    b.Property<bool>("RequirePurpose")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("require_purpose");
+
+                    b.Property<string>("TimeWindows")
+                        .HasColumnType("json")
+                        .HasColumnName("time_windows");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("ZoneMatch")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("zone_match");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_policies");
+
+                    b.HasIndex("CorporateAccountId")
+                        .HasDatabaseName("ix_corporate_policies_corporate_account_id");
+
+                    b.ToTable("corporate_policies", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateUser", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ActivatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("activated_at");
+
+                    b.Property<Guid>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<Guid?>("CostCenterId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("cost_center_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Department")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("department");
+
+                    b.Property<DateTime?>("DisabledAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("disabled_at");
+
+                    b.Property<string>("EmployeeNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)")
+                        .HasColumnName("employee_number");
+
+                    b.Property<string>("FullName")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("full_name");
+
+                    b.Property<Guid?>("InvitedBy")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("invited_by");
+
+                    b.Property<decimal?>("MonthlyBudget")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("monthly_budget");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("phone_number");
+
+                    b.Property<Guid?>("PolicyId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("policy_id");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_corporate_users");
+
+                    b.HasIndex("CostCenterId")
+                        .HasDatabaseName("ix_corporate_users_cost_center_id");
+
+                    b.HasIndex("PolicyId")
+                        .HasDatabaseName("ix_corporate_users_policy_id");
+
+                    b.HasIndex("CorporateAccountId", "PhoneNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_corporate_users_corporate_account_id_phone_number");
+
+                    b.HasIndex("PhoneNumber", "Status")
+                        .HasDatabaseName("ix_corporate_users_phone_number_status");
+
+                    b.HasIndex("UserId", "Status")
+                        .HasDatabaseName("ix_corporate_users_user_id_status");
+
+                    b.ToTable("corporate_users", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Drivers.DriverDocument", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1774,6 +2581,14 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("revoked_at");
+
+                    b.Property<string>("SessionKind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasDefaultValue("app")
+                        .HasColumnName("session_kind");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
@@ -6726,6 +7541,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("assigned_at");
 
+                    b.Property<Guid?>("BookedByUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("booked_by_user_id");
+
                     b.Property<string>("BookingType")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -6749,6 +7568,18 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("completed_at");
+
+                    b.Property<Guid?>("CorporateAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_account_id");
+
+                    b.Property<Guid?>("CorporateUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("corporate_user_id");
+
+                    b.Property<Guid?>("CostCenterId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("cost_center_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
@@ -6837,6 +7668,20 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("varchar(8)")
                         .HasColumnName("flight_number");
+
+                    b.Property<string>("GuestName")
+                        .HasMaxLength(80)
+                        .HasColumnType("varchar(80)")
+                        .HasColumnName("guest_name");
+
+                    b.Property<string>("GuestPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("guest_phone");
+
+                    b.Property<bool>("IsGuest")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_guest");
 
                     b.Property<decimal?>("OfferedPrice")
                         .HasPrecision(12, 2)
@@ -6968,6 +7813,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(20)")
                         .HasColumnName("trip_number");
 
+                    b.Property<string>("TripPurpose")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("trip_purpose");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("updated_at");
@@ -6993,6 +7843,12 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.HasIndex("AirportZoneId")
                         .HasDatabaseName("ix_trips_airport_zone_id");
 
+                    b.HasIndex("CorporateUserId")
+                        .HasDatabaseName("ix_trips_corporate_user_id");
+
+                    b.HasIndex("CostCenterId")
+                        .HasDatabaseName("ix_trips_cost_center_id");
+
                     b.HasIndex("FavoriteDiscountRuleId")
                         .HasDatabaseName("ix_trips_favorite_discount_rule_id");
 
@@ -7014,6 +7870,9 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("VehicleId")
                         .HasDatabaseName("ix_trips_vehicle_id");
+
+                    b.HasIndex("CorporateAccountId", "CompletedAt")
+                        .HasDatabaseName("ix_trips_corporate_account_id_completed_at");
 
                     b.HasIndex("DriverId", "CreatedAt")
                         .HasDatabaseName("ix_trips_driver_id_created_at");
@@ -7539,6 +8398,165 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_reliability_profiles_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateAccount", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_corporate_accounts_city_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_accounts_created_by");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateAdjustment", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_adjustments_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_adjustments_created_by");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateInvoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_adjustments_invoice_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateApiKey", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_api_keys_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_api_keys_created_by");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateCostCenter", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_cost_centers_corporate_account_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvitation", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_invitations_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateUser", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_invitations_corporate_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvoice", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_invoices_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("IssuedBy")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_invoices_issued_by");
+
+                    b.HasOne("ATA.Domain.Files.StoredFile", null)
+                        .WithMany()
+                        .HasForeignKey("PdfFileId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_invoices_pdf_file_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateInvoiceLine", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateInvoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_invoice_lines_invoice_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_corporate_invoice_lines_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporatePolicy", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_policies_corporate_account_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Corporate.CorporateUser", b =>
+                {
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_corporate_users_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateCostCenter", null)
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_users_cost_center_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporatePolicy", null)
+                        .WithMany()
+                        .HasForeignKey("PolicyId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_users_policy_id");
+
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_corporate_users_user_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Drivers.DriverDocument", b =>
@@ -8605,6 +9623,24 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasForeignKey("AirportZoneId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_trips_airport_zone_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trips_corporate_account_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateUser", null)
+                        .WithMany()
+                        .HasForeignKey("CorporateUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_trips_corporate_user_id");
+
+                    b.HasOne("ATA.Domain.Corporate.CorporateCostCenter", null)
+                        .WithMany()
+                        .HasForeignKey("CostCenterId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_trips_cost_center_id");
 
                     b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
                         .WithMany()

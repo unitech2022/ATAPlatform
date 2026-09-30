@@ -20,7 +20,8 @@ public sealed record QuoteCategoryDto(
 /// <summary>Response of <c>POST /pricing/quote</c> (and its alias <c>POST /passenger/trips/estimate</c>) and <c>POST /admin/pricing/simulate</c>.</summary>
 public sealed record QuoteResponse(
     Guid? QuoteId, DateTime? ExpiresAt, int DistanceMeters, int DurationSeconds, ZoneRefDto? PickupZone, ZoneRefDto? DropoffZone, DemandDto Demand,
-    IReadOnlyList<QuoteCategoryDto> Categories, ATA.Api.Modules.Promotions.QuotePromotionDto? Promotion = null, bool FavoriteDiscountConditional = false);
+    IReadOnlyList<QuoteCategoryDto> Categories, ATA.Api.Modules.Promotions.QuotePromotionDto? Promotion = null, bool FavoriteDiscountConditional = false,
+    ATA.Api.Modules.Corporate.CorporateQuoteDto? Corporate = null);
 
 public sealed record SimulateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt, DateTime? At);
 

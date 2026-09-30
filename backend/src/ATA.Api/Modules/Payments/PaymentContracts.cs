@@ -48,7 +48,7 @@ public sealed record ReceiptDto(
     ReceiptPlaceDto Pickup, ReceiptPlaceDto Dropoff, IReadOnlyList<ReceiptPlaceDto> Stops, DateTime? StartedAt, DateTime? CompletedAt,
     int DistanceMeters, int DurationSeconds, int WaitingSeconds, IReadOnlyList<ReceiptLineDto> Lines, IReadOnlyList<DiscountDto> Discounts,
     decimal Subtotal, decimal DiscountTotal, decimal Total, decimal VatRate, decimal VatIncluded, ReceiptPaymentDto Payment,
-    IReadOnlyList<ReceiptRefundDto> Refunds, decimal NetPaid);
+    IReadOnlyList<ReceiptRefundDto> Refunds, decimal NetPaid, ATA.Api.Modules.Corporate.TripCorporateDto? Corporate = null);
 
 /// <summary>Stored in <c>trips.fare_breakdown</c>: the F10 breakdown plus <c>discounts</c> and the min-fare adjustment used by receipts.</summary>
 public sealed record StoredFareBreakdown(

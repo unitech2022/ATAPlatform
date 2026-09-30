@@ -1,6 +1,8 @@
 using System.Text.Json;
 using ATA.Api.Common;
 using ATA.Domain.Common;
+using ATA.Api.Modules.Corporate;
+using ATA.Domain.Corporate;
 using ATA.Domain.Drivers;
 using ATA.Domain.Identity;
 using ATA.Domain.Notifications;
@@ -12,15 +14,17 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Identity;
 
 /// <summary>Login by OTP, refresh-token rotation, logout and admin login.</summary>
-public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenService tokens, IPasswordHasher passwordHasher, IClock clock, ICurrentUser currentUser)
+public sealed class AuthService(
+    AtaDbContext db, OtpService otp, IJwtTokenService tokens, IPasswordHasher passwordHasher, IClock clock, ICurrentUser currentUser, CorporateMembershipService membership)
 {
     public async Task<OtpRequestResponse> RequestOtpAsync(OtpRequestRequest request, Language fallbackLanguage, CancellationToken ct)
     {
         new Validator()
             .Require(nameof(request.PhoneNumber), request.PhoneNumber)
-            .Rule(nameof(request.Role), request.Role is null or Role.Passenger or Role.Driver, "must be passenger or driver")
+            .Rule(nameof(request.Role), request.Role is null or Role.Passenger or Role.Driver or Role.CorporateAdmin, "must be passenger, driver or corporate_admin")
             .ThrowIfInvalid();
 
+        // F19: the code is sent for corporate_admin too, whatever the phone number is (membership is only checked on verify, so the request never reveals it).
         var phone = PhoneNumber.Normalize(request.PhoneNumber);
         return await otp.RequestAsync(phone, request.Language ?? fallbackLanguage, ct);
     }
@@ -32,12 +36,16 @@ public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenServic
             .Require(nameof(request.PhoneNumber), request.PhoneNumber)
             .Require(nameof(request.Code), request.Code, 8)
             .Require(nameof(request.Role), request.Role)
-            .Rule(nameof(request.Role), request.Role is null or Role.Passenger or Role.Driver, "must be passenger or driver")
+            .Rule(nameof(request.Role), request.Role is null or Role.Passenger or Role.Driver or Role.CorporateAdmin, "must be passenger, driver or corporate_admin")
             .ThrowIfInvalid();
 
         var phone = PhoneNumber.Normalize(request.PhoneNumber);
         var role = request.Role!.Value;
         await otp.VerifyAsync(request.RequestId!.Value, phone, request.Code!.Trim(), ct);
+        if (role == Role.CorporateAdmin)
+        {
+            return await VerifyCorporateAdminAsync(request, phone, ct);
+        }
 
         var now = clock.UtcNow;
         var user = await db.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, ct);
@@ -82,7 +90,21 @@ public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenServic
 
         var driver = await db.Drivers.FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
         var permissions = await LoadPermissionsAsync(user, ct);
-        var (response, replacement) = IssueTokens(user, driver, false, existing.DeviceId, permissions);
+        // F19: a corporate session stays a corporate session (same `corp` claim) only while the user is still an active admin of a company that is not closed.
+        Guid? corporateAccountId = null;
+        if (existing.SessionKind == SessionKind.Corporate)
+        {
+            corporateAccountId = await (from m in db.CorporateUsers
+                                        join a in db.CorporateAccounts on m.CorporateAccountId equals a.Id
+                                        where m.UserId == user.Id && m.Role == CorporateRole.CorporateAdmin && m.Status == CorporateUserStatus.Active && a.Status != CorporateAccountStatus.Closed
+                                        select (Guid?)a.Id).FirstOrDefaultAsync(ct);
+            if (corporateAccountId is null)
+            {
+                throw new DomainException(ErrorCodes.Unauthorized);
+            }
+        }
+
+        var (response, replacement) = IssueTokens(user, driver, false, existing.DeviceId, permissions, existing.SessionKind, corporateAccountId);
 
         existing.RevokedAt = now;
         existing.ReplacedById = replacement.Id;
@@ -123,7 +145,71 @@ public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenServic
         user.LastLoginAt = now;
 
         var permissions = ParsePermissions(account.Permissions);
-        var (response, _) = IssueTokens(user, null, false, currentUser.DeviceId, permissions);
+        var (response, _) = IssueTokens(user, null, false, currentUser.DeviceId, permissions, SessionKind.Admin);
+        await db.SaveChangesAsync(ct);
+        return response;
+    }
+
+    /// <summary>
+    /// OTP login to the corporate portal (doc 12 §F19.3): needs a <c>corporate_admin</c> membership (invited or active) of a pending / active / suspended company —
+    /// <c>403 corporate_not_member</c> otherwise, <c>403 corporate_account_inactive</c> for a closed one. A first sign-in accepts the invitation implicitly
+    /// (<c>410 invitation_expired</c> when it lapsed, <c>409 corporate_member_elsewhere</c> when the user administers another company). The token carries the
+    /// <c>corp</c> claim and only the <c>corporate_admin</c> role; the refresh token is a <c>corporate</c> session.
+    /// </summary>
+    private async Task<AuthResponse> VerifyCorporateAdminAsync(OtpVerifyRequest request, string phone, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        var candidates = await (from m in db.CorporateUsers
+                                join a in db.CorporateAccounts on m.CorporateAccountId equals a.Id
+                                where m.PhoneNumber == phone && m.Role == CorporateRole.CorporateAdmin && (m.Status == CorporateUserStatus.Invited || m.Status == CorporateUserStatus.Active)
+                                select new { Member = m, Account = a }).ToListAsync(ct);
+        var chosen = candidates.Where(c => c.Account.Status != CorporateAccountStatus.Closed)
+            .OrderBy(c => c.Member.Status == CorporateUserStatus.Active ? 0 : 1).ThenByDescending(c => c.Member.CreatedAt).FirstOrDefault();
+        if (chosen is null)
+        {
+            throw new DomainException(candidates.Count > 0 ? ErrorCodes.CorporateAccountInactive : ErrorCodes.CorporateNotMember);
+        }
+
+        var member = chosen.Member;
+        var user = await db.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, ct);
+        var isNewUser = user is null;
+        if (user is null)
+        {
+            user = new User { PhoneNumber = phone, PhoneVerifiedAt = now };
+            db.Users.Add(user);
+        }
+
+        user.EnsureActive();
+        user.PhoneVerifiedAt ??= now;
+        user.LastLoginAt = now;
+        user.FullName ??= member.FullName;
+        if (member.Status == CorporateUserStatus.Invited)
+        {
+            var invitations = await db.CorporateInvitations.Where(i => i.CorporateUserId == member.Id && i.AcceptedAt == null && i.DeclinedAt == null && i.RevokedAt == null).ToListAsync(ct);
+            if (invitations.Count == 0)
+            {
+                throw new DomainException(ErrorCodes.CorporateNotMember);
+            }
+
+            if (invitations.All(i => i.IsExpiredAt(now)))
+            {
+                throw new DomainException(ErrorCodes.InvitationExpired, new { expiresAt = invitations.Max(i => i.ExpiresAt) });
+            }
+
+            await membership.ActivateAsync(member, user, now, "corporate_user.accept", CorporateMembershipService.AdminActor, ct);
+        }
+        else if (member.UserId != user.Id)
+        {
+            throw new DomainException(ErrorCodes.CorporateNotMember);
+        }
+        else if (!user.HasRole(Role.CorporateAdmin))
+        {
+            user.Roles.Add(new UserRole { UserId = user.Id, Role = Role.CorporateAdmin, GrantedAt = now });
+        }
+
+        await EnsureProfileAsync(user, Role.CorporateAdmin, ct);
+        await UpsertDeviceAsync(user.Id, request.Device, ct);
+        var (response, _) = IssueTokens(user, null, isNewUser, request.Device?.DeviceId, null, SessionKind.Corporate, chosen.Account.Id);
         await db.SaveChangesAsync(ct);
         return response;
     }
@@ -207,9 +293,10 @@ public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenServic
     private static IReadOnlyList<string> ParsePermissions(string json) =>
         JsonSerializer.Deserialize<string[]>(json) ?? [];
 
-    private (AuthResponse Response, RefreshToken Token) IssueTokens(User user, DriverProfile? driver, bool isNewUser, string? deviceId, IReadOnlyList<string>? permissions)
+    private (AuthResponse Response, RefreshToken Token) IssueTokens(
+        User user, DriverProfile? driver, bool isNewUser, string? deviceId, IReadOnlyList<string>? permissions, SessionKind sessionKind = SessionKind.App, Guid? corporateAccountId = null)
     {
-        var access = tokens.CreateAccessToken(user, permissions);
+        var access = tokens.CreateAccessToken(user, permissions, corporateAccountId);
         var refresh = tokens.CreateRefreshToken();
         var now = clock.UtcNow;
         var entity = new RefreshToken
@@ -217,6 +304,7 @@ public sealed class AuthService(AtaDbContext db, OtpService otp, IJwtTokenServic
             UserId = user.Id,
             TokenHash = refresh.Hash,
             DeviceId = deviceId,
+            SessionKind = sessionKind,
             ExpiresAt = now + tokens.RefreshTokenLifetime,
             CreatedByIp = currentUser.IpAddress,
             CreatedAt = now,

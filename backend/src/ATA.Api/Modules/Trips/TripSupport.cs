@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ATA.Api.Modules.Trips;
 
-/// <summary>Who is looking at a trip; controls whether the PIN is revealed.</summary>
-public enum TripViewer { Passenger, Driver, Admin }
+/// <summary>Who is looking at a trip; controls whether the PIN is revealed (only the rider's own app gets it). <c>Corporate</c> (F19): a company admin in the portal.</summary>
+public enum TripViewer { Passenger, Driver, Admin, Corporate }
 
 /// <summary>
 /// Adds <c>trip_events</c> rows. Timestamps are monotonic per process (at least 1 µs apart, which fits MySQL <c>datetime(6)</c>)

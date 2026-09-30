@@ -1,4 +1,5 @@
 using ATA.Domain.Common;
+using ATA.Infrastructure.Email;
 using ATA.Infrastructure.Locking;
 using ATA.Infrastructure.Persistence;
 using ATA.Infrastructure.Persistence.Seed;
@@ -30,6 +31,9 @@ public static class DependencyInjection
 
         services.Configure<SmsOptions>(configuration.GetSection(SmsOptions.Section));
         services.AddSingleton<ISmsSender>(CreateSmsSender);
+
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Section));
+        services.AddSingleton<IEmailSender, LoggingEmailSender>();
 
         services.Configure<OneSignalOptions>(configuration.GetSection(OneSignalOptions.Section));
         services.AddSingleton<IPushSender>(CreatePushSender);

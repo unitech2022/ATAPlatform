@@ -69,4 +69,6 @@ public static class TripEventTypes
     public const string DriverNoShow = "driver_no_show";
     public const string Rematched = "rematched";
     public const string FavoriteWindowExpired = "favorite_window_expired";
+    /// <summary>F19: a corporate trip completed above <c>max_fare_per_trip</c> or the employee's monthly budget (allowed, only recorded).</summary>
+    public const string CorporatePolicyExceeded = "corporate_policy_exceeded";
 }

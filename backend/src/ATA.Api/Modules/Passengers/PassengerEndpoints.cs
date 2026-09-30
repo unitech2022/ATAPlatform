@@ -94,6 +94,8 @@ public sealed class PassengerService(AtaDbContext db, ICurrentUser currentUser)
 
     public async Task<PassengerPreferencesDto> UpdatePreferencesAsync(PassengerPreferencesRequest request, CancellationToken ct)
     {
+        // F19: `corporate` is a per-trip payment method only; it can never be the default.
+        new Validator().Rule(nameof(request.DefaultPaymentMethod), request.DefaultPaymentMethod != PaymentMethodKind.Corporate, "corporate cannot be the default payment method").ThrowIfInvalid();
         var passenger = await LoadAsync(ct);
         if (request.PreferFemaleDriver is not null) passenger.PreferFemaleDriver = request.PreferFemaleDriver.Value;
         if (request.DefaultPaymentMethod is not null) passenger.DefaultPaymentMethod = request.DefaultPaymentMethod.Value;

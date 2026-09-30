@@ -372,7 +372,14 @@ public sealed class CancellationEngine(
     {
         try
         {
-            if (cardCaptured)
+            if (trip.IsCorporate && trip.CorporateAccountId is { } corporateAccountId)
+            {
+                // F19 (doc 09 §F14.5): the fee is billed to the company (a cancellation_fee invoice line) — receivable ← cancellation_fees, reference = the cancellation.
+                await ledger.JournalAsync(JournalType.TripCorporateCharge, LedgerAccounts.CorporateReceivable(corporateAccountId), LedgerAccounts.CancellationFees, fee, ReferenceType, cancellation.Id,
+                    $"cancellation:{cancellation.Id}:fee", $"Trip {trip.TripNumber} cancellation fee (corporate)", ct);
+                cancellation.FeeMethod = CancellationFeeMethod.Corporate;
+            }
+            else if (cardCaptured)
             {
                 await ledger.JournalAsync(JournalType.CancellationFeeCard, LedgerAccounts.GatewayClearing, LedgerAccounts.CancellationFees, fee, ReferenceType, cancellation.Id,
                     $"cancellation:{cancellation.Id}:fee", $"Trip {trip.TripNumber} cancellation fee (card)", ct);
@@ -396,9 +403,13 @@ public sealed class CancellationEngine(
         cancellation.FeeCharged = fee;
         cancellation.FeeStatus = CancellationFeeStatus.Charged;
         events.Add(trip.Id, TripEventTypes.CancellationFeeCharged, TripActor.System, data: new { fee, method = cancellation.FeeMethod, cancellationId = cancellation.Id });
-        await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.CancellationFeeCharged, participants.PassengerUserId,
-            NotificationPlaceholders.Of(("tripNumber", trip.TripNumber)).Money("fee", fee), "trip", trip.Id,
-            new Dictionary<string, object?> { ["tripNumber"] = trip.TripNumber, ["cancellationId"] = cancellation.Id }), ct);
+        if (cancellation.FeeMethod != CancellationFeeMethod.Corporate)
+        {
+            // A corporate fee is billed to the company, not to the rider: the rider is not told that they were charged.
+            await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.CancellationFeeCharged, participants.PassengerUserId,
+                NotificationPlaceholders.Of(("tripNumber", trip.TripNumber)).Money("fee", fee), "trip", trip.Id,
+                new Dictionary<string, object?> { ["tripNumber"] = trip.TripNumber, ["cancellationId"] = cancellation.Id }), ct);
+        }
 
         var compensation = participants.DriverUserId is not null ? CancellationMath.Compensation(fee, compensationPercent) : 0m;
         if (compensation > 0 && participants.DriverUserId is { } driverUserId)

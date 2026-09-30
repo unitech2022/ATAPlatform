@@ -30,6 +30,9 @@ waiting policy, the FIFO driver queue of the waiting area, admin CRUD) — see "
 F18 adds `Modules/Support` (the public help center with FULLTEXT search, rider / driver support tickets with messages and attachments, agent console with internal notes, canned responses,
 SLA policies with pause while waiting for the user, fare disputes resolved through the F11 refund service, CSAT, KPIs, auto-close and SLA-monitor jobs) and links the F12 lost items / safety
 cases to tickets — see "Support (F18)".
+F19 adds `Modules/Corporate` (corporate accounts: company admins signing in to the business portal by OTP, employee invitations / CSV import, travel policies and cost centres,
+policy-checked corporate trips and guest bookings made from the portal, monthly VAT invoices with a ZATCA-style QR PDF, receivables through the F11 ledger, reports / CSV exports, API keys
+and the platform-admin console) — see "Corporate accounts (F19)".
 
 ## Layout
 
@@ -140,6 +143,15 @@ dotnet test
 | `Support:AutoCloseDays`, `Support:DisputeWindowDays`, `Support:MaxAttachmentsPerMessage` | A `resolved` ticket without a user reply closes after 3 days; a fare can be disputed 14 days after the trip (inclusive); attachments per message (5 → `422 attachment_limit`) |
 | `Support:JobsEnabled`, `Support:AutoCloseIntervalMinutes`, `Support:SlaMonitorIntervalMinutes` | Runs `SupportAutoCloseJob` (hourly) and `SupportSlaMonitorJob` (every 5 min); `false` in tests, which call `RunOnceAsync` |
 | `Favorites:AvailabilityRadiusMeters` | Radius of `/passenger/favorite-drivers/available` and of the exclusive round; `null` (default) = the zone/category `matching_settings.radius_meters` (5000 by default) |
+| `Corporate:PortalBaseUrl`, `Corporate:InvitationDays` | Base of the portal links sent in invitations / invoice e-mails (`https://ata.sa` → `/business/join/{token}`); invitation lifetime (7 days, then `410 invitation_expired`) |
+| `Corporate:InvoiceDayOfMonth`, `Corporate:InvoiceHourLocal`, `Corporate:AutoIssueInvoices` | `CorporateInvoiceJob` generates the previous month's draft invoices on day 1 at 04:00 Riyadh; `AutoIssueInvoices=true` also issues them (default `false`: drafts wait for an admin) |
+| `Corporate:SuspendAfterOverdueDays` | Suspends a company whose invoice is overdue for this many days (`0` = never) |
+| `Corporate:MaxActiveGuestTripsPerAdmin`, `Corporate:MaxImportRows` | Guest trips one admin may have in flight (10 → `409 trip_active_exists` with `details.reason = guest_trips_limit`); rows accepted by the CSV import (500) |
+| `Corporate:ApiKeysEnabled` | Enables `/corporate/api-keys` (default `false` → `404`); keys are stored hashed and shown once |
+| `Corporate:SellerLegalNameAr`, `SellerLegalNameEn`, `SellerVatNumber`, `SellerAddress` | Seller block printed on the invoice PDF and encoded in its ZATCA TLV QR |
+| `Corporate:JobsEnabled`, `Corporate:JobIntervalMinutes` | Runs the invoice, overdue and invitation-expiry jobs (15 min loop; `false` in tests, which call `RunOnceAsync`) |
+| `Email:Provider`, `Email:From` | `logging` (default): invoice / invitation e-mails are written to the log through `IEmailSender`; replace the registration to send real mail |
+| `Seed:DemoCorporate` | Seeds the demo company (Development only, `true` in `appsettings.Development.json`) |
 
 ### Development OTP behaviour
 
@@ -195,6 +207,10 @@ dotnet test
   (first response / resolution minutes) urgent 15 / 240, high 60 / 1440, normal 240 / 2880, low 1440 / 4320; help categories `trips`, `payments`, `safety`, `account`, `drivers` (audience `driver`)
   with 14 published bilingual articles (2–3 per category; riders see the four general categories, drivers `safety`, `account` and `drivers`); canned responses `greeting`, `need_more_info`,
   `refund_approved`, `refund_rejected`, `lost_item_contacted`, `closing` (placeholders `{userName}` `{ticketNumber}` `{tripNumber}`).
+- F19 demo company (only with `Seed:DemoCorporate=true`, i.e. Development; seeded once when missing): "شركة ATA التجريبية" (`CA-00001`, active, credit limit 20 000 SAR, 30-day terms), default policy
+  "السياسة العامة" (economy / comfort, Sunday–Thursday 06:00–23:00 Riyadh, max fare 150, monthly budget 1 500, purpose required) and "الإدارة التنفيذية" (budget 5 000), cost centres `FIN-01`, `SAL-01`, `IT-01`,
+  the company admin Sara Al-Harbi `+966500000901`, active employees Ahmed `+966500000902` (finance) and Khaled `+966500000903` (sales, budget 400) and a pending invitation for `+966500000904`. Everyone signs in by OTP
+  (`devCode` in Development). Notification templates `corporate.*` (ar / en) are seeded like every other event.
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
 
@@ -346,7 +362,7 @@ Every posting is balanced: a wallet movement (`wallet_transactions` + 2 `ledger_
 | `discount_promotion` | F15 promo discounts (`trip_discount` journal → `trip_revenue`, or `cash_collected` for cash trips; key `trip:{id}:discount:promotion`) |
 | `incentives` | F15 incentive rewards (wallet `incentive` credit to the driver, key `incentive:{progressId}`) |
 | `discount_favorite_driver` | F16: favourite-driver discounts (`trip_discount` journal → `trip_revenue` / `cash_collected`, like `discount_promotion`) |
-| `corporate_receivable:{id}` | Reserved for F19 |
+| `corporate_receivable:{id}` | F19: corporate trip charges and cancellation fees (debit), invoice payments (credit) |
 
 Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `cancellation_fee_card`, `refund_card`, `payout_paid`,
 `corporate_invoice_payment`, `manual`. Wallet movement types add `cash_collection`, `cancellation_compensation`, `payout_reversal`.
@@ -569,6 +585,39 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
   `breachingResolution`, all-time averages and `csatAvg`).
 - Migration `AddSupport`; tests: `HelpCenterTests`, `SupportTicketTests`, `SupportConversationTests`, `SupportWorkflowTests`, `SupportQueueTests`, `SupportAdminTests`, `SupportStatsTests`, `FareDisputeTests`,
   `SupportUnitTests` (`SupportFlow` helpers, `SupportFixture` with a recording `ISupportNotifier` and `Payments:RefundAutoApproveLimit = 20`). The jobs are driven with `RunSupportAutoCloseAsync` / `RunSupportSlaMonitorAsync`.
+
+## Corporate accounts (F19)
+
+- **Model** (migration `AddCorporate`): `corporate_accounts`, `corporate_users` + `corporate_invitations` (membership: role `corporate_admin` / `employee`, status `invited` / `active` / `disabled`; each invitation has its own expiry and token hash), `corporate_policies`,
+  `corporate_cost_centers`, `corporate_invoices` + `corporate_invoice_lines`, `corporate_adjustments`, `corporate_api_keys`; `trips` gain `corporate_account_id`, `corporate_user_id`, `booked_by_user_id`, `is_guest`, `guest_name`,
+  `guest_phone`, `trip_purpose`, `cost_center_id`; `refresh_tokens.session_kind` (`app` / `admin` / `corporate`). `PaymentMethodKind.Corporate` (`payment.method = corporate`).
+- **Portal auth**: `POST /auth/otp/request` and `/auth/otp/verify` with `role: "corporate_admin"`. The token carries only the role `corporate_admin` plus the claim `corp` (the account id); every `/corporate/*` call re-checks that
+  the user is still an active admin of a non-closed company (`403 corporate_not_member` / `corporate_account_inactive`). A first sign-in accepts the admin invitation implicitly; a pending company can be entered so its first
+  admin can be set up, but it cannot book until an admin activates it. Refresh keeps the session kind.
+- **Company admin API** (`/corporate/*`, `Policies.CorporateAdmin`): `account` (GET/PUT), `dashboard`, `employees` (list, invite, `import` CSV, get, update, `disable`, `enable`, `resend-invitation`, DELETE revokes / removes),
+  `policies` (CRUD + `default`), `cost-centers` (CRUD), `bookings` (`quote`, create for an employee or a guest, list, get, `cancel/preview`, `cancel`), `invoices` (list, get, `pdf`, `export`), `reports/summary`, `reports/trips`,
+  `reports/trips/export` (CSV), `api-keys` (behind `Corporate:ApiKeysEnabled`).
+- **Employee / rider API** (`/passenger/corporate*`, rider token): `GET /passenger/corporate` (`null` or `{ membership, policy, budget, costCenters }`), `GET /passenger/corporate/invitations`,
+  `POST …/invitations/{id}/accept|decline`. `POST /passenger/trips/estimate` and `/passenger/trips` accept `paymentMethod: "corporate"`, `tripPurpose`, `costCenterId`; the quote carries
+  `corporate { allowed, violations[{ rule, limit?, allowed? }], remainingBudget }`; a blocked request answers `422 corporate_policy_violation` (`details.violations`), an exhausted budget
+  `422 corporate_budget_exceeded` (`details.remaining`). `Trip` and `Receipt` carry `corporate { companyName, purpose, costCenter }` (the driver never sees it; the admin trip view adds the account and the
+  `corporate_policy_exceeded` event). Promo codes and the favourite-driver discount never apply to corporate trips; "offer your price" does.
+- **Platform admin API** (`/admin/corporate/*`, permission `corporate.manage`): `accounts` (list, create, get, update, `activate`, `suspend`, `close`, `admins`), mirrors under `accounts/{id}/` for `employees`
+  (+ `disable`, `enable`, `resend-invitation`, DELETE), `policies`, `cost-centers`, `trips` (+ `export`), `adjustments`, `invoices/generate`; `invoices` (filters `status`, `from` / `to` on the issue date, `accountId`),
+  `invoices/{id}` (+ `issue`, `mark-paid`, `void`, `pdf`), `receivables` (array). Audit rows use `entityType = corporate_account`, `entityId` = the account id.
+- **Policy rules** (`CorporatePolicyEvaluator`, pure): `guest_booking`, `category`, `day`, `time_window` (Riyadh time), `zone`, `max_fare`, `scheduled`, `purpose_required`, `cost_center_required`; the monthly budget is
+  per employee (an employee override wins over the policy) and counts the Riyadh calendar month. The company credit check counts unbilled + unpaid + overdue invoices + in-flight trips.
+- **Money** (F11 ledger, doc 08 §F11.3): a completed corporate trip posts `corporate_receivable:{account} ← trip_revenue` (`trip_corporate_charge`) and credits the driver as usual; cancellation fees post the same way
+  (a waived fee is reversed on the company account); invoice payment posts `corporate_invoice_payment` and manual adjustments post journals, so the receivable nets to zero when an invoice is paid in full. Refunds on corporate
+  trips are refused. VAT 15 % is included in fares: per line `excl = round(incl / 1.15, 2, AwayFromZero)`, `vat = incl − excl`.
+- **Invoices**: one non-void invoice per account and month (`period_active` makes the pair unique except for void invoices); the monthly job generates drafts for the previous Riyadh month, an admin issues them
+  (`corporate.invoice_issued` notification + e-mail), marks them paid (full or partial) or voids them; `CorporateInvoiceOverdueJob` marks issued invoices past their due date `overdue`, and `CorporateInvitationExpiryJob` expires old invitations.
+- **Invoice PDF**: rendered by QuestPDF (2026.9.1) behind `IInvoicePdfRenderer` (swap point: register another implementation in `Program.cs`). QuestPDF is used under the **Community licence**, which is free for companies below the
+  revenue threshold of the licence; above it a commercial licence is required, or replace the renderer. The layout is bilingual / RTL, uses the embedded **IBM Plex Sans Arabic** (SIL OFL, `Modules/Corporate/Fonts`) so nothing is
+  fetched at run time, and includes a QR of the ZATCA TLV payload (seller name, VAT number, ISO timestamp, total, VAT; base64; matrix from QRCoder drawn as SVG).
+- **Tests**: `CorporateAccountTests`, `CorporateApiKeyTests`, `CorporateMembershipTests`, `CorporatePolicyTests`, `CorporateTripTests`, `CorporateInvoiceTests`, `CorporateInvoiceJobTests`, `CorporateAutoIssueTests`,
+  `CorporateReportTests`, `CorporateUnitTests` (helpers in `Infrastructure/CorporateFlow.cs`: `CorporateFixture`, `RecordingEmailSender`; the jobs are driven with `RunCorporateInvoiceJobAsync`,
+  `RunCorporateOverdueJobAsync`, `RunCorporateInvitationExpiryAsync` and the `FakeClock`).
 
 ## Migrations
 

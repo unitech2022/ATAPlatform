@@ -40,7 +40,11 @@ public sealed class PassengerTripService(
     Scheduling.ScheduleRuleProvider scheduleRules,
     Scheduling.ScheduledRideService scheduledRides,
     Scheduling.ScheduledRideEngine scheduledEngine,
-    Airports.AirportTripService airportTrips)
+    Airports.AirportTripService airportTrips,
+    Corporate.CorporateRiderService corporateRiders,
+    Corporate.CorporateTripPolicyService corporatePolicies,
+    Safety.TripShareService shares,
+    IOptions<Corporate.CorporateOptions> corporateOptions)
 {
     private const int TripNumberRetries = 3;
 
@@ -48,12 +52,27 @@ public sealed class PassengerTripService(
     public async Task<QuoteResponse> QuoteAsync(EstimateRequest request, Language lang, CancellationToken ct)
     {
         var passenger = await LoadPassengerAsync(ct);
-        return await quotes.QuoteAsync(request, passenger.Id, lang, ct);
+        if (request.PaymentMethod != PaymentMethodKind.Corporate)
+        {
+            return await quotes.QuoteAsync(request, passenger.Id, lang, ct);
+        }
+
+        // F19: `paymentMethod: "corporate"` adds `corporate { allowed, violations, remainingBudget }` (no promo or favourite discount is priced in).
+        new Validator().Rule(nameof(request.TripPurpose), request.TripPurpose is null || request.TripPurpose.Length <= 200, "max_length:200").ThrowIfInvalid();
+        var booking = await corporateRiders.ResolveForAppAsync(passenger, ct);
+        var response = await quotes.QuoteAsync(request, passenger.Id, lang, ct, corporate: true);
+        return response with { Corporate = await corporateRiders.QuoteBlockAsync(booking, request, request.TripPurpose, request.CostCenterId, response, clock.UtcNow, ct) };
     }
 
-    public async Task<TripDto> CreateAsync(CreateTripRequest request, Language lang, CancellationToken ct)
+    public Task<TripDto> CreateAsync(CreateTripRequest request, Language lang, CancellationToken ct) => CreateCoreAsync(request, lang, null, ct);
+
+    /// <summary>F19: a company admin books in the portal; <paramref name="booking"/> says who pays, who rides (employee, or a guest recorded on the admin's profile) and who booked.</summary>
+    public Task<TripDto> CreateForCorporateAsync(CreateTripRequest request, Corporate.CorporateBooking booking, Language lang, CancellationToken ct) => CreateCoreAsync(request, lang, booking, ct);
+
+    private async Task<TripDto> CreateCoreAsync(CreateTripRequest request, Language lang, Corporate.CorporateBooking? portalBooking, CancellationToken ct)
     {
         var now = clock.UtcNow;
+        var corporateTrip = portalBooking is not null || request.PaymentMethod == PaymentMethodKind.Corporate;
         var v = new Validator()
             .Route(request.Pickup, request.Dropoff, request.Stops)
             .Booking(request.BookingType, request.ScheduledAt)
@@ -63,19 +82,34 @@ public sealed class PassengerTripService(
             .Rule(nameof(request.OfferedPrice), request.OfferedPrice is null || decimal.Round(request.OfferedPrice.Value, 2) == request.OfferedPrice.Value, "at most 2 decimal places")
             .Rule(nameof(request.RiderNote), request.RiderNote is null || request.RiderNote.Length <= 500, "max_length:500")
             .Rule(nameof(request.PaymentMethodId), request.PaymentMethodId is null || (request.PaymentMethod ?? PaymentMethodKind.Card) == PaymentMethodKind.Card, "only for paymentMethod=card")
-            .Rule(nameof(request.PromoCode), request.PromoCode is null || request.PromoCode.Length <= 40, "max_length:40");
+            .Rule(nameof(request.PromoCode), request.PromoCode is null || request.PromoCode.Length <= 40, "max_length:40")
+            .Rule(nameof(request.TripPurpose), request.TripPurpose is null || request.TripPurpose.Length <= 200, "max_length:200");
         v.ThrowIfInvalid();
+        if (corporateTrip && !string.IsNullOrWhiteSpace(request.PromoCode))
+        {
+            // doc 10 §F15.1: no discounts with corporate payment.
+            throw new DomainException(ErrorCodes.PromoNotEligible, new Promotions.PromoReason(Promotions.PromotionService.Reasons.PaymentMethod));
+        }
 
         var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == request.RideCategoryId && c.IsActive, ct);
         v.Rule(nameof(request.RideCategoryId), category is not null, "unknown or inactive ride category");
         v.Rule(nameof(request.Stops), category is null || (request.Stops?.Count ?? 0) <= category.MaxStops, $"must be at most {category?.MaxStops} for this category");
         v.ThrowIfInvalid();
 
-        var passenger = await LoadPassengerAsync(ct);
+        var passenger = portalBooking?.Passenger ?? await LoadPassengerAsync(ct);
+        var booking = portalBooking ?? (corporateTrip ? await corporateRiders.ResolveForAppAsync(passenger, ct) : null);
+        if (booking is not null)
+        {
+            await corporateRiders.EnsureCostCenterAsync(booking.Account.Id, request.CostCenterId, ct);
+        }
+
         var user = await db.Users.AsNoTracking().FirstAsync(u => u.Id == passenger.UserId, ct);
         user.EnsureActive();
-        // F14: a temporarily restricted or suspended passenger cannot request trips (403 account_restricted).
-        await reliability.EnsureNotRestrictedAsync(passenger.UserId, Role.Passenger, ct);
+        // F14: a temporarily restricted or suspended passenger cannot request trips (403 account_restricted); a guest is not the admin's own ride.
+        if (booking is not { IsGuest: true })
+        {
+            await reliability.EnsureNotRestrictedAsync(passenger.UserId, Role.Passenger, ct);
+        }
 
         // F17: airport detection and validation (pickup zone, flight number, terminal); an airport pickup zone replaces the pickup point.
         var airport = await airportTrips.PrepareAsync(request.Pickup!.Lat!.Value, request.Pickup.Lng!.Value, request.Dropoff!.Lat!.Value, request.Dropoff.Lng!.Value,
@@ -95,12 +129,25 @@ public sealed class PassengerTripService(
             // `max_open_per_passenger` scheduled bookings may be open.
             scheduleRule = await scheduleRules.ResolveForPickupAsync(pickup.Lat, pickup.Lng, category!.Id, now, ct);
             Scheduling.ScheduleRuleProvider.EnsureWindow(scheduleRule, request.ScheduledAt!.Value, now);
-            await scheduledRides.EnsureCanBookAsync(passenger.Id, scheduleRule, ct);
+            if (booking is null)
+            {
+                await scheduledRides.EnsureCanBookAsync(passenger.Id, scheduleRule, ct);
+            }
+        }
+        else if (booking is { IsGuest: true })
+        {
+            // F19: the trip_active_exists rule does not apply to guest bookings; a company admin may run up to Corporate:MaxActiveGuestTripsPerAdmin guest trips at once.
+            var limit = corporateOptions.Value.MaxActiveGuestTripsPerAdmin;
+            var open = await db.Trips.AsNoTracking().CountAsync(t => t.BookedByUserId == booking.BookedByUserId && t.IsGuest && Trip.ActiveStatuses.Contains(t.Status), ct);
+            if (open >= limit)
+            {
+                throw new DomainException(ErrorCodes.TripActiveExists, new { reason = "guest_trips_limit", limit, open });
+            }
         }
         else
         {
             var active = await db.Trips.AsNoTracking()
-                .Where(t => t.PassengerId == passenger.Id && Trip.ActiveStatuses.Contains(t.Status))
+                .Where(t => t.PassengerId == passenger.Id && !t.IsGuest && Trip.ActiveStatuses.Contains(t.Status))
                 .Select(t => new { t.Id, t.TripNumber, t.Status }).FirstOrDefaultAsync(ct);
             if (active is not null)
             {
@@ -108,8 +155,8 @@ public sealed class PassengerTripService(
             }
         }
 
-        // A negative passenger balance is a debt (failed card collection, cancellation fees): top up before requesting again.
-        if (paymentOptions.Value.BlockOnOutstandingBalance)
+        // A negative passenger balance is a debt (failed card collection, cancellation fees): top up before requesting again (the company pays corporate trips).
+        if (booking is null && paymentOptions.Value.BlockOnOutstandingBalance)
         {
             var balance = await db.Wallets.AsNoTracking().Where(w => w.UserId == passenger.UserId && w.Kind == WalletKind.Passenger).Select(w => (decimal?)w.Balance).FirstOrDefaultAsync(ct) ?? 0m;
             if (balance < 0)
@@ -133,6 +180,14 @@ public sealed class PassengerTripService(
         if (offered is { } offeredPrice && (offeredPrice < quote.OfferMin || offeredPrice > quote.OfferMax))
         {
             throw new DomainException(ErrorCodes.OfferOutOfRange, new { quote.OfferMin, quote.OfferMax, offeredPrice });
+        }
+
+        // F19: policy, monthly budget and credit limit of the company (the estimated fare is the quoted total, or the rider's offered price).
+        if (booking is not null)
+        {
+            var check = await corporatePolicies.CheckAsync(booking.Account, booking.Member,
+                new Corporate.CorporateCheckInput(category!.Id, pickup, request.Dropoff!.Point(), pickupAt, offered ?? quote.Total, bookingType, request.TripPurpose, request.CostCenterId, booking.IsGuest), ct);
+            check.EnforceOrThrow();
         }
 
         // F15: a promo code is fully validated before anything is created (no discounts with "offer your price").
@@ -166,7 +221,15 @@ public sealed class PassengerTripService(
             PreferFemaleDriver = preferFemale,
             FavoriteDriverId = request.FavoriteDriverId,
             FavoriteStatus = favorite?.Status,
-            PaymentMethod = request.PaymentMethod ?? passenger.DefaultPaymentMethod,
+            PaymentMethod = booking is null ? request.PaymentMethod ?? passenger.DefaultPaymentMethod : PaymentMethodKind.Corporate,
+            CorporateAccountId = booking?.Account.Id,
+            CorporateUserId = booking?.Member?.Id,
+            BookedByUserId = booking?.BookedByUserId,
+            IsGuest = booking?.IsGuest ?? false,
+            GuestName = booking?.GuestName,
+            GuestPhone = booking?.GuestPhone,
+            TripPurpose = booking is null || string.IsNullOrWhiteSpace(request.TripPurpose) ? null : request.TripPurpose.Trim(),
+            CostCenterId = booking is null ? null : request.CostCenterId,
             PricingMode = pricingMode,
             OfferedPrice = offered,
             EstimatedDistanceM = quote.DistanceM,
@@ -210,8 +273,8 @@ public sealed class PassengerTripService(
 
         db.Trips.Add(trip);
         quote.UsedTripId = trip.Id;
-        events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
-            new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id,
+        events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, booking?.BookedByUserId ?? passenger.UserId, pickup.Lat, pickup.Lng,
+            new { corporateAccountId = booking?.Account.Id, corporateUserId = booking?.Member?.Id, isGuest = booking?.IsGuest, trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id,
                 promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount, favoriteDriverId = request.FavoriteDriverId, favoriteStatus = favorite?.Status,
                 bookingType, scheduledAt = trip.ScheduledAt, airportId = trip.AirportId, airportDirection = trip.AirportDirection, airportZoneId = trip.AirportZoneId });
         if (favorite is { Status: FavoriteStatus.Unavailable })
@@ -239,6 +302,11 @@ public sealed class PassengerTripService(
 
             trip.StartSearching();
             events.Add(trip.Id, TripEventTypes.SearchStarted, TripActor.System);
+        }
+
+        if (booking is { IsGuest: true })
+        {
+            await SendGuestTripSmsAsync(trip, booking, lang, ct);
         }
 
         if (promo is null)
@@ -271,7 +339,20 @@ public sealed class PassengerTripService(
         }
 
         await paymentService.PublishPendingAsync(ct);
-        return await reads.PublishAsync(trip, TripViewer.Passenger, lang, ct);
+        return await reads.PublishAsync(trip, portalBooking is null ? TripViewer.Passenger : TripViewer.Corporate, lang, ct);
+    }
+
+    /// <summary>
+    /// F19 guest booking: a tracking link (F12, kept alive until the trip ends) and the trip PIN go to the guest by SMS (<c>corporate.guest_trip</c>); the guest has no account, the
+    /// booking admin's rider profile owns the trip.
+    /// </summary>
+    private async Task SendGuestTripSmsAsync(Trip trip, Corporate.CorporateBooking booking, Language lang, CancellationToken ct)
+    {
+        var share = shares.Add(trip.Id, booking.BookedByUserId, null, Domain.Safety.TripShareChannel.Sms);
+        var pickupAt = trip.ScheduledAt ?? trip.RequestedAt;
+        await notifications.DispatchAsync(new NotificationRequest("corporate.guest_trip", Guid.Empty,
+            NotificationPlaceholders.Of(("companyName", booking.Account.DisplayName), ("pickupName", trip.PickupName), ("pickupTime", pickupAt), ("shareUrl", shares.UrlOf(share.Token)), ("pin", pins.Reveal(trip) ?? string.Empty)),
+            "trip", trip.Id, new Dictionary<string, object?> { ["tripId"] = trip.Id, ["shareId"] = share.Id }, RecipientPhoneOverride: booking.GuestPhone), ct);
     }
 
     private async Task SaveNewTripAsync(Trip trip, DateTime now, CancellationToken ct)
@@ -295,7 +376,7 @@ public sealed class PassengerTripService(
     {
         var passenger = await LoadPassengerAsync(ct);
         var trip = await db.Trips.AsNoTracking().Include(t => t.Stops)
-            .Where(t => t.PassengerId == passenger.Id && Trip.ActiveStatuses.Contains(t.Status))
+            .Where(t => t.PassengerId == passenger.Id && !t.IsGuest && Trip.ActiveStatuses.Contains(t.Status))
             .OrderByDescending(t => t.RequestedAt).FirstOrDefaultAsync(ct);
         return trip is null ? null : await reads.BuildAsync(trip, TripViewer.Passenger, lang, ct);
     }

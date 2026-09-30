@@ -108,7 +108,8 @@ public sealed class FavoriteDiscountService(AtaDbContext db, IClock clock, ZoneR
     /// </summary>
     public async Task<FavoriteCompletion?> ForCompletionAsync(Trip trip, FareCalculation calculation, CancellationToken ct)
     {
-        if (trip.FavoriteStatus != FavoriteStatus.Accepted || trip.FavoriteDiscountRuleId is not { } ruleId || trip.PricingMode == PricingMode.Offer
+        // F19: no favourite-driver discount with corporate payment (doc 10 §F15.1).
+        if (trip.PaymentMethod == PaymentMethodKind.Corporate || trip.FavoriteStatus != FavoriteStatus.Accepted || trip.FavoriteDiscountRuleId is not { } ruleId || trip.PricingMode == PricingMode.Offer
             || trip.DriverId is null || trip.DriverId != trip.FavoriteDriverId)
         {
             return null;

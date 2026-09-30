@@ -47,7 +47,8 @@ public sealed record PlaceRequest(string? Name, string? Address, decimal? Lat, d
 /// favourites) adds the favourite-driver discount to the quote, conditional on that driver accepting.
 /// </summary>
 public sealed record EstimateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt,
-    string? PromoCode = null, Guid? FavoriteDriverId = null, Guid? AirportPickupZoneId = null, string? AirportTerminalCode = null, string? FlightNumber = null);
+    string? PromoCode = null, Guid? FavoriteDriverId = null, Guid? AirportPickupZoneId = null, string? AirportTerminalCode = null, string? FlightNumber = null,
+    PaymentMethodKind? PaymentMethod = null, string? TripPurpose = null, Guid? CostCenterId = null);
 
 public sealed record CreateTripRequest(
     PlaceRequest? Pickup,
@@ -67,7 +68,9 @@ public sealed record CreateTripRequest(
     Guid? FavoriteDriverId = null,
     Guid? AirportPickupZoneId = null,
     string? AirportTerminalCode = null,
-    string? FlightNumber = null);
+    string? FlightNumber = null,
+    string? TripPurpose = null,
+    Guid? CostCenterId = null);
 
 public sealed record CancelTripRequest(string? ReasonCode, string? Note, decimal? ExpectedFee = null, int? ExpectedPenaltyPoints = null);
 
@@ -129,7 +132,9 @@ public sealed record TripDto(
     DateTime? RateUntil = null,
     ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null,
     ATA.Api.Modules.Scheduling.TripSchedulingDto? Scheduling = null,
-    ATA.Api.Modules.Airports.TripAirportDto? Airport = null);
+    ATA.Api.Modules.Airports.TripAirportDto? Airport = null,
+    ATA.Api.Modules.Corporate.TripCorporateDto? Corporate = null,
+    ATA.Api.Modules.Payments.ReceiptDto? Receipt = null);
 
 public sealed record OfferPassengerDto(string? FirstName, decimal RatingAvg);
 
@@ -222,7 +227,8 @@ public sealed record AdminTripDetailDto(
     decimal TierCommissionDiscountPercent = 0m,
     ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null,
     ATA.Api.Modules.Scheduling.AdminTripSchedulingDto? Scheduling = null,
-    ATA.Api.Modules.Airports.TripAirportDto? Airport = null);
+    ATA.Api.Modules.Airports.TripAirportDto? Airport = null,
+    ATA.Api.Modules.Corporate.TripCorporateDto? Corporate = null);
 
 public sealed record LiveDriverDto(Guid DriverId, string? Name, decimal Lat, decimal Lng, bool IsOnline, string Status, string? CategoryCode, Guid? CurrentTripId, decimal? Heading, DateTime UpdatedAt);
 

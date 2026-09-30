@@ -14,6 +14,7 @@ namespace ATA.Api.Modules.Trips;
 /// <item><c>card</c>: captured → <c>trip_card_capture</c> journal (<c>gateway_clearing → trip_revenue</c>) + driver <c>trip_earning</c>; a final decline falls
 /// back to cash (<c>payment_fallback_cash</c>, <c>card_capture_failed</c>, <c>payment.failed</c>); an unknown result keeps the trip on card with the capture
 /// pending (the driver is paid anyway — the platform carries the collection risk).</item>
+/// <item><c>corporate</c> (F19): <c>trip_corporate_charge</c> journal <c>corporate_receivable:{account} ← trip_revenue</c> + driver <c>trip_earning</c> out of <c>trip_revenue</c>.</item>
 /// <item><c>cash</c>: driver <c>trip_earning</c> against <c>cash_collected</c>, then <c>cash_collection</c> of the whole fare (overdraft allowed): the negative
 /// balance is the cash commission the driver owes.</item>
 /// </list>
@@ -48,6 +49,15 @@ public sealed class TripPaymentService(LedgerService ledger, TripEventRecorder e
             trip.PaymentMethod = PaymentMethodKind.Cash;
             events.Add(trip.Id, TripEventTypes.PaymentFallbackCash, TripActor.System,
                 data: new { requested, reason = ErrorCodes.InsufficientBalance, balance = passengerWallet.Balance, amount = fare });
+        }
+        else if (requested == PaymentMethodKind.Corporate && trip.CorporateAccountId is { } accountId)
+        {
+            // F19: the company is charged through the ledger (receivable ← trip_revenue) and the driver share is paid out of trip_revenue; the invoice bills it later.
+            await ledger.JournalAsync(JournalType.TripCorporateCharge, LedgerAccounts.CorporateReceivable(accountId), LedgerAccounts.TripRevenue, fare, ReferenceType, trip.Id,
+                $"trip:{trip.Id}:corporate", $"Trip {trip.TripNumber} corporate charge", ct);
+            await CreditDriverAsync(trip, participants, driverEarnings, LedgerAccounts.TripRevenue, ct);
+            events.Add(trip.Id, TripEventTypes.PaymentRecorded, TripActor.System, data: new { method = PaymentMethodKind.Corporate, amount = fare, driverEarnings, corporateAccountId = accountId });
+            return;
         }
         else if (requested == PaymentMethodKind.Card)
         {

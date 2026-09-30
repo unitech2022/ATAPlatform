@@ -85,6 +85,13 @@ public static class ErrorCatalog
         [ErrorCodes.DisputeExists] = new(StatusCodes.Status409Conflict, "يوجد اعتراض سابق على هذه الرحلة", "A dispute already exists for this trip"),
         [ErrorCodes.DisputeWindowClosed] = new(StatusCodes.Status422UnprocessableEntity, "انتهت مدة الاعتراض على الأجرة", "The fare dispute window has closed"),
         [ErrorCodes.AttachmentLimit] = new(StatusCodes.Status422UnprocessableEntity, "الحد الأقصى 5 مرفقات", "You can attach at most 5 files"),
+        [ErrorCodes.CorporateNotMember] = new(StatusCodes.Status403Forbidden, "لست عضواً في حساب شركة", "You are not a member of a corporate account"),
+        [ErrorCodes.CorporateAccountInactive] = new(StatusCodes.Status403Forbidden, "حساب الشركة غير نشط", "The corporate account is not active"),
+        [ErrorCodes.CorporateMemberElsewhere] = new(StatusCodes.Status409Conflict, "الرقم مرتبط بحساب شركة آخر", "This number is already linked to another corporate account"),
+        [ErrorCodes.CorporatePolicyViolation] = new(StatusCodes.Status422UnprocessableEntity, "الرحلة تخالف سياسة شركتك", "The trip violates your company's policy"),
+        [ErrorCodes.CorporateBudgetExceeded] = new(StatusCodes.Status422UnprocessableEntity, "تجاوزت الميزانية الشهرية المتاحة", "You have exceeded the available monthly budget"),
+        [ErrorCodes.CorporateCreditLimitExceeded] = new(StatusCodes.Status422UnprocessableEntity, "تجاوز حساب الشركة الحد الائتماني", "The company account has exceeded its credit limit"),
+        [ErrorCodes.InvitationExpired] = new(StatusCodes.Status410Gone, "انتهت صلاحية الدعوة", "The invitation has expired"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

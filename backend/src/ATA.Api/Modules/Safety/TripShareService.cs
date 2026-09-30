@@ -207,7 +207,10 @@ public sealed class TripShareService(
         }
 
         var trip = await db.Trips.AsNoTracking().Include(t => t.Stops).FirstAsync(t => t.Id == share.TripId, ct);
-        var passengerName = await (from p in db.Passengers.AsNoTracking() join u in db.Users.AsNoTracking() on p.UserId equals u.Id where p.Id == trip.PassengerId select u.FullName).FirstOrDefaultAsync(ct);
+        // F19: the tracking page of a guest trip names the guest, not the company admin who booked it.
+        var passengerName = trip.IsGuest
+            ? trip.GuestName
+            : await (from p in db.Passengers.AsNoTracking() join u in db.Users.AsNoTracking() on p.UserId equals u.Id where p.Id == trip.PassengerId select u.FullName).FirstOrDefaultAsync(ct);
         var category = await db.RideCategories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == trip.RideCategoryId, ct);
 
         PublicDriverDto? driver = null;

@@ -165,7 +165,7 @@ public sealed class AdminTripService(
             events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)),
             dto.Promotion, trip.DiscountTotal, stored?.Discounts.Select(d => d with { Label = Promotions.DiscountEngine.Label(d.Source, d.Reference, lang) }).ToList(),
             trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent, dto.Favorite,
-            await schedulingViews.BuildAdminAsync(trip, ct), dto.Airport);
+            await schedulingViews.BuildAdminAsync(trip, ct), dto.Airport, dto.Corporate);
     }
 
     private async Task<Dictionary<Guid, string?>> DriverNamesAsync(IEnumerable<Guid> driverIds, CancellationToken ct)

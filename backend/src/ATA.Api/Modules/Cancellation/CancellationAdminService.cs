@@ -27,6 +27,7 @@ public sealed partial class CancellationAdminService(
     TripReadService reads,
     RefundService refunds,
     ZoneResolver zones,
+    Corporate.CorporateCreditService corporateCredit,
     IOptions<CancellationOptions> options)
 {
     [GeneratedRegex("^[a-z0-9_]{2,60}$")]
@@ -269,7 +270,13 @@ public sealed partial class CancellationAdminService(
             cancellation.FeeStatus = charged > 0 ? CancellationFeeStatus.Charged : CancellationFeeStatus.Waived;
             audit.Log("cancellation.review", "cancellation_event", cancellation.Id, before, Snapshot(cancellation));
             await db.SaveChangesAsync(ct);
-            if (charged > 0)
+            if (charged > 0 && cancellation.FeeMethod == CancellationFeeMethod.Corporate)
+            {
+                // F19: a fee billed to a company is reversed on its account, never refunded to the rider's wallet.
+                await corporateCredit.WaiveCancellationFeeAsync(cancellation, trip, cancellation.ReviewNote ?? string.Empty, currentUser.UserId, ct);
+                await db.SaveChangesAsync(ct);
+            }
+            else if (charged > 0)
             {
                 var refund = await refunds.RefundCancellationFeeAsync(trip.Id, participants.PassengerUserId, charged, cancellation.FeeMethod == CancellationFeeMethod.Card,
                     $"Cancellation fee waived: {cancellation.ReviewNote}", ct);

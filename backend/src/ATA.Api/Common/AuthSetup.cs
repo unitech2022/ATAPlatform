@@ -12,6 +12,8 @@ public static class Policies
     public const string Passenger = "Passenger";
     public const string Driver = "Driver";
     public const string Admin = "Admin";
+    /// <summary>F19: the <c>corporate_admin</c> role plus the <c>corp</c> claim of a portal session.</summary>
+    public const string CorporateAdmin = "CorporateAdmin";
 }
 
 public static class AuthSetup
@@ -77,7 +79,8 @@ public static class AuthSetup
             .AddPolicy(Policies.Authenticated, p => p.RequireAuthenticatedUser())
             .AddPolicy(Policies.Passenger, p => p.RequireRole(RoleNames.Passenger))
             .AddPolicy(Policies.Driver, p => p.RequireRole(RoleNames.Driver))
-            .AddPolicy(Policies.Admin, p => p.RequireRole(RoleNames.Admin, RoleNames.Operations));
+            .AddPolicy(Policies.Admin, p => p.RequireRole(RoleNames.Admin, RoleNames.Operations))
+            .AddPolicy(Policies.CorporateAdmin, p => p.RequireRole(RoleNames.CorporateAdmin).RequireClaim(AtaClaims.Corporate));
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();

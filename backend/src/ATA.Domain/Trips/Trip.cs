@@ -71,6 +71,18 @@ public class Trip : AuditableEntity
     public CancelledBy? CancelledBy { get; set; }
     public string? CancellationReason { get; set; }
     public string? RiderNote { get; set; }
+    /// <summary>F19: the company charged for a <c>corporate</c> trip.</summary>
+    public Guid? CorporateAccountId { get; set; }
+    /// <summary>F19: the employee the trip was booked for (<c>corporate_users.id</c>); NULL for guest trips.</summary>
+    public Guid? CorporateUserId { get; set; }
+    /// <summary>F19: the user who booked the trip (the employee themselves in the app, the company admin in the portal).</summary>
+    public Guid? BookedByUserId { get; set; }
+    /// <summary>F19: a guest trip is recorded on the booking admin's rider profile with the guest's name and phone.</summary>
+    public bool IsGuest { get; set; }
+    public string? GuestName { get; set; }
+    public string? GuestPhone { get; set; }
+    public string? TripPurpose { get; set; }
+    public Guid? CostCenterId { get; set; }
     public DateTime RequestedAt { get; set; }
     public DateTime? AssignedAt { get; set; }
     public DateTime? ArrivedAt { get; set; }
@@ -99,6 +111,9 @@ public class Trip : AuditableEntity
     public bool HasDriver => DriverId is not null && Status is not TripStatus.Requested and not TripStatus.Searching and not TripStatus.NoDrivers;
 
     public bool IsScheduledBooking => BookingType == BookingType.Scheduled;
+
+    /// <summary>F19: paid by a company (<c>payment_method = corporate</c>); never changes to cash/wallet at completion.</summary>
+    public bool IsCorporate => PaymentMethod == PaymentMethodKind.Corporate && CorporateAccountId is not null;
 
     public bool CanBeCancelled => Status is not TripStatus.InTrip && !IsTerminal;
 

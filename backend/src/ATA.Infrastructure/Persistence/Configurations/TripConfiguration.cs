@@ -28,6 +28,9 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.Property(x => x.PinCodeProtected).HasMaxLength(255).IsRequired();
         b.Property(x => x.CancellationReason).HasMaxLength(500);
         b.Property(x => x.RiderNote).HasMaxLength(500);
+        b.Property(x => x.GuestName).HasMaxLength(80);
+        b.Property(x => x.GuestPhone).HasMaxLength(20);
+        b.Property(x => x.TripPurpose).HasMaxLength(200);
         b.Property(x => x.FareBreakdown).HasColumnType("json");
         b.Property(x => x.PlannedRoute).HasColumnType("json");
         b.Property(x => x.WaitingPolicy).HasColumnType("json");
@@ -41,6 +44,9 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasIndex(x => new { x.FavoriteDriverId, x.FavoriteStatus });
         b.HasIndex(x => new { x.Status, x.ScheduledAt });
         b.HasIndex(x => x.ReservedDriverId);
+        b.HasIndex(x => new { x.CorporateAccountId, x.CompletedAt });
+        b.HasIndex(x => x.CorporateUserId);
+        b.Ignore(x => x.IsCorporate);
         b.Ignore(x => x.IsTerminal);
         b.Ignore(x => x.HasDriver);
         b.Ignore(x => x.CanBeCancelled);
@@ -51,6 +57,9 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.FavoriteDriverId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ATA.Domain.Favorites.FavoriteDriverDiscountRule>().WithMany().HasForeignKey(x => x.FavoriteDiscountRuleId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PaymentMethod>().WithMany().HasForeignKey(x => x.PaymentMethodId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ATA.Domain.Corporate.CorporateAccount>().WithMany().HasForeignKey(x => x.CorporateAccountId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ATA.Domain.Corporate.CorporateUser>().WithMany().HasForeignKey(x => x.CorporateUserId).OnDelete(DeleteBehavior.SetNull);
+        b.HasOne<ATA.Domain.Corporate.CorporateCostCenter>().WithMany().HasForeignKey(x => x.CostCenterId).OnDelete(DeleteBehavior.SetNull);
         b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.ReservedDriverId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ATA.Domain.Airports.Airport>().WithMany().HasForeignKey(x => x.AirportId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ATA.Domain.Airports.AirportZone>().WithMany().HasForeignKey(x => x.AirportZoneId).OnDelete(DeleteBehavior.Restrict);

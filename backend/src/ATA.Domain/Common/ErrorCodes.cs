@@ -74,5 +74,12 @@ public static class ErrorCodes
     public const string DisputeExists = "dispute_exists";
     public const string DisputeWindowClosed = "dispute_window_closed";
     public const string AttachmentLimit = "attachment_limit";
+    public const string CorporateNotMember = "corporate_not_member";
+    public const string CorporateAccountInactive = "corporate_account_inactive";
+    public const string CorporateMemberElsewhere = "corporate_member_elsewhere";
+    public const string CorporatePolicyViolation = "corporate_policy_violation";
+    public const string CorporateBudgetExceeded = "corporate_budget_exceeded";
+    public const string CorporateCreditLimitExceeded = "corporate_credit_limit_exceeded";
+    public const string InvitationExpired = "invitation_expired";
     public const string InternalError = "internal_error";
 }

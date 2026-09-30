@@ -8,12 +8,13 @@ namespace ATA.Api.Modules.Admin;
 /// <summary>Records sensitive administrative actions in <c>audit_logs</c>; the caller saves within its own unit of work.</summary>
 public sealed class AuditService(AtaDbContext db, ICurrentUser currentUser)
 {
-    public AuditLog Log(string action, string entityType, Guid? entityId, object? before = null, object? after = null)
+    /// <param name="actorRole">Overrides the caller's first role (<c>corporate_admin</c> for portal actions, <c>system</c> for jobs).</param>
+    public AuditLog Log(string action, string entityType, Guid? entityId, object? before = null, object? after = null, string? actorRole = null)
     {
         var log = new AuditLog
         {
             ActorUserId = currentUser.IsAuthenticated ? currentUser.UserId : null,
-            ActorRole = currentUser.Roles.FirstOrDefault(),
+            ActorRole = actorRole ?? currentUser.Roles.FirstOrDefault(),
             Action = action,
             EntityType = entityType,
             EntityId = entityId,

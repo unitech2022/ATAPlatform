@@ -26,8 +26,14 @@ public sealed class QuoteService(
     /// <summary>What a quote knows about the trip beyond the route: a scheduled booking (its rule may lock the demand level to <c>normal</c>) and whether it touches an airport.</summary>
     private sealed record QuoteContext(bool Scheduled, Guid? CityId, bool AirportTrip);
 
-    public async Task<QuoteResponse> QuoteAsync(EstimateRequest request, Guid passengerId, Language lang, CancellationToken ct)
+    /// <param name="corporate">F19: the trip is paid by a company, so neither a promo code nor a favourite-driver discount is priced in (doc 10 §F15.1).</param>
+    public async Task<QuoteResponse> QuoteAsync(EstimateRequest request, Guid passengerId, Language lang, CancellationToken ct, bool corporate = false)
     {
+        if (corporate)
+        {
+            request = request with { PromoCode = null, FavoriteDriverId = null };
+        }
+
         var now = clock.UtcNow;
         new Validator().Route(request.Pickup, request.Dropoff, request.Stops, requireLabels: false).Booking(request.BookingType, request.ScheduledAt).ThrowIfInvalid();
         var scheduled = request.BookingType == BookingType.Scheduled;

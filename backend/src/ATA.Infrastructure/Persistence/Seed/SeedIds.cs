@@ -38,6 +38,21 @@ public static class SeedIds
         public static readonly Guid Airport = Guid.Parse("019985f0-0000-7000-8000-000000000706");
     }
 
+    /// <summary>F19 demo company ("شركة ATA التجريبية", Development only) with its policies and cost centres.</summary>
+    public static class DemoCorporate
+    {
+        public static readonly Guid Account = Guid.Parse("019985f0-0000-7000-8000-000000000a01");
+        public static readonly Guid DefaultPolicy = Guid.Parse("019985f0-0000-7000-8000-000000000a11");
+        public static readonly Guid ExecutivePolicy = Guid.Parse("019985f0-0000-7000-8000-000000000a12");
+        public static readonly Guid CostCenterFinance = Guid.Parse("019985f0-0000-7000-8000-000000000a21");
+        public static readonly Guid CostCenterSales = Guid.Parse("019985f0-0000-7000-8000-000000000a22");
+        public static readonly Guid CostCenterIt = Guid.Parse("019985f0-0000-7000-8000-000000000a23");
+        public const string AdminPhone = "+966500000901";
+        public const string EmployeeAhmedPhone = "+966500000902";
+        public const string EmployeeKhaledPhone = "+966500000903";
+        public const string InvitedPhone = "+966500000904";
+    }
+
     public static readonly Guid ScheduledRideRuleDefault = Guid.Parse("019985f0-0000-7000-8000-000000000801");
     public static readonly Guid AirportRuh = Guid.Parse("019985f0-0000-7000-8000-000000000901");
 

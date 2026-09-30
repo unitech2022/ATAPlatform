@@ -2,11 +2,13 @@ using ATA.Domain.Airports;
 using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
+using ATA.Domain.Corporate;
 using ATA.Domain.Drivers;
 using ATA.Domain.Identity;
 using ATA.Domain.Incentives;
 using ATA.Domain.Matching;
 using ATA.Domain.Notifications;
+using ATA.Domain.Passengers;
 using ATA.Domain.Pricing;
 using ATA.Domain.Favorites;
 using ATA.Domain.Promotions;
@@ -36,6 +38,8 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedDemandRulesAsync(cancellationToken);
         await SeedMatchingSettingsAsync(cancellationToken);
         await SeedNotificationTemplatesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await UpgradeCorporateInvitationTemplatesAsync(cancellationToken);
         await SeedCancellationReasonsAsync(cancellationToken);
         await SeedCancellationRulesAsync(cancellationToken);
         await SeedReliabilityThresholdsAsync(cancellationToken);
@@ -50,6 +54,106 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedCannedResponsesAsync(cancellationToken);
         await SeedHelpCenterAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        await SeedDemoCorporateAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// F19 demo company "شركة ATA التجريبية" (Development only: <c>Seed:DemoCorporate=true</c>), seeded once when missing: an active account (credit limit 20000), a default policy
+    /// (economy / comfort, Sunday–Thursday 06:00–23:00 Riyadh, max fare 150, budget 1500, purpose required) and an executive policy, three cost centres, the company admin
+    /// (+966500000901), two active employees (+966500000902 finance, +966500000903 sales with a 400 budget) and one pending invitation (+966500000904). Everyone signs in by OTP.
+    /// </summary>
+    private async Task SeedDemoCorporateAsync(CancellationToken ct)
+    {
+        if (!configuration.GetValue("Seed:DemoCorporate", false) || await db.CorporateAccounts.AnyAsync(a => a.Id == SeedIds.DemoCorporate.Account, ct))
+        {
+            return;
+        }
+
+        var admin = await db.AdminAccounts.AsNoTracking().OrderBy(a => a.CreatedAt).Select(a => a.UserId).FirstOrDefaultAsync(ct);
+        if (admin == Guid.Empty)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        db.CorporateAccounts.Add(new CorporateAccount
+        {
+            Id = SeedIds.DemoCorporate.Account, AccountNumber = "CA-00001", LegalNameAr = "شركة ATA التجريبية المحدودة", LegalNameEn = "ATA Demo Company Ltd", DisplayName = "شركة ATA التجريبية",
+            CrNumber = "1010000001", VatNumber = "310000000000003", BillingEmail = "billing@demo.ata.sa",
+            BillingAddress = "{\"buildingNumber\":\"1234\",\"street\":\"King Fahd Road\",\"district\":\"Al Olaya\",\"city\":\"Riyadh\",\"postalCode\":\"12211\",\"additionalNumber\":\"5678\",\"countryCode\":\"SA\"}",
+            CityId = SeedIds.CityRiyadh, ContactName = "Sara Al-Harbi", ContactPhone = SeedIds.DemoCorporate.AdminPhone, Status = CorporateAccountStatus.Active, CreditLimit = 20000m,
+            PaymentTermsDays = 30, DefaultPolicyId = SeedIds.DemoCorporate.DefaultPolicy, CreatedBy = admin, Notes = "Demo data (Development only)",
+        });
+        await db.SaveChangesAsync(ct);
+        db.CorporateCostCenters.AddRange(
+            new CorporateCostCenter { Id = SeedIds.DemoCorporate.CostCenterFinance, CorporateAccountId = SeedIds.DemoCorporate.Account, Code = "FIN-01", Name = "Finance" },
+            new CorporateCostCenter { Id = SeedIds.DemoCorporate.CostCenterSales, CorporateAccountId = SeedIds.DemoCorporate.Account, Code = "SAL-01", Name = "Sales" },
+            new CorporateCostCenter { Id = SeedIds.DemoCorporate.CostCenterIt, CorporateAccountId = SeedIds.DemoCorporate.Account, Code = "IT-01", Name = "IT" });
+        db.CorporatePolicies.AddRange(
+            new CorporatePolicy
+            {
+                Id = SeedIds.DemoCorporate.DefaultPolicy, CorporateAccountId = SeedIds.DemoCorporate.Account, Name = "السياسة العامة", IsDefault = true,
+                AllowedRideCategoryIds = $"[\"{SeedIds.RideCategories.Economy}\",\"{SeedIds.RideCategories.Comfort}\"]", AllowedDays = "[0,1,2,3,4]",
+                TimeWindows = "[{\"from\":\"06:00\",\"to\":\"23:00\"}]", MaxFarePerTrip = 150m, MonthlyBudgetPerEmployee = 1500m, RequirePurpose = true,
+            },
+            new CorporatePolicy { Id = SeedIds.DemoCorporate.ExecutivePolicy, CorporateAccountId = SeedIds.DemoCorporate.Account, Name = "الإدارة التنفيذية", MonthlyBudgetPerEmployee = 5000m });
+
+        async Task<Guid> ActiveUserAsync(string phone, string name, Role extraRole)
+        {
+            var user = await db.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, ct);
+            if (user is null)
+            {
+                user = new User { PhoneNumber = phone, FullName = name, PhoneVerifiedAt = now, Language = Language.Ar };
+                db.Users.Add(user);
+                db.NotificationPreferences.Add(new NotificationPreference { UserId = user.Id });
+            }
+
+            if (!user.HasRole(extraRole))
+            {
+                user.Roles.Add(new UserRole { UserId = user.Id, Role = extraRole, GrantedAt = now });
+            }
+
+            if (extraRole == Role.Passenger && !await db.Passengers.AnyAsync(p => p.UserId == user.Id, ct))
+            {
+                db.Passengers.Add(new PassengerProfile { UserId = user.Id });
+            }
+
+            return user.Id;
+        }
+
+        var adminUser = await ActiveUserAsync(SeedIds.DemoCorporate.AdminPhone, "Sara Al-Harbi", Role.CorporateAdmin);
+        var ahmed = await ActiveUserAsync(SeedIds.DemoCorporate.EmployeeAhmedPhone, "Ahmed Al-Qahtani", Role.Passenger);
+        var khaled = await ActiveUserAsync(SeedIds.DemoCorporate.EmployeeKhaledPhone, "Khaled Al-Otaibi", Role.Passenger);
+        db.CorporateUsers.AddRange(
+            new CorporateUser
+            {
+                CorporateAccountId = SeedIds.DemoCorporate.Account, UserId = adminUser, PhoneNumber = SeedIds.DemoCorporate.AdminPhone, FullName = "Sara Al-Harbi", Role = CorporateRole.CorporateAdmin,
+                EmployeeNumber = "E-1000", Department = "Administration", PolicyId = SeedIds.DemoCorporate.ExecutivePolicy, Status = CorporateUserStatus.Active, InvitedBy = admin, ActivatedAt = now,
+            },
+            new CorporateUser
+            {
+                CorporateAccountId = SeedIds.DemoCorporate.Account, UserId = ahmed, PhoneNumber = SeedIds.DemoCorporate.EmployeeAhmedPhone, FullName = "Ahmed Al-Qahtani", Role = CorporateRole.Employee,
+                EmployeeNumber = "E-1001", Department = "Finance", CostCenterId = SeedIds.DemoCorporate.CostCenterFinance, Status = CorporateUserStatus.Active, InvitedBy = admin, ActivatedAt = now,
+            },
+            new CorporateUser
+            {
+                CorporateAccountId = SeedIds.DemoCorporate.Account, UserId = khaled, PhoneNumber = SeedIds.DemoCorporate.EmployeeKhaledPhone, FullName = "Khaled Al-Otaibi", Role = CorporateRole.Employee,
+                EmployeeNumber = "E-1002", Department = "Sales", CostCenterId = SeedIds.DemoCorporate.CostCenterSales, MonthlyBudget = 400m, Status = CorporateUserStatus.Active, InvitedBy = admin, ActivatedAt = now,
+            });
+        var invited = new CorporateUser
+        {
+            CorporateAccountId = SeedIds.DemoCorporate.Account, PhoneNumber = SeedIds.DemoCorporate.InvitedPhone, FullName = "Noura Al-Dosari", Role = CorporateRole.Employee, EmployeeNumber = "E-1003",
+            Department = "IT", CostCenterId = SeedIds.DemoCorporate.CostCenterIt, Status = CorporateUserStatus.Invited, InvitedBy = admin,
+        };
+        db.CorporateUsers.Add(invited);
+        db.CorporateInvitations.Add(new CorporateInvitation
+        {
+            CorporateAccountId = SeedIds.DemoCorporate.Account, CorporateUserId = invited.Id, PhoneNumber = invited.PhoneNumber,
+            TokenHash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Guid.NewGuid().ToByteArray())), ExpiresAt = now.AddDays(7), SentAt = now,
+        });
+        logger.LogInformation("Seeded demo corporate account CA-00001 (admin {Phone}, employees {Ahmed} / {Khaled}, invited {Invited})", SeedIds.DemoCorporate.AdminPhone,
+            SeedIds.DemoCorporate.EmployeeAhmedPhone, SeedIds.DemoCorporate.EmployeeKhaledPhone, SeedIds.DemoCorporate.InvitedPhone);
     }
 
     /// <summary>F18 SLA policies (doc 11 seed data), added per priority when missing: urgent 15/240, high 60/1440, normal 240/2880, low 1440/4320 (first response / resolution minutes).</summary>
@@ -506,6 +610,25 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
                     BodyEn = text.BodyEn,
                     IsActive = true,
                 });
+            }
+        }
+    }
+
+    /// <summary>F19 added <c>{joinUrl}</c> to <c>corporate.invitation</c>: rows still carrying the F13 default text are upgraded once (edited templates are never touched).</summary>
+    private async Task UpgradeCorporateInvitationTemplatesAsync(CancellationToken ct)
+    {
+        var definition = NotificationEvents.Find("corporate.invitation");
+        if (definition is null)
+        {
+            return;
+        }
+
+        foreach (var row in await db.NotificationTemplates.Where(t => t.Code == "corporate.invitation").ToListAsync(ct))
+        {
+            if (row.BodyAr == "دعتك {companyName} للانضمام إلى حساب الشركة." && row.BodyEn == "{companyName} invited you to its corporate account.")
+            {
+                row.BodyAr = definition.Text.BodyAr;
+                row.BodyEn = definition.Text.BodyEn;
             }
         }
     }

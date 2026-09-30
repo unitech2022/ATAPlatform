@@ -3,6 +3,7 @@ using ATA.Domain.Airports;
 using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
+using ATA.Domain.Corporate;
 using ATA.Domain.Drivers;
 using ATA.Domain.Favorites;
 using ATA.Domain.Files;
@@ -133,6 +134,16 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<SupportMessageAttachment> SupportMessageAttachments => Set<SupportMessageAttachment>();
     public DbSet<CannedResponse> CannedResponses => Set<CannedResponse>();
     public DbSet<FareDispute> FareDisputes => Set<FareDispute>();
+
+    public DbSet<CorporateAccount> CorporateAccounts => Set<CorporateAccount>();
+    public DbSet<CorporateUser> CorporateUsers => Set<CorporateUser>();
+    public DbSet<CorporateInvitation> CorporateInvitations => Set<CorporateInvitation>();
+    public DbSet<CorporateCostCenter> CorporateCostCenters => Set<CorporateCostCenter>();
+    public DbSet<CorporatePolicy> CorporatePolicies => Set<CorporatePolicy>();
+    public DbSet<CorporateAdjustment> CorporateAdjustments => Set<CorporateAdjustment>();
+    public DbSet<CorporateInvoice> CorporateInvoices => Set<CorporateInvoice>();
+    public DbSet<CorporateInvoiceLine> CorporateInvoiceLines => Set<CorporateInvoiceLine>();
+    public DbSet<CorporateApiKey> CorporateApiKeys => Set<CorporateApiKey>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

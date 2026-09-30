@@ -9,6 +9,8 @@ public interface ICurrentUser
     Guid UserId { get; }
     IReadOnlyCollection<string> Roles { get; }
     bool IsAdmin { get; }
+    /// <summary>F19: the <c>corp</c> claim of a corporate portal token.</summary>
+    Guid? CorporateAccountId { get; }
     string? IpAddress { get; }
     string? DeviceId { get; }
 
@@ -37,6 +39,8 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public IReadOnlyCollection<string> Roles => accessor.HttpContext?.User.FindAll(AtaClaims.Roles).Select(c => c.Value).ToArray() ?? [];
 
     public bool IsAdmin => HasRole(RoleNames.Admin) || HasRole(RoleNames.Operations);
+
+    public Guid? CorporateAccountId => Guid.TryParse(accessor.HttpContext?.User.FindFirst(AtaClaims.Corporate)?.Value, out var id) ? id : null;
 
     public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 

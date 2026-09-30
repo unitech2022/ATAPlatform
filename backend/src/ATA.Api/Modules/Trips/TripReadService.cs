@@ -23,6 +23,8 @@ public static class TripDtoRatings
     public static TripDto WithFavorite(this TripDto dto, Favorites.TripFavoriteDto? favorite) => dto with { Favorite = favorite };
 
     public static TripDto WithScheduling(this TripDto dto, Scheduling.TripSchedulingDto? scheduling, Airports.TripAirportDto? airport) => dto with { Scheduling = scheduling, Airport = airport };
+
+    public static TripDto WithCorporate(this TripDto dto, Corporate.TripCorporateDto? corporate) => dto with { Corporate = corporate };
 }
 
 /// <summary>Participants of a trip resolved to user ids (for notifications and real-time fan-out).</summary>
@@ -31,7 +33,7 @@ public sealed record TripParticipants(Guid PassengerUserId, Guid? DriverUserId);
 /// <summary>Builds the <see cref="TripDto"/>/<see cref="OfferDto"/> read models and publishes <c>TripUpdated</c> to both parties.</summary>
 public sealed class TripReadService(
     AtaDbContext db, TripPinService pins, ITripNotifier notifier, IClock clock, Microsoft.Extensions.Options.IOptions<Ratings.RatingsOptions> ratingOptions,
-    Scheduling.SchedulingViewBuilder schedulingViews, Airports.AirportViewBuilder airportViews)
+    Scheduling.SchedulingViewBuilder schedulingViews, Airports.AirportViewBuilder airportViews, Corporate.CorporateTripViews corporateViews)
 {
     public async Task<Trip?> FindAsync(Guid tripId, CancellationToken ct) =>
         await db.Trips.Include(t => t.Stops).FirstOrDefaultAsync(t => t.Id == tripId, ct);
@@ -69,7 +71,7 @@ public sealed class TripReadService(
                                      where doc.DriverId == driverId && type.Code == "profile_photo" && doc.Status != Domain.Drivers.DocumentStatus.Rejected
                                      select (Guid?)doc.FileId).FirstOrDefaultAsync(ct);
             // F16: `isFavorite` is the passenger's knowledge (never in the driver's copy).
-            var isFavorite = viewer != TripViewer.Driver && await db.FavoriteDrivers.AsNoTracking().AnyAsync(f => f.PassengerId == trip.PassengerId && f.DriverId == driverId, ct);
+            var isFavorite = (viewer is TripViewer.Passenger or TripViewer.Admin) && await db.FavoriteDrivers.AsNoTracking().AnyAsync(f => f.PassengerId == trip.PassengerId && f.DriverId == driverId, ct);
             driver = new TripDriverDto(row.Id, row.FullName, row.RatingAvg, photoFileId, PhoneMasking.Mask(row.PhoneNumber), row.Gender, isFavorite);
 
             if (trip.VehicleId is { } vehicleId)
@@ -112,7 +114,8 @@ public sealed class TripReadService(
             await PromotionForAsync(trip.Id, ct))
             .WithRating(await RatingForAsync(trip, viewer, ct))
             .WithFavorite(await FavoriteForAsync(trip, viewer, ct))
-            .WithScheduling(await schedulingViews.BuildAsync(trip, ct), await airportViews.BuildAsync(trip, lang, includeFlightNumber: true, ct));
+            .WithScheduling(await schedulingViews.BuildAsync(trip, ct), await airportViews.BuildAsync(trip, lang, includeFlightNumber: true, ct))
+            .WithCorporate(await corporateViews.BuildAsync(trip, viewer, ct));
     }
 
     /// <summary>
@@ -121,7 +124,7 @@ public sealed class TripReadService(
     /// </summary>
     public async Task<Favorites.TripFavoriteDto?> FavoriteForAsync(Trip trip, TripViewer viewer, CancellationToken ct)
     {
-        if (trip.FavoriteDriverId is not { } driverId || trip.FavoriteStatus is not { } status)
+        if (trip.FavoriteDriverId is not { } driverId || trip.FavoriteStatus is not { } status || viewer == TripViewer.Corporate)
         {
             return null;
         }
@@ -165,7 +168,7 @@ public sealed class TripReadService(
         var now = clock.UtcNow;
         return trips.ToDictionary(t => t.Id, t =>
         {
-            if (viewer == TripViewer.Admin || t.Status != TripStatus.Completed || t.CompletedAt is not { } completedAt)
+            if (viewer is TripViewer.Admin or TripViewer.Corporate || t.Status != TripStatus.Completed || t.CompletedAt is not { } completedAt)
             {
                 return TripRatingState.None;
             }
@@ -180,7 +183,7 @@ public sealed class TripReadService(
     /// <summary><c>Trip.myRating</c>, <c>canRate</c>, <c>rateUntil</c> for the passenger / driver viewer (F15).</summary>
     public async Task<TripRatingState> RatingForAsync(Trip trip, TripViewer viewer, CancellationToken ct)
     {
-        if (viewer == TripViewer.Admin || trip.Status != TripStatus.Completed || trip.CompletedAt is not { } completedAt)
+        if (viewer is TripViewer.Admin or TripViewer.Corporate || trip.Status != TripStatus.Completed || trip.CompletedAt is not { } completedAt)
         {
             return TripRatingState.None;
         }
@@ -217,7 +220,7 @@ public sealed class TripReadService(
 
         var e = row.e;
         var admin = viewer == TripViewer.Admin;
-        var passenger = viewer == TripViewer.Passenger || admin;
+        var passenger = viewer is TripViewer.Passenger or TripViewer.Corporate || admin;
         var driver = viewer == TripViewer.Driver || admin;
         return new ATA.Api.Modules.Cancellation.TripCancellationDto(
             admin ? e.Id : null, admin ? e.Actor : null, e.Stage, e.ReasonCode, lang.PickOptional(row.NameAr, row.NameEn), admin ? e.Note : null, e.AtFault,
@@ -250,7 +253,7 @@ public sealed class TripReadService(
         var isFavoriteDriver = dto.Driver is { } assigned && await db.FavoriteDrivers.AsNoTracking().AnyAsync(f => f.PassengerId == trip.PassengerId && f.DriverId == assigned.Id, ct);
         var passengerDto = (dto with
         {
-            Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null,
+            Pin = PinFor(trip, TripViewer.Passenger), CollectCashAmount = null, Corporate = await corporateViews.BuildAsync(trip, TripViewer.Passenger, ct),
             Driver = dto.Driver is null ? null : dto.Driver with { IsFavorite = isFavoriteDriver },
             Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Passenger, lang, ct),
         }).WithRating(await RatingForAsync(trip, TripViewer.Passenger, ct));
@@ -260,13 +263,19 @@ public sealed class TripReadService(
             await notifier.TripUpdatedAsync(driverUserId, dto, ct);
         }
 
-        var adminDto = (passengerDto with { Pin = null, Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Admin, lang, ct) })
+        var adminDto = (passengerDto with
+            {
+                Pin = null, Cancellation = dto.Cancellation is null ? null : await CancellationForAsync(trip, TripViewer.Admin, lang, ct),
+                Corporate = await corporateViews.BuildAsync(trip, TripViewer.Admin, ct),
+            })
             .WithRating(TripRatingState.None);
         await notifier.TripUpdatedForAdminsAsync(adminDto, ct);
         return responder switch
         {
             TripViewer.Passenger => passengerDto,
             TripViewer.Admin => adminDto,
+            // F19: the company portal's copy: the rider's view without the PIN and with the company-side corporate block.
+            TripViewer.Corporate => (passengerDto with { Pin = null, Corporate = await corporateViews.BuildAsync(trip, TripViewer.Corporate, ct) }).WithRating(TripRatingState.None),
             _ => dto,
         };
     }
@@ -278,7 +287,8 @@ public sealed class TripReadService(
                                where p.Id == trip.PassengerId
                                select new { u.FullName, p.RatingAvg }).FirstAsync(ct);
         var stops = trip.Stops.Count > 0 ? trip.Stops.ToList() : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct);
-        var firstName = passenger.FullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        // F19: the driver of a guest trip sees the guest's first name, not the booking admin's.
+        var firstName = (trip.IsGuest ? trip.GuestName : passenger.FullName)?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
         var latest = await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id).OrderByDescending(a => a.Round).Select(a => new { a.Round, a.Mode }).FirstOrDefaultAsync(ct);
         // F16: an offer to the requested favourite driver; `exclusive` while it belongs to the favourite round (round 0, only that driver is asked).
         var isFavorite = trip.FavoriteDriverId == offer.DriverId;

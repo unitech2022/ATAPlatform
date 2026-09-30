@@ -44,6 +44,7 @@ public sealed class DriverTripService(
     Favorites.FavoriteDiscountService favoriteDiscounts,
     Airports.AirportQueueService airportQueue,
     Scheduling.ScheduledRideEngine scheduledEngine,
+    Corporate.CorporateTripPolicyService corporatePolicies,
     ILogger<DriverTripService> logger)
 {
     private readonly TripOptions _options = options.Value;
@@ -330,6 +331,8 @@ public sealed class DriverTripService(
 
         var discountTotal = discount?.Discount ?? 0m;
         var participants = await reads.ParticipantsAsync(trip, ct);
+        // F19: a corporate trip may finish above the policy (max fare, monthly budget): allowed, recorded as a trip event.
+        var corporateOverage = trip.IsCorporate ? await corporatePolicies.OverageAsync(trip, fare, ct) : [];
         var breakdown = await ReceiptService.StoredBreakdownAsync(db, calculation, category, discountTotal, ct,
             discount is null ? null : Promotions.DiscountEngine.Lines(discount, Language.Ar));
 
@@ -355,6 +358,11 @@ public sealed class DriverTripService(
                 var account = applied.Source == Promotions.DiscountSources.FavoriteDriver ? LedgerAccounts.DiscountFavoriteDriver : LedgerAccounts.DiscountPromotion;
                 await ledger.JournalAsync(JournalType.TripDiscount, account, trip.PaymentMethod == PaymentMethodKind.Cash ? LedgerAccounts.CashCollected : LedgerAccounts.TripRevenue,
                     applied.Amount, TripPaymentService.ReferenceType, trip.Id, $"trip:{trip.Id}:discount:{applied.Source}", $"Trip {trip.TripNumber} {applied.Source} discount {applied.Reference}".TrimEnd(), ct);
+            }
+
+            if (corporateOverage.Count > 0)
+            {
+                events.Add(trip.Id, TripEventTypes.CorporatePolicyExceeded, TripActor.System, data: new { finalFare = fare, violations = corporateOverage });
             }
 
             driver.CurrentTripId = null;

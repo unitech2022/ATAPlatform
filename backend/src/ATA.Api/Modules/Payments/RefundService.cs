@@ -64,8 +64,18 @@ public sealed class RefundService(
             : await CreateForCompletedTripAsync(trip, request, disputeId, ct);
     }
 
+    /// <summary>F19: a company pays corporate trips and their cancellation fees on its invoice, so nothing is paid out to the rider's wallet: ops post a negative corporate adjustment instead.</summary>
+    private static void EnsureNotCorporate(Trip trip)
+    {
+        if (trip.PaymentMethod == PaymentMethodKind.Corporate)
+        {
+            throw new DomainException(ErrorCodes.Conflict, new { reason = "corporate_trip", hint = "credit the company with a corporate adjustment" });
+        }
+    }
+
     private async Task<RefundDto> CreateForCancellationFeeAsync(Trip trip, CreateRefundRequest request, Guid disputeId, CancellationToken ct)
     {
+        EnsureNotCorporate(trip);
         var cancellation = await db.CancellationEvents.AsNoTracking().Where(e => e.TripId == trip.Id && e.FeeCharged > 0).OrderByDescending(e => e.CreatedAt).FirstOrDefaultAsync(ct)
             ?? throw new DomainException(ErrorCodes.Conflict, new { status = trip.Status });
         var cardPayment = cancellation.FeeMethod == CancellationFeeMethod.Card
@@ -84,6 +94,7 @@ public sealed class RefundService(
 
     private async Task<RefundDto> CreateForCompletedTripAsync(Trip trip, CreateRefundRequest request, Guid? disputeId, CancellationToken ct)
     {
+        EnsureNotCorporate(trip);
         var tripId = trip.Id;
         if (trip.Status != TripStatus.Completed || trip.FinalFare is not { } fare)
         {

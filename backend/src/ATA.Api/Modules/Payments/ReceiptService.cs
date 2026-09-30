@@ -15,7 +15,7 @@ namespace ATA.Api.Modules.Payments;
 /// Trip receipts (doc 08 §F11.6). Prices include 15 % VAT (<c>vatIncluded = round(total × 15/115, 2)</c>); zero lines are dropped except
 /// <c>base_fare</c>; the <c>rounding</c> line makes the lines add up to <c>total</c>.
 /// </summary>
-public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IClock clock)
+public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IClock clock, Corporate.CorporateTripViews corporateViews)
 {
     public const decimal VatRate = 15m;
 
@@ -58,6 +58,9 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
         return await BuildAsync(trip, lang, ct);
     }
 
+    /// <summary>F19: the receipt of one of the company's trips (the caller has checked that the trip belongs to the company).</summary>
+    public Task<ReceiptDto> ForCorporateTripAsync(Trip trip, Language lang, CancellationToken ct) => BuildAsync(trip, lang, ct);
+
     private async Task<ReceiptDto> BuildAsync(Trip trip, Language lang, CancellationToken ct)
     {
         if (trip.Status != TripStatus.Completed || trip.FinalFare is not { } total)
@@ -67,7 +70,9 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
         }
 
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
-        var passengerName = await (from p in db.Passengers.AsNoTracking() join u in db.Users.AsNoTracking() on p.UserId equals u.Id where p.Id == trip.PassengerId select u.FullName).FirstOrDefaultAsync(ct);
+        var passengerName = trip.IsGuest
+            ? trip.GuestName
+            : await (from p in db.Passengers.AsNoTracking() join u in db.Users.AsNoTracking() on p.UserId equals u.Id where p.Id == trip.PassengerId select u.FullName).FirstOrDefaultAsync(ct);
         var driverName = trip.DriverId is { } driverId
             ? await (from d in db.Drivers.AsNoTracking() join u in db.Users.AsNoTracking() on d.UserId equals u.Id where d.Id == driverId select u.FullName).FirstOrDefaultAsync(ct)
             : null;
@@ -144,6 +149,6 @@ public sealed class ReceiptService(AtaDbContext db, ICurrentUser currentUser, IC
             trip.Stops.OrderBy(s => s.Sequence).Select(s => new ReceiptPlaceDto(s.Name, s.Address, s.Lat, s.Lng)).ToList(),
             trip.StartedAt, trip.CompletedAt, distanceMeters, durationSeconds, trip.WaitingSeconds,
             lines, discounts, subtotal, trip.DiscountTotal, total, VatRate, PricingMath.Round2(total * VatRate / (100m + VatRate)),
-            paymentDto, refunds, total - refunded);
+            paymentDto, refunds, total - refunded, await corporateViews.BuildAsync(trip, Trips.TripViewer.Passenger, ct));
     }
 }

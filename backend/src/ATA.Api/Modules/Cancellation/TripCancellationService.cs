@@ -33,9 +33,12 @@ public sealed class TripCancellationService(
             .ToList();
     }
 
-    public async Task<CancelPreviewDto> PreviewForPassengerAsync(Guid tripId, CancelPreviewRequest? request, Language lang, CancellationToken ct)
+    public async Task<CancelPreviewDto> PreviewForPassengerAsync(Guid tripId, CancelPreviewRequest? request, Language lang, CancellationToken ct) =>
+        await PreviewAsync(await LoadPassengerTripAsync(tripId, ct), request, lang, ct);
+
+    /// <summary>The rider-side preview of <paramref name="trip"/> (also used by the company portal, F19, for the trips of its company).</summary>
+    public async Task<CancelPreviewDto> PreviewAsync(Trip trip, CancelPreviewRequest? request, Language lang, CancellationToken ct)
     {
-        var trip = await LoadPassengerTripAsync(tripId, ct);
         var quote = await engine.QuoteAsync(trip, TripActor.Passenger, Clean(request?.ReasonCode), false, null, false, ct);
         var fee = quote.RequiresReview ? quote.Outcome.Fee : quote.FeeToCharge;
         string message;

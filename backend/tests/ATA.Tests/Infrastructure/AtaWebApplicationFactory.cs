@@ -1,4 +1,5 @@
 using ATA.Api.Modules.Airports;
+using ATA.Api.Modules.Corporate;
 using ATA.Api.Modules.Pricing;
 using ATA.Api.Modules.Scheduling;
 using ATA.Api.Modules.Support;
@@ -63,6 +64,8 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Scheduling:JobsEnabled", "false");
         builder.UseSetting("Airport:JobsEnabled", "false");
         builder.UseSetting("Support:JobsEnabled", "false");
+        builder.UseSetting("Corporate:JobsEnabled", "false");
+        builder.UseSetting("Corporate:PortalBaseUrl", "https://ata.test");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);
@@ -127,6 +130,27 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     public async Task<int> RunSupportSlaMonitorAsync()
     {
         var job = Services.GetServices<IHostedService>().OfType<SupportSlaMonitorJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>CorporateInvoiceJob</c> (bills the previous month once the invoice day / hour has come).</summary>
+    public async Task<int> RunCorporateInvoiceJobAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<CorporateInvoiceJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>CorporateInvoiceOverdueJob</c>.</summary>
+    public async Task<int> RunCorporateOverdueJobAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<CorporateInvoiceOverdueJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>CorporateInvitationExpiryJob</c>.</summary>
+    public async Task<int> RunCorporateInvitationExpiryAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<CorporateInvitationExpiryJob>().Single();
         return await job.RunOnceAsync(CancellationToken.None);
     }
 
