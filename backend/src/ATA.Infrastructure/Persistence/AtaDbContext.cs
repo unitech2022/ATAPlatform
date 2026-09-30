@@ -15,7 +15,9 @@ using ATA.Domain.Passengers;
 using ATA.Domain.Payments;
 using ATA.Domain.Pricing;
 using ATA.Domain.Promotions;
+using ATA.Domain.Rbac;
 using ATA.Domain.Ratings;
+using ATA.Domain.Reporting;
 using ATA.Domain.Safety;
 using ATA.Domain.Scheduling;
 using ATA.Domain.Support;
@@ -145,6 +147,13 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<CorporateInvoiceLine> CorporateInvoiceLines => Set<CorporateInvoiceLine>();
     public DbSet<CorporateApiKey> CorporateApiKeys => Set<CorporateApiKey>();
 
+    public DbSet<AdminRole> Roles => Set<AdminRole>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<AdminAccountRole> AdminAccountRoles => Set<AdminAccountRole>();
+    public DbSet<AdminRecoveryCode> AdminRecoveryCodes => Set<AdminRecoveryCode>();
+    public DbSet<ReportSnapshot> ReportSnapshots => Set<ReportSnapshot>();
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -216,6 +225,9 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
                     break;
                 case SupportSlaPolicy policy when entry.State is EntityState.Added or EntityState.Modified:
                     policy.UpdatedAt = now;
+                    break;
+                case ReportSnapshot snapshot when entry.State is EntityState.Added or EntityState.Modified && snapshot.ComputedAt == default:
+                    snapshot.ComputedAt = now;
                     break;
                 case DocumentExpiryNotice notice when entry.State == EntityState.Added && notice.SentAt == default:
                     notice.SentAt = now;

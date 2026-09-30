@@ -257,7 +257,7 @@ public class CorporatePolicyTests(CorporateFixture fixture) : IClassFixture<Corp
         var refusedByPolicy = await second.Client.PostAsJsonAsync("/api/v1/passenger/trips", CorporateFlow.TripRequest(area));
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refusedByPolicy.StatusCode);
         Assert.Equal("corporate_budget_exceeded", await refusedByPolicy.ErrorCodeAsync());
-        Assert.NotNull(policy);
+        Assert.Equal(System.Text.Json.JsonValueKind.Object, policy.ValueKind);
     }
 
     [Fact]

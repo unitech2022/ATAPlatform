@@ -2432,6 +2432,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
 
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("int")
+                        .HasColumnName("failed_login_count");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("is_active");
@@ -2440,18 +2444,42 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("last_login_at");
 
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("locked_until");
+
                     b.Property<bool>("MfaEnabled")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("mfa_enabled");
 
+                    b.Property<DateTime?>("MfaEnrolledAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("mfa_enrolled_at");
+
+                    b.Property<int>("MfaFailedCount")
+                        .HasColumnType("int")
+                        .HasColumnName("mfa_failed_count");
+
+                    b.Property<long?>("MfaLastStep")
+                        .HasColumnType("bigint")
+                        .HasColumnName("mfa_last_step");
+
                     b.Property<string>("MfaSecret")
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)")
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)")
                         .HasColumnName("mfa_secret");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("must_change_password");
 
                     b.Property<bool>("OnDuty")
                         .HasColumnType("tinyint(1)")
                         .HasColumnName("on_duty");
+
+                    b.Property<DateTime?>("PasswordChangedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("password_changed_at");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -2556,6 +2584,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("char(36)")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("AbsoluteExpiresAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("absolute_expires_at");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
@@ -2573,6 +2605,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("expires_at");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_used_at");
 
                     b.Property<Guid?>("ReplacedById")
                         .HasColumnType("char(36)")
@@ -2596,6 +2632,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(128)")
                         .HasColumnName("token_hash");
 
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("user_agent");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)")
                         .HasColumnName("user_id");
@@ -2609,6 +2650,9 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_refresh_tokens_user_id");
+
+                    b.HasIndex("SessionKind", "RevokedAt")
+                        .HasDatabaseName("ix_refresh_tokens_session_kind_revoked_at");
 
                     b.ToTable("refresh_tokens", (string)null);
                 });
@@ -5892,6 +5936,263 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ux_rating_tags_target_role_code");
 
                     b.ToTable("rating_tags", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.AdminAccountRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AdminAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("admin_account_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_account_roles");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("ix_admin_account_roles_role_id");
+
+                    b.HasIndex("AdminAccountId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_admin_account_roles_admin_account_id_role_id");
+
+                    b.ToTable("admin_account_roles", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.AdminRecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AdminAccountId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("admin_account_id");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_recovery_codes");
+
+                    b.HasIndex("AdminAccountId")
+                        .HasDatabaseName("ix_admin_recovery_codes_admin_account_id");
+
+                    b.ToTable("admin_recovery_codes", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.AdminRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name_en");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_roles");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_roles_code");
+
+                    b.ToTable("roles", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("module");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name_en");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.HasKey("Id")
+                        .HasName("pk_permissions");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_permissions_code");
+
+                    b.ToTable("permissions", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("permission_id");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_role_permissions");
+
+                    b.HasIndex("PermissionId")
+                        .HasDatabaseName("ix_role_permissions_permission_id");
+
+                    b.HasIndex("RoleId", "PermissionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_role_permissions_role_id_permission_id");
+
+                    b.ToTable("role_permissions", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Reporting.ReportSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<DateTime>("ComputedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("computed_at");
+
+                    b.Property<decimal?>("Denominator")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("denominator");
+
+                    b.Property<string>("MetricCode")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("metric_code");
+
+                    b.Property<decimal?>("Numerator")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("numerator");
+
+                    b.Property<Guid?>("RideCategoryId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("ride_category_id");
+
+                    b.Property<string>("ScopeKey")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("varchar(160)")
+                        .HasColumnName("scope_key");
+
+                    b.Property<DateOnly>("SnapshotDate")
+                        .HasColumnType("date")
+                        .HasColumnName("snapshot_date");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("value");
+
+                    b.Property<Guid?>("ZoneId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("zone_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_snapshots");
+
+                    b.HasIndex("MetricCode", "SnapshotDate")
+                        .HasDatabaseName("ix_report_snapshots_metric_code_snapshot_date");
+
+                    b.HasIndex("SnapshotDate", "ScopeKey", "MetricCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_report_snapshots_snapshot_date_scope_key_metric_code");
+
+                    b.ToTable("report_snapshots", (string)null);
                 });
 
             modelBuilder.Entity("ATA.Domain.Safety.LostItemReport", b =>
@@ -9250,6 +9551,50 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_rating_flags_user_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.AdminAccountRole", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.AdminAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AdminAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_account_roles_admin_account_id");
+
+                    b.HasOne("ATA.Domain.Rbac.AdminRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_account_roles_role_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.AdminRecoveryCode", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.AdminAccount", null)
+                        .WithMany()
+                        .HasForeignKey("AdminAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_recovery_codes_admin_account_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Rbac.RolePermission", b =>
+                {
+                    b.HasOne("ATA.Domain.Rbac.Permission", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_permissions_permission_id");
+
+                    b.HasOne("ATA.Domain.Rbac.AdminRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_permissions_role_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Safety.LostItemReport", b =>

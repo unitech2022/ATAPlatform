@@ -15,6 +15,12 @@ public class RefreshToken : Entity
     public DateTime? RevokedAt { get; set; }
     public Guid? ReplacedById { get; set; }
     public string? CreatedByIp { get; set; }
+    /// <summary>F20: shown in the admin session list.</summary>
+    public string? UserAgent { get; set; }
+    /// <summary>F20: last login / refresh of the session (admin idle limit).</summary>
+    public DateTime? LastUsedAt { get; set; }
+    /// <summary>F20: hard end of an admin session (<c>Admin:SessionAbsoluteHours</c> after the login), carried over by every rotation.</summary>
+    public DateTime? AbsoluteExpiresAt { get; set; }
 
     public bool IsActive(DateTime now) => RevokedAt is null && now < ExpiresAt;
 }

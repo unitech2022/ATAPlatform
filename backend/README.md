@@ -33,6 +33,9 @@ cases to tickets — see "Support (F18)".
 F19 adds `Modules/Corporate` (corporate accounts: company admins signing in to the business portal by OTP, employee invitations / CSV import, travel policies and cost centres,
 policy-checked corporate trips and guest bookings made from the portal, monthly VAT invoices with a ZATCA-style QR PDF, receivables through the F11 ledger, reports / CSV exports, API keys
 and the platform-admin console) — see "Corporate accounts (F19)".
+F20 adds `Modules/Rbac` (roles with a permission matrix synced from the code catalogue, admin users with temporary passwords, per-endpoint `RequirePermission` on every
+`/admin/*` route, `/admin/me` with sessions and recovery codes), TOTP MFA and admin session limits in `Modules/Identity`, and `Modules/Reporting` (the unified KPI definitions,
+daily `report_snapshots`, KPI / series / breakdown APIs and CSV exports) — see "Roles, permissions, MFA and reports (F20)".
 
 ## Layout
 
@@ -97,7 +100,13 @@ dotnet test
 | `Notifications:CampaignPushPerMinute`, `Notifications:CampaignPollSeconds` | 60 campaign pages per pass; campaign sender every 30 s |
 | `Notifications:DocumentExpiryOffsetsDays`, `Notifications:DocumentScanHourLocal` | `[30, 7, 1]` (SMS on the last one); daily scan at 06:00 Riyadh |
 | `RateLimiting:OtpPerIpPerHour` | IP-level limit on the OTP endpoints (default 10) |
-| `Admin:Username`, `Admin:Password` | Seeded development admin (override in production) |
+| `Admin:Username`, `Admin:Password` | Seeded development admin (override in production); it receives the `super_admin` role |
+| `Admin:MfaRequired`, `Admin:MfaTokenMinutes` | F20: every admin must enrol TOTP (`true`; `false` in `appsettings.Development.json` so the seed admin signs in with the password only) / lifetime of the `mfaToken` between the login steps (5) |
+| `Admin:MaxFailedLogins`, `Admin:LockoutMinutes`, `Admin:MaxMfaAttempts` | 5 wrong passwords → `429 account_locked { retryAfterSeconds }` for 15 min; 5 wrong MFA codes → `429 mfa_locked` (a new password login starts over) |
+| `Admin:AccessTokenMinutes`, `Admin:SessionAbsoluteHours`, `Admin:SessionIdleMinutes`, `Admin:JobsEnabled` | Admin access tokens 15 min; a session ends 12 h after the login or after 30 min without a refresh; `AdminSessionCleanupJob` (hourly) |
+| `Reports:MaxRangeDays`, `Reports:MaxExportRows`, `Reports:RecomputeTrailingDays` | 366 days per report (`422 report_range_too_large { maxDays }`), 100 000 CSV rows (`{ maxRows }`), `ReportSnapshotJob` recomputes the 3 days before yesterday |
+| `Reports:SnapshotHourLocal`, `Reports:SnapshotMinuteLocal`, `Reports:JobsEnabled` | `ReportSnapshotJob` runs daily at 01:30 Riyadh |
+| `Rbac:SyncOnStartup` | Outside Development the API syncs the permission catalogue and the system roles at start (`true`; Development does it in `DataSeeder`) |
 | `Trips:FreeWaitingMinutes` | Free waiting at the pickup before waiting time is billed (default 3) |
 | `Trips:ArrivalRadiusMeters` | "Arrived" reported farther than this from the pickup adds an `arrival_distance_warning` event (default 300) |
 | `Trips:PinMaxAttempts` | Wrong-PIN attempts before `pin_locked` (default 5) |
@@ -177,7 +186,10 @@ dotnet test
   `{distance:0.35, eta:0.20, rating:0.15, acceptance:0.10, cancellation:0.10, tier:0.05, favorite:0.05}`).
 - Document types: `national_id`, `driving_license`, `vehicle_registration`, `insurance`, `profile_photo` (all required).
 - City: `riyadh`.
-- Admin account: username `admin`, password `Admin@12345` (`POST /api/v1/auth/admin/login`).
+- Admin account: username `admin`, password `Admin@12345` (`POST /api/v1/auth/admin/login`), role `super_admin` (`*`). With `Admin:MfaRequired=false` (Development) it signs in
+  with the password only; with `true` the first login asks for the TOTP enrolment.
+- F20 permissions (synced from `PermissionCatalog` at every start: added / renamed / removed) and the system roles `super_admin`, `operations_manager`, `finance`, `support_agent`,
+  `analyst` (created once when missing; their permissions stay editable, their code and existence do not).
 - Notification templates: one row per catalogue event and default channel (ar/en), never overwritten once present.
 - Cancellation reasons (doc 09 §F14.6, unique per `(actor, code)`): passenger `changed_mind`, `driver_late`, `driver_too_far`, `wrong_pickup`, `found_other_ride`,
   `driver_asked_to_cancel` (excusable), `driver_not_moving` (excusable), `safety_concern` (emergency), `other` (note required); driver `passenger_not_responding`,
@@ -216,7 +228,7 @@ dotnet test
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/admin/login` |
+| Auth | `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/admin/login` (F20: `AuthResponse` + `mustChangePassword` \| `{ mfaRequired, mfaToken, methods }` \| `{ mfaEnrollmentRequired, mfaToken }`), `POST /auth/admin/mfa/verify`, `POST /auth/admin/mfa/enroll`, `POST /auth/admin/mfa/enroll/confirm` |
 | Me | `GET/PATCH/DELETE /me`, `GET/PUT /me/notification-preferences`, `PUT /me/devices` |
 | Catalog | `GET /catalog/ride-categories`, `GET /catalog/document-types`, `GET /catalog/cities` |
 | Passenger | `GET /passenger/saved-places`, `PUT/DELETE /passenger/saved-places/{label}`, `PATCH /passenger/preferences` |
@@ -230,7 +242,10 @@ dotnet test
 | Driver trips | `PUT /driver/location` (204; broadcasts `DriverLocation` to the passenger during a trip), `GET /driver/offers/active` (`Offer` or `null`; includes `round`, `passengerOffered`, and since F16 `isFavoriteRequest` / `exclusive`), `POST /driver/offers/{id}/accept` (409 `offer_expired`), `POST /driver/offers/{id}/reject`, `GET /driver/trips/active`, `POST /driver/trips/{id}/en-route`, `/arrived`, `/verify-pin` (400 `pin_invalid` with `attemptsLeft`, 429 `pin_locked`), `/start`, `/complete`, `/cancel`, `GET /driver/trips?status=` |
 | Notifications | `GET /notifications?category=` (`type` = event code, legacy types normalised; `category`; `data.deepLink`), `GET /notifications/unread-count`, `POST /notifications/read`, `POST /notifications/{id}/opened` (204) |
 | Files | `GET /files/{id}` (owner or admin, inline) |
-| Admin | `GET /admin/dashboard/summary`, `GET /admin/drivers`, `GET /admin/drivers/{id}`, `POST /admin/drivers/{id}/{review,approve,reject,suspend,reinstate}`, `POST /admin/documents/{id}/verify`, `GET /admin/passengers`, `POST /admin/users/{userId}/{suspend,reinstate}`, `GET/POST /admin/ride-categories`, `PUT/DELETE /admin/ride-categories/{id}` (`fallbackPricing` = flat-pricing columns, `pricingSource`), `GET /admin/audit-logs` |
+| Admin self (any admin) | `GET /admin/me`, `POST /admin/me/password`, `POST /admin/me/mfa/recovery-codes`, `POST /admin/me/mfa/enroll`, `POST /admin/me/mfa/enroll/confirm`, `GET /admin/me/sessions`, `DELETE /admin/me/sessions/{id}`, `POST /admin/me/sessions/revoke-others`, `GET/PUT /admin/me/duty` (`safety.manage`) |
+| Admin users & roles | `GET/POST /admin/admin-users`, `GET/PUT /admin/admin-users/{id}`, `POST /admin/admin-users/{id}/disable\|enable\|reset-password\|reset-mfa\|unlock\|revoke-sessions`, `GET /admin/admin-users/{id}/sessions`, `DELETE /admin/admin-users/{id}/sessions/{sessionId}` (`admin.users.manage`); `GET /admin/permissions`, `GET/POST /admin/roles`, `GET/PUT/DELETE /admin/roles/{id}` (`admin.roles.manage`) |
+| Admin reports | `GET /admin/reports/definitions`, `GET /admin/reports/kpis`, `GET /admin/reports/kpis/{code}/series`, `GET /admin/reports/breakdown` (`reports.view`); `GET /admin/reports/export`, `POST /admin/reports/snapshots/rebuild` (`reports.export`) |
+| Admin | `GET /admin/dashboard/summary` (+ F20 `today`), `GET /admin/drivers`, `GET /admin/drivers/{id}`, `POST /admin/drivers/{id}/{review,approve,reject,suspend,reinstate}`, `POST /admin/documents/{id}/verify`, `GET /admin/passengers`, `POST /admin/users/{userId}/{suspend,reinstate}`, `GET/POST /admin/ride-categories`, `PUT/DELETE /admin/ride-categories/{id}` (`fallbackPricing` = flat-pricing columns, `pricingSource`), `GET /admin/audit-logs` |
 | Admin pricing | `GET/POST /admin/zones`, `GET/PUT/DELETE /admin/zones/{id}` (nested `zoneCategorySettings`; the city default cannot be deleted), `GET/POST /admin/pricing-rules?rideCategoryId=&zoneId=`, `GET/PUT/DELETE /admin/pricing-rules/{id}` (nested `timeMultipliers`, replaced as a whole on PUT), `POST /admin/pricing/simulate` (quote inputs + `at`, nothing stored), `GET /admin/demand-levels`, `PUT /admin/demand-levels/{id}` (multiplier only), `GET/POST /admin/demand-rules`, `PUT/DELETE /admin/demand-rules/{id}`, `GET /admin/demand-overrides?active=`, `POST /admin/demand-overrides`, `PUT/DELETE /admin/demand-overrides/{id}` (DELETE ends a running override), `GET /admin/demand/current` (level per zone and category with the reading behind it). Every write is audited (`zone.*`, `pricing_rule.*`, `demand_level.update`, `demand_rule.*`, `demand_override.*`) |
 | Admin matching | `GET/POST /admin/matching-settings`, `GET/PUT/DELETE /admin/matching-settings/{id}` (audited `matching_settings.*`), `GET /admin/trips/{id}/matching` (rounds with scored candidates and their answers), `GET /admin/matching/stats?from=&to=` (assignment rate and times, `no_drivers` rate, offer acceptance, rounds per trip) |
 | Admin trips | `GET /admin/trips?status=&from=&to=&search=&page=`, `GET /admin/trips/{id}` (full events with actor names, offers, route), `POST /admin/trips/{id}/cancel` (audited as `trip.cancel`), `GET /admin/live` (drivers incl. recently-offline, active and searching trips) |
@@ -618,6 +633,72 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
 - **Tests**: `CorporateAccountTests`, `CorporateApiKeyTests`, `CorporateMembershipTests`, `CorporatePolicyTests`, `CorporateTripTests`, `CorporateInvoiceTests`, `CorporateInvoiceJobTests`, `CorporateAutoIssueTests`,
   `CorporateReportTests`, `CorporateUnitTests` (helpers in `Infrastructure/CorporateFlow.cs`: `CorporateFixture`, `RecordingEmailSender`; the jobs are driven with `RunCorporateInvoiceJobAsync`,
   `RunCorporateOverdueJobAsync`, `RunCorporateInvitationExpiryAsync` and the `FakeClock`).
+
+## Roles, permissions, MFA and reports (F20)
+
+- **Model** (migration `AddRbacMfaReports`): `roles`, `permissions` (read-only copy of the code catalogue), `role_permissions`, `admin_account_roles`, `admin_recovery_codes`, `report_snapshots`
+  (UNIQUE(snapshot_date, scope_key, metric_code)); `admin_accounts` gain `failed_login_count`, `locked_until`, `must_change_password`, `password_changed_at`, `mfa_enrolled_at`, `mfa_last_step`,
+  `mfa_failed_count` (`mfa_secret` widened to 512 for the Data Protection payload; the old `permissions` JSON is kept for compatibility only and cleared once the sync grants the role);
+  `refresh_tokens` gain `user_agent`, `last_used_at`, `absolute_expires_at` (`session_kind` came with F19).
+- **Authorization** (doc 12 §F20.3): every `/admin/*` route keeps `Policies.Admin` and declares `RequirePermission("<code>")` (group or endpoint) — or `AllowAnyAdmin()` for `/admin/me*` and reading
+  ride categories. The metadata is enforced by `AdminAccessMiddleware` right after authorization, before parameter binding: `403 forbidden { permission }` (`{ permissions }` for an any-of rule).
+  The route-table test fails when a new admin route has neither. The admin JWT carries `roles` (incl. `admin`), `perm` = union of the role permissions (`["*"]` for `super_admin`), `sid` (the
+  session) and `pwdc` while a temporary password must be changed. Permissions are re-derived from the roles at every refresh (app / corporate sessions never get `perm`).
+- **Rules**: a role change, disabling, a password reset or an MFA reset revokes every refresh token of the user (access tokens end within `Admin:AccessTokenMinutes`); nobody disables themselves
+  (`409 conflict { reason: "cannot_disable_self" }`); the last active `super_admin` keeps the role and stays enabled (`409 { reason: "last_super_admin" }`); only a caller holding `*` grants or removes
+  `super_admin` (`403 { permission: "*" }`); system roles keep their code and cannot be deleted, `super_admin` always means `*` (`409 { reason: "system_role" }`); a role still assigned cannot be deleted
+  (`409 { reason: "role_in_use", userCount }`).
+- **Passwords**: ≥ 12 characters with upper, lower, digit and symbol (`422 password_policy_violation { rules: ["min_length:12", "uppercase", "lowercase", "digit", "symbol"] }`, plus
+  `different_from_current`). A created / reset admin gets a temporary password (shown once) and `must_change_password`: until `POST /admin/me/password` every other admin call answers
+  `403 password_change_required`. A wrong current password answers `400 invalid_credentials`; a successful change keeps the current session and revokes the others.
+- **MFA** (RFC 6238, SHA-1, 6 digits, 30 s, ±1 step): 20-byte Base32 secret encrypted with Data Protection; a step at or before `mfa_last_step` is refused (no replay); 10 recovery codes
+  `xxxx-xxxx` hashed with the PBKDF2 hasher, single use, replaced by `POST /admin/me/mfa/recovery-codes { code }`. The `mfaToken` (Data Protection, 5 min, stage `verify` / `enroll`) links the login steps.
+  `otpauth://totp/ATA%20Admin:{username}?secret=…&issuer=ATA%20Admin&digits=6&period=30`. Audit: `admin.login`, `admin.login_failed`, `admin.mfa_enrolled`, `admin.mfa_failed`, `admin.password_changed`.
+- **Sessions**: login creates an `admin` refresh token with `absolute_expires_at = login + 12 h`; each refresh rotates it, keeps the session start / absolute end / user agent and records `last_used_at`;
+  refreshing after 30 idle minutes or past the absolute end → `401` (the token is revoked). `AdminSessionCleanupJob` revokes such sessions hourly.
+
+| Permission | Module | Covers |
+|---|---|---|
+| `dashboard.view` | dashboard | `/admin/dashboard/summary` |
+| `drivers.view` / `drivers.review` | drivers | driver lists and details / review, approve, reject, suspend, reinstate, `/admin/documents/{id}/verify` |
+| `passengers.view` | passengers | `/admin/passengers` |
+| `users.suspend` | users | `/admin/users/{id}/suspend\|reinstate` |
+| `catalog.manage` | catalog | ride-category writes (reads open to every admin) |
+| `trips.view` / `trips.cancel` / `live.view` | trips | trips, details, matching, cancellation log / admin cancel / live map |
+| `pricing.view` / `pricing.edit` | pricing | zones, pricing rules, demand, `demand/current`, matching settings (read) / writes and `pricing/simulate` |
+| `matching.edit` | matching | matching-settings writes |
+| `payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust` | payments | payments, refunds, payouts, wallets, ledger / refunds / refund decisions / payouts & batches / settlements / adjustments & freezing |
+| `notifications.view`, `notifications.manage`, `notifications.sms_broadcast` | notifications | catalogue, templates, deliveries / template edits, campaigns, retries / SMS campaigns |
+| `safety.manage` | safety | safety cases, alerts, lost items, duty |
+| `cancellation.manage`, `cancellation.review`, `reliability.manage` | cancellation | reasons, rules, thresholds / excuse reviews / reliability profiles |
+| `ratings.manage`, `promotions.manage`, `incentives.manage`, `favorites.manage` | … | ratings & flags, promotions, incentives & tiers, favourite discount rules |
+| `scheduling.manage`, `airport.manage` | … | scheduling rules & scheduled trips, airports & queue |
+| `support.view`, `support.manage`, `support.disputes`, `help.manage` | support | tickets & disputes (read) / replies, assignment, canned responses, SLA / dispute resolution / help center |
+| `corporate.manage` | corporate | corporate accounts and invoices |
+| `reports.view` / `reports.export` | reports | KPIs, statistics (`/admin/matching/stats`, `/admin/cancellations/stats`) / CSV exports and snapshot rebuilds |
+| `admin.users.manage` / `admin.roles.manage` / `audit.view` | admin | admin users / roles & permissions / audit log |
+
+| System role | Permissions (defaults) |
+|---|---|
+| `super_admin` | `*` (immutable) |
+| `operations_manager` | dashboard, drivers view/review, passengers, users.suspend, trips view/cancel, live, pricing.view, safety, cancellation manage/review, reliability, ratings, scheduling, airport, support.view, notifications.view, reports.view |
+| `finance` | dashboard, trips.view, payments.*, payouts.approve, settlements.manage, wallets.adjust, corporate.manage, reports view/export |
+| `support_agent` | dashboard, trips.view, passengers.view, drivers.view, support view/manage/disputes, help.manage, cancellation.review, notifications.view |
+| `analyst` | dashboard, trips.view, pricing.view, reports view/export |
+
+- **KPIs** (doc 12 §F20.6, `Modules/Reporting/KpiDefinitions.cs`): 32 metrics (`completed_trips` … `scheduled_ride_cancellation_rate`, the v1.1 ones with `group = "v1.1"`), computed by `KpiCalculator` from the
+  F8–F19 tables per Riyadh day and scope (`all`, `city:{id}`, `zone:{id}`, `cat:{id}`, `city:{id}|cat:{id}`, `zone:{id}|cat:{id}`; the zone is the trip's `fare_quotes.pickup_zone_id`, else the resolved
+  pickup zone). `sum` metrics add up, `ratio` / `avg` keep numerator and denominator (Σ ÷ Σ across days), `distinct` metrics (`active_riders`, `active_drivers`, `repeat_rate`, `trips_per_active_rider`,
+  `repeat_cancellation_rate`) are recomputed for the requested range. Percent metrics are shares 0..1 (with numerator / denominator); `online_hours`, `driver_earnings_per_online_hour`,
+  `incentives_paid` and `support_resolution_time` have no place / category dimension (null under a filter).
+- **Snapshots**: `ReportSnapshotJob` (01:30 Riyadh) rewrites yesterday and the 3 days before it (rows of a day are replaced in one transaction: no duplicates); `POST /admin/reports/snapshots/rebuild { from, to }`
+  → `202 { from, to, days, rows }` does the same for any past range (audited `report_snapshots.rebuild`). Days without a snapshot (today, or not yet computed) are computed live by the report APIs.
+- **Reports API**: `kpis?from=&to=&cityId=&zoneId=&rideCategoryId=&compare=previous_period&metrics=` → `{ from, to, filters, compare, previousFrom, previousTo, metrics[{ code, name, unit, aggregation, group,
+  value, previousValue, changePercent, numerator, denominator }] }`; `kpis/{code}/series?granularity=day|week|month` (weeks start on Sunday) → `{ code, name, unit, granularity, points[{ periodStart, value,
+  numerator, denominator }] }`; `breakdown?metric=&groupBy=city|zone|category` (+ the same filters) → `{ metric, rows[{ key, label, value, numerator, denominator }] }`; `export?dataset=kpis|trips|payments|payouts|
+  cancellations|ratings|support_tickets|drivers|incentives&format=csv` streams UTF-8 CSV with BOM and the doc's columns (users as UUIDs, never names or phones).
+- **Tests**: `RbacPermissionTests` (sync, route table, 403 of every admin endpoint), `RbacAdminUserTests`, `AdminMfaTests` (RFC 6238 vectors, fake-clock TOTP), `AdminSessionTests`, `ReportKpiTests`
+  (hand-built data in `Infrastructure/ReportData.cs`), `ReportSnapshotJobTests`. Limited admins in tests are created with `TestAdmins` (a role per test user; `*` → `super_admin`).
 
 ## Migrations
 

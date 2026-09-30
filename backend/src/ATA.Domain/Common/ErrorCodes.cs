@@ -81,5 +81,11 @@ public static class ErrorCodes
     public const string CorporateBudgetExceeded = "corporate_budget_exceeded";
     public const string CorporateCreditLimitExceeded = "corporate_credit_limit_exceeded";
     public const string InvitationExpired = "invitation_expired";
+    public const string MfaInvalid = "mfa_invalid";
+    public const string MfaLocked = "mfa_locked";
+    public const string AccountLocked = "account_locked";
+    public const string PasswordPolicyViolation = "password_policy_violation";
+    public const string PasswordChangeRequired = "password_change_required";
+    public const string ReportRangeTooLarge = "report_range_too_large";
     public const string InternalError = "internal_error";
 }

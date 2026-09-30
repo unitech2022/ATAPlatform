@@ -14,7 +14,7 @@ public sealed class AdminAccountConfiguration : IEntityTypeConfiguration<AdminAc
         b.HasIndex(x => x.Username).IsUnique();
         b.HasIndex(x => x.UserId).IsUnique();
         b.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
-        b.Property(x => x.MfaSecret).HasMaxLength(128);
+        b.Property(x => x.MfaSecret).HasMaxLength(512);
         b.Property(x => x.Permissions).HasColumnType("json").IsRequired();
         b.HasOne(x => x.User).WithOne().HasForeignKey<AdminAccount>(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }

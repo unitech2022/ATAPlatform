@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Admin;
 
 /// <summary>Dashboard, passengers, user suspension, ride-category management and audit log browsing.</summary>
-public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clock)
+public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clock, ATA.Api.Modules.Reporting.ReportService reports)
 {
     public async Task<DashboardSummaryDto> GetDashboardAsync(CancellationToken ct)
     {
@@ -22,7 +22,8 @@ public sealed class AdminService(AtaDbContext db, AuditService audit, IClock clo
             await db.Drivers.CountAsync(d => d.IsOnline, ct),
             await db.Passengers.CountAsync(ct),
             await db.Trips.CountAsync(t => t.RequestedAt >= today, ct),
-            await db.Users.CountAsync(u => u.CreatedAt >= today, ct));
+            await db.Users.CountAsync(u => u.CreatedAt >= today, ct),
+            await reports.TodayAsync(ct));
     }
 
     public async Task<PagedResult<AdminPassengerListItemDto>> ListPassengersAsync(string? search, Paging paging, CancellationToken ct)

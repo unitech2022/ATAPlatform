@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ATA.Api.Common;
+using ATA.Api.Modules.Rbac;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Trips.Realtime;
 using ATA.Domain.Common;
@@ -322,10 +323,12 @@ public sealed class SafetyCaseFactory(
             .Localized("type", typeAr, typeEn).Localized("priority", priorityAr, priorityEn);
         var extra = new Dictionary<string, object?> { ["caseId"] = safetyCase.Id, ["tripId"] = safetyCase.TripId, ["priority"] = SafetyLabels.Snake(safetyCase.Priority) };
 
-        var agents = await db.AdminAccounts.AsNoTracking().Where(a => a.OnDuty && a.IsActive).Select(a => new { a.UserId, a.Permissions }).ToListAsync(ct);
-        foreach (var agent in agents.Where(a => Permissions.Grants(a.Permissions, Permissions.SafetyManage)))
+        // F20: safety.manage comes from the account's roles.
+        var granted = db.AccountsGranting(Permissions.SafetyManage);
+        var agents = await db.AdminAccounts.AsNoTracking().Where(a => a.OnDuty && a.IsActive && granted.Contains(a.Id)).Select(a => a.UserId).ToListAsync(ct);
+        foreach (var agentUserId in agents)
         {
-            await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.SafetyAlert, agent.UserId, Placeholders(), "case", safetyCase.Id, extra), ct);
+            await notifications.DispatchAsync(new NotificationRequest(NotificationTypes.SafetyAlert, agentUserId, Placeholders(), "case", safetyCase.Id, extra), ct);
         }
 
         foreach (var phone in options.Value.OpsHotlinePhones.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct())

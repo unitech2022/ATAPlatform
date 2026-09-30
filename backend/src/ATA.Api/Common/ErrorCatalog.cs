@@ -92,6 +92,12 @@ public static class ErrorCatalog
         [ErrorCodes.CorporateBudgetExceeded] = new(StatusCodes.Status422UnprocessableEntity, "تجاوزت الميزانية الشهرية المتاحة", "You have exceeded the available monthly budget"),
         [ErrorCodes.CorporateCreditLimitExceeded] = new(StatusCodes.Status422UnprocessableEntity, "تجاوز حساب الشركة الحد الائتماني", "The company account has exceeded its credit limit"),
         [ErrorCodes.InvitationExpired] = new(StatusCodes.Status410Gone, "انتهت صلاحية الدعوة", "The invitation has expired"),
+        [ErrorCodes.MfaInvalid] = new(StatusCodes.Status400BadRequest, "رمز التحقق الثنائي غير صحيح", "The two-factor code is incorrect"),
+        [ErrorCodes.MfaLocked] = new(StatusCodes.Status429TooManyRequests, "تجاوزت عدد المحاولات، سجّل الدخول مجدداً", "Too many attempts, please sign in again"),
+        [ErrorCodes.AccountLocked] = new(StatusCodes.Status429TooManyRequests, "الحساب مقفل مؤقتاً بسبب محاولات خاطئة", "The account is temporarily locked after failed attempts"),
+        [ErrorCodes.PasswordPolicyViolation] = new(StatusCodes.Status422UnprocessableEntity, "كلمة المرور لا تستوفي المتطلبات", "The password does not meet the requirements"),
+        [ErrorCodes.PasswordChangeRequired] = new(StatusCodes.Status403Forbidden, "يجب تغيير كلمة المرور أولاً", "You must change your password first"),
+        [ErrorCodes.ReportRangeTooLarge] = new(StatusCodes.Status422UnprocessableEntity, "نطاق التقرير أكبر من المسموح", "The report range is larger than allowed"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

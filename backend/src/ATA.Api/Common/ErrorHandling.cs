@@ -12,6 +12,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         var language = httpContext.GetLanguage();
+        var status = (exception as DomainException)?.Status;
         var (code, details) = exception switch
         {
             DomainException domain => (domain.Code, domain.Details),
@@ -25,18 +26,18 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             logger.LogError(exception, "Unhandled exception for {Method} {Path}", httpContext.Request.Method, httpContext.Request.Path);
         }
 
-        await httpContext.WriteErrorAsync(code, language, details, cancellationToken);
+        await httpContext.WriteErrorAsync(code, language, details, cancellationToken, status);
         return true;
     }
 }
 
 public static class ErrorResponses
 {
-    public static async Task WriteErrorAsync(this HttpContext context, string code, Language language, object? details = null, CancellationToken cancellationToken = default)
+    public static async Task WriteErrorAsync(this HttpContext context, string code, Language language, object? details = null, CancellationToken cancellationToken = default, int? status = null)
     {
-        var status = ErrorCatalog.StatusOf(code);
+        status ??= ErrorCatalog.StatusOf(code);
         context.Response.Clear();
-        context.Response.StatusCode = status;
+        context.Response.StatusCode = status.Value;
         context.Response.ContentType = "application/json; charset=utf-8";
         if (status == StatusCodes.Status429TooManyRequests && details is not null)
         {

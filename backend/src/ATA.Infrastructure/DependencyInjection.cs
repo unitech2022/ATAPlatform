@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<IOtpGenerator, OtpGenerator>();
 
+        services.AddScoped<RbacSynchronizer>();
         services.AddScoped<DataSeeder>();
         return services;
     }

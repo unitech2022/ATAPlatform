@@ -55,25 +55,8 @@ public static class PaymentFlow
     }
 
     /// <summary>Creates another admin account (all permissions) — used for the four-eyes rule.</summary>
-    public static async Task<HttpClient> SecondAdminAsync(ApiFixture fixture, string username)
-    {
-        await fixture.Factory.WithDbAsync(async db =>
-        {
-            if (!await db.AdminAccounts.AnyAsync(a => a.Username == username))
-            {
-                using var scope = fixture.Factory.Services.CreateScope();
-                var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-                var user = new User { PhoneNumber = $"+9665{Random.Shared.Next(10000000, 99999999)}", FullName = $"Admin {username}", PhoneVerifiedAt = DateTime.UtcNow };
-                user.Roles.Add(new UserRole { UserId = user.Id, Role = Role.Admin });
-                db.Users.Add(user);
-                db.AdminAccounts.Add(new AdminAccount { UserId = user.Id, Username = username, PasswordHash = hasher.Hash("Second@12345"), Permissions = "[\"*\"]" });
-                await db.SaveChangesAsync();
-            }
-
-            return true;
-        });
-        return await fixture.LoginAdminAsync(username, "Second@12345");
-    }
+    public static Task<HttpClient> SecondAdminAsync(ApiFixture fixture, string username) =>
+        TestAdmins.LoginWithAsync(fixture, username, "Second@12345", "*");
 
     /// <summary>Every wallet movement and every journal must be balanced (Σ debit = Σ credit).</summary>
     public static async Task AssertLedgerBalancedAsync(ApiFixture fixture)

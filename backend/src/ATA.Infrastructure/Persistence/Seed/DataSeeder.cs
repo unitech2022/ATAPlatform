@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 namespace ATA.Infrastructure.Persistence.Seed;
 
 /// <summary>Idempotent seed of catalog data and the development admin account.</summary>
-public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, IConfiguration configuration, ILogger<DataSeeder> logger)
+public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, IConfiguration configuration, RbacSynchronizer rbac, ILogger<DataSeeder> logger)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
@@ -32,6 +32,8 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedDocumentTypesAsync(cancellationToken);
         await SeedAdminAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        // F20: permissions + system roles; the seed admin (legacy "*") becomes super_admin.
+        await rbac.SyncAsync(cancellationToken);
         await SeedZonesAsync(cancellationToken);
         await SeedDemandLevelsAsync(cancellationToken);
         await SeedPricingRulesAsync(cancellationToken);
@@ -821,8 +823,10 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
             UserId = user.Id,
             Username = username,
             PasswordHash = passwordHasher.Hash(password),
+            // Legacy marker read once by RbacSynchronizer, which grants the super_admin role (F20: permissions derive from roles).
             Permissions = "[\"*\"]",
             IsActive = true,
+            PasswordChangedAt = DateTime.UtcNow,
         });
         logger.LogInformation("Seeded admin account '{Username}'", username);
     }

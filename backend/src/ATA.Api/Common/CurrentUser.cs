@@ -13,6 +13,9 @@ public interface ICurrentUser
     Guid? CorporateAccountId { get; }
     string? IpAddress { get; }
     string? DeviceId { get; }
+    /// <summary>F20: the <c>sid</c> claim of an admin token (the refresh token of the current session).</summary>
+    Guid? SessionId { get; }
+    string? UserAgent { get; }
 
     bool HasRole(string role);
 
@@ -45,6 +48,17 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public string? IpAddress => accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
     public string? DeviceId => Context.Request.Headers.TryGetValue("X-Device-Id", out var v) ? v.ToString() : null;
+
+    public Guid? SessionId => Guid.TryParse(accessor.HttpContext?.User.FindFirst(AtaClaims.Session)?.Value, out var id) ? id : null;
+
+    public string? UserAgent
+    {
+        get
+        {
+            var value = accessor.HttpContext?.Request.Headers.UserAgent.ToString();
+            return string.IsNullOrWhiteSpace(value) ? null : value.Length > 255 ? value[..255] : value;
+        }
+    }
 
     public bool HasRole(string role) => Context.User.HasClaim(AtaClaims.Roles, role);
 

@@ -32,10 +32,30 @@ public static class IdentityEndpoints
             })
             .Produces(StatusCodes.Status204NoContent);
 
-        auth.MapPost("/admin/login", async (AdminLoginRequest request, AuthService service, CancellationToken ct) =>
-                Results.Ok(await service.AdminLoginAsync(request, ct)))
+        // F20 (doc 12 §F20.5): AuthResponse (+ mustChangePassword) | { mfaRequired, mfaToken, methods } | { mfaEnrollmentRequired, mfaToken }.
+        auth.MapPost("/admin/login", async (AdminLoginRequest request, AdminAuthService service, CancellationToken ct) =>
+                Results.Ok(await service.LoginAsync(request, ct)))
             .Produces<AuthResponse>()
+            .Produces<AdminMfaChallengeResponse>()
+            .Produces<AdminMfaEnrollmentResponse>()
+            .Produces<ErrorEnvelope>(StatusCodes.Status401Unauthorized)
+            .Produces<ErrorEnvelope>(StatusCodes.Status429TooManyRequests);
+
+        auth.MapPost("/admin/mfa/verify", async (AdminMfaVerifyRequest request, AdminAuthService service, CancellationToken ct) =>
+                Results.Ok(await service.VerifyAsync(request, ct)))
+            .Produces<AuthResponse>()
+            .Produces<ErrorEnvelope>(StatusCodes.Status400BadRequest)
+            .Produces<ErrorEnvelope>(StatusCodes.Status429TooManyRequests);
+
+        auth.MapPost("/admin/mfa/enroll", async (AdminMfaEnrollRequest request, AdminAuthService service, CancellationToken ct) =>
+                Results.Ok(await service.EnrollAsync(request, ct)))
+            .Produces<AdminMfaEnrollResponse>()
             .Produces<ErrorEnvelope>(StatusCodes.Status401Unauthorized);
+
+        auth.MapPost("/admin/mfa/enroll/confirm", async (AdminMfaEnrollConfirmRequest request, AdminAuthService service, CancellationToken ct) =>
+                Results.Ok(await service.ConfirmEnrollmentAsync(request, ct)))
+            .Produces<AdminMfaEnrollConfirmResponse>()
+            .Produces<ErrorEnvelope>(StatusCodes.Status400BadRequest);
 
         var me = api.MapGroup("/me").WithTags("Me").RequireAuthorization(Policies.Authenticated);
 

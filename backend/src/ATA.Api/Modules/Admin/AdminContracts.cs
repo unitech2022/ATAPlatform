@@ -6,7 +6,9 @@ using ATA.Domain.Drivers;
 
 namespace ATA.Api.Modules.Admin;
 
-public sealed record DashboardSummaryDto(int PendingDriverApplications, int ApprovedDrivers, int OnlineDrivers, int Passengers, int TripsToday, int UsersToday);
+/// <param name="Today">F20 (doc 12 §F20.7): today's (Riyadh) live KPIs.</param>
+public sealed record DashboardSummaryDto(int PendingDriverApplications, int ApprovedDrivers, int OnlineDrivers, int Passengers, int TripsToday, int UsersToday,
+    ATA.Api.Modules.Reporting.DashboardTodayDto Today);
 
 public sealed record AdminDriverListItemDto(Guid Id, string ApplicationNumber, string? FullName, string PhoneNumber, ApplicationStatus Status, string? CityName, string? Vehicle, DateTime? SubmittedAt, int DocumentsPending,
     DriverTier Tier = DriverTier.Bronze, decimal RatingAvg = 5m, int RatingCount = 0);

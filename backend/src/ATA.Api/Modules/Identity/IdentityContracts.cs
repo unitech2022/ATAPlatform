@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Identity;
@@ -53,7 +54,34 @@ public sealed record AuthResponse(
     bool IsNewUser,
     UserDto User,
     DriverSummaryDto? Driver,
-    IReadOnlyList<string>? Permissions);
+    IReadOnlyList<string>? Permissions)
+{
+    /// <summary>F20 admin sessions only (omitted for app / corporate sessions): a temporary password must be changed first.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? MustChangePassword { get; init; }
+
+    /// <summary>F20: unused recovery codes after <c>/auth/admin/mfa/verify</c>.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RecoveryCodesRemaining { get; init; }
+}
+
+// ----- F20 admin login with MFA (doc 12 §F20.5) -----
+
+/// <summary><c>200 { mfaRequired: true, mfaToken, methods: ["totp", "recovery_code"] }</c>: the password was right, a TOTP or recovery code must follow.</summary>
+public sealed record AdminMfaChallengeResponse(bool MfaRequired, string MfaToken, IReadOnlyList<string> Methods);
+
+/// <summary><c>200 { mfaEnrollmentRequired: true, mfaToken }</c>: MFA is mandatory and the account has not enrolled yet.</summary>
+public sealed record AdminMfaEnrollmentResponse(bool MfaEnrollmentRequired, string MfaToken);
+
+public sealed record AdminMfaVerifyRequest(string? MfaToken, string? Code, string? RecoveryCode);
+
+public sealed record AdminMfaEnrollRequest(string? MfaToken);
+
+public sealed record AdminMfaEnrollResponse(string Secret, string OtpauthUri);
+
+public sealed record AdminMfaEnrollConfirmRequest(string? MfaToken, string? Code);
+
+public sealed record AdminMfaEnrollConfirmResponse(IReadOnlyList<string> RecoveryCodes, AuthResponse Auth);
 
 public sealed record MeResponse(UserDto User, MePassengerDto? Passenger, MeDriverDto? Driver);
 

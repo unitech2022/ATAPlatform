@@ -1,83 +1,129 @@
 using Microsoft.EntityFrameworkCore;
 using ATA.Domain.Common;
+using ATA.Domain.Rbac;
 
 namespace ATA.Api.Common;
 
-/// <summary>Admin permission names (full role/permission management arrives with F20; the seeded admin holds <c>*</c>).</summary>
+/// <summary>
+/// Admin permissions (doc 12 §F20.2 — the catalogue itself is <see cref="PermissionCatalog"/>). <see cref="RequirePermission{TBuilder}"/> attaches a
+/// <see cref="RequiredPermissionMetadata"/> that <see cref="AdminAccessMiddleware"/> checks against the JWT <c>perm</c> claims before the endpoint binds its
+/// parameters (<c>403 forbidden { permission }</c>); <c>*</c> grants everything.
+/// </summary>
 public static class Permissions
 {
-    public const string PaymentsView = "payments.view";
-    public const string PaymentsRefund = "payments.refund";
-    public const string PaymentsRefundApprove = "payments.refund_approve";
-    public const string PayoutsApprove = "payouts.approve";
-    public const string SettlementsManage = "settlements.manage";
-    public const string WalletsAdjust = "wallets.adjust";
-    public const string NotificationsView = "notifications.view";
-    public const string NotificationsManage = "notifications.manage";
-    public const string NotificationsSmsBroadcast = "notifications.sms_broadcast";
-    public const string SafetyManage = "safety.manage";
-    public const string SupportView = "support.view";
-    public const string SupportManage = "support.manage";
-    public const string SupportDisputes = "support.disputes";
-    public const string HelpManage = "help.manage";
-    public const string TripsView = "trips.view";
-    public const string TripsCancel = "trips.cancel";
-    public const string CancellationManage = "cancellation.manage";
-    public const string CancellationReview = "cancellation.review";
-    public const string ReliabilityManage = "reliability.manage";
-    public const string ReportsView = "reports.view";
-    public const string RatingsManage = "ratings.manage";
-    public const string PromotionsManage = "promotions.manage";
-    public const string IncentivesManage = "incentives.manage";
-    public const string FavoritesManage = "favorites.manage";
-    public const string SchedulingManage = "scheduling.manage";
-    public const string AirportManage = "airport.manage";
-    public const string CorporateManage = "corporate.manage";
+    public const string DashboardView = PermissionCatalog.DashboardView;
+    public const string DriversView = PermissionCatalog.DriversView;
+    public const string DriversReview = PermissionCatalog.DriversReview;
+    public const string PassengersView = PermissionCatalog.PassengersView;
+    public const string UsersSuspend = PermissionCatalog.UsersSuspend;
+    public const string CatalogManage = PermissionCatalog.CatalogManage;
+    public const string TripsView = PermissionCatalog.TripsView;
+    public const string TripsCancel = PermissionCatalog.TripsCancel;
+    public const string LiveView = PermissionCatalog.LiveView;
+    public const string PricingView = PermissionCatalog.PricingView;
+    public const string PricingEdit = PermissionCatalog.PricingEdit;
+    public const string MatchingEdit = PermissionCatalog.MatchingEdit;
+    public const string PaymentsView = PermissionCatalog.PaymentsView;
+    public const string PaymentsRefund = PermissionCatalog.PaymentsRefund;
+    public const string PaymentsRefundApprove = PermissionCatalog.PaymentsRefundApprove;
+    public const string PayoutsApprove = PermissionCatalog.PayoutsApprove;
+    public const string SettlementsManage = PermissionCatalog.SettlementsManage;
+    public const string WalletsAdjust = PermissionCatalog.WalletsAdjust;
+    public const string NotificationsView = PermissionCatalog.NotificationsView;
+    public const string NotificationsManage = PermissionCatalog.NotificationsManage;
+    public const string NotificationsSmsBroadcast = PermissionCatalog.NotificationsSmsBroadcast;
+    public const string SafetyManage = PermissionCatalog.SafetyManage;
+    public const string SupportView = PermissionCatalog.SupportView;
+    public const string SupportManage = PermissionCatalog.SupportManage;
+    public const string SupportDisputes = PermissionCatalog.SupportDisputes;
+    public const string HelpManage = PermissionCatalog.HelpManage;
+    public const string CancellationManage = PermissionCatalog.CancellationManage;
+    public const string CancellationReview = PermissionCatalog.CancellationReview;
+    public const string ReliabilityManage = PermissionCatalog.ReliabilityManage;
+    public const string ReportsView = PermissionCatalog.ReportsView;
+    public const string ReportsExport = PermissionCatalog.ReportsExport;
+    public const string RatingsManage = PermissionCatalog.RatingsManage;
+    public const string PromotionsManage = PermissionCatalog.PromotionsManage;
+    public const string IncentivesManage = PermissionCatalog.IncentivesManage;
+    public const string FavoritesManage = PermissionCatalog.FavoritesManage;
+    public const string SchedulingManage = PermissionCatalog.SchedulingManage;
+    public const string AirportManage = PermissionCatalog.AirportManage;
+    public const string CorporateManage = PermissionCatalog.CorporateManage;
+    public const string AdminUsersManage = PermissionCatalog.AdminUsersManage;
+    public const string AdminRolesManage = PermissionCatalog.AdminRolesManage;
+    public const string AuditView = PermissionCatalog.AuditView;
 
-    /// <summary>Whether a stored permission list (JSON array of <c>admin_accounts.permissions</c>) grants <paramref name="permission"/>.</summary>
-    public static bool Grants(string? permissionsJson, string permission)
-    {
-        if (string.IsNullOrWhiteSpace(permissionsJson))
-        {
-            return false;
-        }
-
-        try
-        {
-            var values = System.Text.Json.JsonSerializer.Deserialize<string[]>(permissionsJson) ?? [];
-            return values.Contains("*") || values.Contains(permission);
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return false;
-        }
-    }
-
-    /// <summary>Rejects the request with <c>403 forbidden</c> unless the caller holds at least one of <paramref name="permissions"/> (or <c>*</c>).</summary>
+    /// <summary>Rejects the request with <c>403 forbidden { permissions }</c> unless the caller holds at least one of <paramref name="permissions"/> (or <c>*</c>).</summary>
     public static TBuilder RequireAnyPermission<TBuilder>(this TBuilder builder, params string[] permissions) where TBuilder : IEndpointConventionBuilder =>
-        builder.AddEndpointFilter(async (context, next) =>
-        {
-            var user = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
-            if (!permissions.Any(user.HasPermission))
-            {
-                throw new DomainException(ErrorCodes.Forbidden, new { permissions });
-            }
+        builder.WithMetadata(new RequiredPermissionMetadata(permissions));
 
-            return await next(context);
-        });
-
-    /// <summary>Rejects the request with <c>403 forbidden</c> unless the caller's JWT carries <paramref name="permission"/> (or <c>*</c>).</summary>
+    /// <summary>Rejects the request with <c>403 forbidden { permission }</c> unless the caller's JWT carries <paramref name="permission"/> (or <c>*</c>).</summary>
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, string permission) where TBuilder : IEndpointConventionBuilder =>
-        builder.AddEndpointFilter(async (context, next) =>
+        builder.WithMetadata(new RequiredPermissionMetadata([permission]));
+
+    /// <summary>Marks an <c>/admin/*</c> endpoint open to every admin (no catalogue permission): <c>/admin/me*</c>, reading ride categories.</summary>
+    public static TBuilder AllowAnyAdmin<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(AnyAdminMetadata.Instance);
+
+    /// <summary>The only admin endpoint reachable while a temporary password must be changed (<c>POST /admin/me/password</c>).</summary>
+    public static TBuilder AllowDuringPasswordChange<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(PasswordChangeEndpointMetadata.Instance);
+}
+
+/// <summary>Endpoint metadata: the caller needs one of <see cref="AnyOf"/>; several metadata entries (group + endpoint) must all be satisfied.</summary>
+public sealed class RequiredPermissionMetadata(IReadOnlyList<string> anyOf)
+{
+    public IReadOnlyList<string> AnyOf { get; } = anyOf;
+}
+
+public sealed class AnyAdminMetadata
+{
+    public static readonly AnyAdminMetadata Instance = new();
+}
+
+public sealed class PasswordChangeEndpointMetadata
+{
+    public static readonly PasswordChangeEndpointMetadata Instance = new();
+}
+
+/// <summary>
+/// Runs after authorization (the <c>Admin</c> policy) and before parameter binding: enforces <see cref="RequiredPermissionMetadata"/> and, for admin tokens
+/// carrying the <c>pwdc</c> claim, the temporary-password gate (<c>403 password_change_required</c> while <c>admin_accounts.must_change_password</c> is still set).
+/// </summary>
+public sealed class AdminAccessMiddleware(RequestDelegate next)
+{
+    public async Task InvokeAsync(HttpContext context, ICurrentUser user)
+    {
+        var endpoint = context.GetEndpoint();
+        var requirements = endpoint?.Metadata.GetOrderedMetadata<RequiredPermissionMetadata>() ?? [];
+        var isAdminEndpoint = requirements.Count > 0 || endpoint?.Metadata.GetMetadata<AnyAdminMetadata>() is not null;
+        if (isAdminEndpoint && context.User.Identity?.IsAuthenticated == true)
         {
-            var user = context.HttpContext.RequestServices.GetRequiredService<ICurrentUser>();
-            if (!user.HasPermission(permission))
+            if (context.User.HasClaim(ATA.Infrastructure.Security.AtaClaims.PasswordChangeRequired, "true")
+                && endpoint!.Metadata.GetMetadata<PasswordChangeEndpointMetadata>() is null)
             {
-                throw new DomainException(ErrorCodes.Forbidden, new { permission });
+                var db = context.RequestServices.GetRequiredService<ATA.Infrastructure.Persistence.AtaDbContext>();
+                var userId = user.UserId;
+                if (await db.AdminAccounts.AsNoTracking().AnyAsync(a => a.UserId == userId && a.MustChangePassword, context.RequestAborted))
+                {
+                    await context.WriteErrorAsync(ErrorCodes.PasswordChangeRequired, context.GetLanguage());
+                    return;
+                }
             }
 
-            return await next(context);
-        });
+            foreach (var requirement in requirements)
+            {
+                if (!requirement.AnyOf.Any(user.HasPermission))
+                {
+                    object details = requirement.AnyOf.Count == 1 ? new { permission = requirement.AnyOf[0] } : new { permissions = requirement.AnyOf };
+                    await context.WriteErrorAsync(ErrorCodes.Forbidden, context.GetLanguage(), details);
+                    return;
+                }
+            }
+        }
+
+        await next(context);
+    }
 }
 
 /// <summary>Money and time formatting for notification texts: <c>46.00 ر.س</c> / <c>SAR 46.00</c>, Riyadh local <c>HH:mm dd/MM</c>.</summary>

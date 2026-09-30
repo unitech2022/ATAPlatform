@@ -9,11 +9,12 @@ namespace ATA.Api.Modules.Admin;
 public sealed class AuditService(AtaDbContext db, ICurrentUser currentUser)
 {
     /// <param name="actorRole">Overrides the caller's first role (<c>corporate_admin</c> for portal actions, <c>system</c> for jobs).</param>
-    public AuditLog Log(string action, string entityType, Guid? entityId, object? before = null, object? after = null, string? actorRole = null)
+    /// <param name="actorUserId">Overrides the caller (F20 security events of the anonymous login endpoints name the admin who signed in).</param>
+    public AuditLog Log(string action, string entityType, Guid? entityId, object? before = null, object? after = null, string? actorRole = null, Guid? actorUserId = null)
     {
         var log = new AuditLog
         {
-            ActorUserId = currentUser.IsAuthenticated ? currentUser.UserId : null,
+            ActorUserId = actorUserId ?? (currentUser.IsAuthenticated ? currentUser.UserId : null),
             ActorRole = actorRole ?? currentUser.Roles.FirstOrDefault(),
             Action = action,
             EntityType = entityType,

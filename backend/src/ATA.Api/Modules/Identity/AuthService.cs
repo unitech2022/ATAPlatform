@@ -1,4 +1,3 @@
-using System.Text.Json;
 using ATA.Api.Common;
 using ATA.Domain.Common;
 using ATA.Api.Modules.Corporate;
@@ -13,9 +12,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ATA.Api.Modules.Identity;
 
-/// <summary>Login by OTP, refresh-token rotation, logout and admin login.</summary>
+/// <summary>Login by OTP, refresh-token rotation and logout (admin login: <see cref="AdminAuthService"/>).</summary>
 public sealed class AuthService(
-    AtaDbContext db, OtpService otp, IJwtTokenService tokens, IPasswordHasher passwordHasher, IClock clock, ICurrentUser currentUser, CorporateMembershipService membership)
+    AtaDbContext db, OtpService otp, IJwtTokenService tokens, IClock clock, ICurrentUser currentUser, CorporateMembershipService membership, AdminSessionIssuer adminSessions)
 {
     public async Task<OtpRequestResponse> RequestOtpAsync(OtpRequestRequest request, Language fallbackLanguage, CancellationToken ct)
     {
@@ -88,8 +87,12 @@ public sealed class AuthService(
         var user = await db.Users.FirstAsync(u => u.Id == existing.UserId, ct);
         user.EnsureActive();
 
+        if (existing.SessionKind == SessionKind.Admin)
+        {
+            return await RefreshAdminAsync(existing, user, now, ct);
+        }
+
         var driver = await db.Drivers.FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
-        var permissions = await LoadPermissionsAsync(user, ct);
         // F19: a corporate session stays a corporate session (same `corp` claim) only while the user is still an active admin of a company that is not closed.
         Guid? corporateAccountId = null;
         if (existing.SessionKind == SessionKind.Corporate)
@@ -104,7 +107,7 @@ public sealed class AuthService(
             }
         }
 
-        var (response, replacement) = IssueTokens(user, driver, false, existing.DeviceId, permissions, existing.SessionKind, corporateAccountId);
+        var (response, replacement) = IssueTokens(user, driver, false, existing.DeviceId, null, existing.SessionKind, corporateAccountId);
 
         existing.RevokedAt = now;
         existing.ReplacedById = replacement.Id;
@@ -124,28 +127,21 @@ public sealed class AuthService(
         }
     }
 
-    public async Task<AuthResponse> AdminLoginAsync(AdminLoginRequest request, CancellationToken ct)
+    /// <summary>
+    /// F20 admin sessions (doc 12 §F20.4): refused (and revoked) after <c>Admin:SessionIdleMinutes</c> without a refresh or past the absolute end; the account must
+    /// still be active. The rotated token keeps the session start, absolute end and user agent; permissions are re-derived from the roles.
+    /// </summary>
+    private async Task<AuthResponse> RefreshAdminAsync(RefreshToken existing, User user, DateTime now, CancellationToken ct)
     {
-        new Validator()
-            .Require(nameof(request.Username), request.Username, 64)
-            .Require(nameof(request.Password), request.Password, 256)
-            .ThrowIfInvalid();
-
-        var account = await db.AdminAccounts.Include(a => a.User)
-            .FirstOrDefaultAsync(a => a.Username == request.Username!.Trim(), ct);
-        if (account is null || !account.IsActive || !passwordHasher.Verify(request.Password!, account.PasswordHash))
+        var account = await db.AdminAccounts.FirstOrDefaultAsync(a => a.UserId == user.Id, ct);
+        if (account is null || !account.IsActive || !adminSessions.IsAlive(existing, now))
         {
-            throw new DomainException(ErrorCodes.InvalidCredentials);
+            existing.RevokedAt = now;
+            await db.SaveChangesAsync(ct);
+            throw new DomainException(ErrorCodes.Unauthorized);
         }
 
-        var user = account.User!;
-        user.EnsureActive();
-        var now = clock.UtcNow;
-        account.LastLoginAt = now;
-        user.LastLoginAt = now;
-
-        var permissions = ParsePermissions(account.Permissions);
-        var (response, _) = IssueTokens(user, null, false, currentUser.DeviceId, permissions, SessionKind.Admin);
+        var response = await adminSessions.IssueAsync(user, account, existing, ct);
         await db.SaveChangesAsync(ct);
         return response;
     }
@@ -278,20 +274,6 @@ public sealed class AuthService(
         existing.AppVersion = device.AppVersion ?? existing.AppVersion;
         existing.LastSeenAt = clock.UtcNow;
     }
-
-    private async Task<IReadOnlyList<string>?> LoadPermissionsAsync(User user, CancellationToken ct)
-    {
-        if (!user.HasRole(Role.Admin) && !user.HasRole(Role.Operations))
-        {
-            return null;
-        }
-
-        var json = await db.AdminAccounts.Where(a => a.UserId == user.Id && a.IsActive).Select(a => a.Permissions).FirstOrDefaultAsync(ct);
-        return json is null ? null : ParsePermissions(json);
-    }
-
-    private static IReadOnlyList<string> ParsePermissions(string json) =>
-        JsonSerializer.Deserialize<string[]>(json) ?? [];
 
     private (AuthResponse Response, RefreshToken Token) IssueTokens(
         User user, DriverProfile? driver, bool isNewUser, string? deviceId, IReadOnlyList<string>? permissions, SessionKind sessionKind = SessionKind.App, Guid? corporateAccountId = null)

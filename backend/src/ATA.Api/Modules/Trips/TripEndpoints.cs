@@ -118,10 +118,12 @@ public static class TripEndpoints
 
         admin.MapGet("/trips", async (string? status, DateOnly? from, DateOnly? to, string? search, int? page, int? pageSize, AdminTripService service, HttpContext http, CancellationToken ct) =>
                 Results.Ok(await service.ListAsync(QueryEnum.Parse<TripStatus>(status, "status"), from, to, search, Paging.From(page, pageSize), http.GetLanguage(), ct)))
+            .RequirePermission(Permissions.TripsView)
             .Produces<PagedResult<AdminTripListItemDto>>();
 
         admin.MapGet("/trips/{id:guid}", async (Guid id, AdminTripService service, HttpContext http, CancellationToken ct) =>
                 Results.Ok(await service.GetAsync(id, http.GetLanguage(), ct)))
+            .RequirePermission(Permissions.TripsView)
             .Produces<AdminTripDetailDto>();
 
         admin.MapPost("/trips/{id:guid}/cancel", async (Guid id, AdminCancelTripRequest request, AdminTripService service, HttpContext http, CancellationToken ct) =>
@@ -130,6 +132,7 @@ public static class TripEndpoints
             .Produces<AdminTripDetailDto>();
 
         admin.MapGet("/live", async (AdminTripService service, CancellationToken ct) => Results.Ok(await service.GetLiveAsync(ct)))
+            .RequirePermission(Permissions.LiveView)
             .Produces<LiveSnapshotDto>();
     }
 

@@ -66,6 +66,15 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Support:JobsEnabled", "false");
         builder.UseSetting("Corporate:JobsEnabled", "false");
         builder.UseSetting("Corporate:PortalBaseUrl", "https://ata.test");
+        // F20: the seeded super_admin signs in with the password only unless a test class turns MFA on; jobs run through RunOnceAsync; the startup
+        // permission sync is done by DataSeeder once the SQLite schema exists.
+        builder.UseSetting("Admin:MfaRequired", "false");
+        // Admin access tokens keep the lifetime the suites that move the fake clock were written against (Jwt:AccessTokenMinutes, 60 unless a
+        // fixture raises it); the F20 session tests set the production default (15) explicitly.
+        builder.UseSetting("Admin:AccessTokenMinutes", _settings.GetValueOrDefault("Jwt:AccessTokenMinutes") ?? "60");
+        builder.UseSetting("Admin:JobsEnabled", "false");
+        builder.UseSetting("Reports:JobsEnabled", "false");
+        builder.UseSetting("Rbac:SyncOnStartup", "false");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);
@@ -151,6 +160,20 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     public async Task<int> RunCorporateInvitationExpiryAsync()
     {
         var job = Services.GetServices<IHostedService>().OfType<CorporateInvitationExpiryJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>ReportSnapshotJob</c> (yesterday + the trailing recompute days).</summary>
+    public async Task<int> RunReportSnapshotJobAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<ATA.Api.Modules.Reporting.ReportSnapshotJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>AdminSessionCleanupJob</c>.</summary>
+    public async Task<int> RunAdminSessionCleanupAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<ATA.Api.Modules.Rbac.AdminSessionCleanupJob>().Single();
         return await job.RunOnceAsync(CancellationToken.None);
     }
 

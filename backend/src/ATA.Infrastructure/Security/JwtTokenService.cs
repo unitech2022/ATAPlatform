@@ -29,7 +29,14 @@ public static class AtaClaims
     public const string Permissions = "perm";
     /// <summary>Corporate portal tokens: the <c>corporate_accounts.id</c> every <c>/corporate/*</c> query is scoped to (F19).</summary>
     public const string Corporate = "corp";
+    /// <summary>F20 admin tokens: the <c>refresh_tokens.id</c> of the session the token was issued with (marks the current session).</summary>
+    public const string Session = "sid";
+    /// <summary>F20: present while the admin must change a temporary password (every other <c>/admin/*</c> call answers <c>403 password_change_required</c>).</summary>
+    public const string PasswordChangeRequired = "pwdc";
 }
+
+/// <summary>F20 admin sessions: the session id, the admin access lifetime (<c>Admin:AccessTokenMinutes</c>) and the temporary-password flag.</summary>
+public sealed record AdminTokenContext(Guid SessionId, int LifetimeMinutes, bool MustChangePassword);
 
 public sealed record AccessToken(string Token, int ExpiresInSeconds);
 
@@ -37,7 +44,7 @@ public sealed record OpaqueToken(string Value, string Hash);
 
 public interface IJwtTokenService
 {
-    AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null);
+    AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null, AdminTokenContext? admin = null);
 
     /// <summary>Creates a cryptographically random opaque refresh token together with its SHA-256 hash.</summary>
     OpaqueToken CreateRefreshToken();
@@ -57,10 +64,11 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
     /// A corporate portal token (<paramref name="corporateAccountId"/>, F19) carries only the <c>corporate_admin</c> role and the <c>corp</c> claim, so it can never
     /// be used against the rider, driver or admin APIs even when the same user also holds those roles.
     /// </summary>
-    public AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null)
+    public AccessToken CreateAccessToken(User user, IReadOnlyCollection<string>? permissions = null, Guid? corporateAccountId = null, AdminTokenContext? admin = null)
     {
         var now = clock.UtcNow;
-        var expires = now.AddMinutes(_options.AccessTokenMinutes);
+        var lifetimeMinutes = admin?.LifetimeMinutes ?? _options.AccessTokenMinutes;
+        var expires = now.AddMinutes(lifetimeMinutes);
         var claims = new List<Claim>
         {
             new(AtaClaims.Subject, user.Id.ToString()),
@@ -88,6 +96,15 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
             claims.AddRange(permissions.Select(p => new Claim(AtaClaims.Permissions, p)));
         }
 
+        if (admin is not null)
+        {
+            claims.Add(new Claim(AtaClaims.Session, admin.SessionId.ToString()));
+            if (admin.MustChangePassword)
+            {
+                claims.Add(new Claim(AtaClaims.PasswordChangeRequired, "true"));
+            }
+        }
+
         var descriptor = new SecurityTokenDescriptor
         {
             Issuer = _options.Issuer,
@@ -99,7 +116,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, IClock clock) 
             SigningCredentials = new SigningCredentials(CreateKey(_options.Key), SecurityAlgorithms.HmacSha256),
         };
         var token = new JsonWebTokenHandler { SetDefaultTimesOnTokenCreation = false }.CreateToken(descriptor);
-        return new AccessToken(token, _options.AccessTokenMinutes * 60);
+        return new AccessToken(token, lifetimeMinutes * 60);
     }
 
     public OpaqueToken CreateRefreshToken()

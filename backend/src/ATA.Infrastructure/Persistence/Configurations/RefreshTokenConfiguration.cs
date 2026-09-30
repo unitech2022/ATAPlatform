@@ -14,8 +14,10 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         b.HasIndex(x => x.TokenHash).IsUnique();
         b.Property(x => x.DeviceId).HasMaxLength(128);
         b.Property(x => x.CreatedByIp).HasMaxLength(45);
+        b.Property(x => x.UserAgent).HasMaxLength(255);
         b.Property(x => x.SessionKind).HasDefaultValue(SessionKind.App).HasSentinel((SessionKind)(-1));
         b.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         b.HasIndex(x => x.UserId);
+        b.HasIndex(x => new { x.SessionKind, x.RevokedAt });
     }
 }

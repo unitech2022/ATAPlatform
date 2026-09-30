@@ -16,6 +16,8 @@ using ATA.Api.Modules.Payments.Gateways;
 using ATA.Api.Modules.Pricing;
 using ATA.Api.Modules.Promotions;
 using ATA.Api.Modules.Ratings;
+using ATA.Api.Modules.Rbac;
+using ATA.Api.Modules.Reporting;
 using ATA.Api.Modules.Safety;
 using ATA.Api.Modules.Support;
 using ATA.Api.Modules.Scheduling;
@@ -58,8 +60,23 @@ builder.Services.Configure<PaymentsOptions>(builder.Configuration.GetSection(Pay
 builder.Services.Configure<PayoutsOptions>(builder.Configuration.GetSection(PayoutsOptions.Section));
 builder.Services.Configure<SettlementsOptions>(builder.Configuration.GetSection(SettlementsOptions.Section));
 builder.Services.Configure<NotificationsOptions>(builder.Configuration.GetSection(NotificationsOptions.Section));
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
+builder.Services.Configure<ReportsOptions>(builder.Configuration.GetSection(ReportsOptions.Section));
 builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddSingleton<MfaTokenService>();
+builder.Services.AddSingleton<MfaSecretProtector>();
+builder.Services.AddScoped<AdminMfaService>();
+builder.Services.AddScoped<AdminSessionIssuer>();
+builder.Services.AddScoped<AdminAuthService>();
+builder.Services.AddScoped<AdminRbacQueries>();
+builder.Services.AddScoped<AdminSelfService>();
+builder.Services.AddScoped<AdminUserService>();
+builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<KpiCalculator>();
+builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<ReportSnapshotService>();
+builder.Services.AddScoped<ReportExportService>();
 builder.Services.AddScoped<MeService>();
 builder.Services.AddScoped<PassengerService>();
 builder.Services.AddScoped<WalletService>();
@@ -234,6 +251,8 @@ builder.Services.AddHostedService<SupportSlaMonitorJob>();
 builder.Services.AddHostedService<CorporateInvoiceJob>();
 builder.Services.AddHostedService<CorporateInvoiceOverdueJob>();
 builder.Services.AddHostedService<CorporateInvitationExpiryJob>();
+builder.Services.AddHostedService<ReportSnapshotJob>();
+builder.Services.AddHostedService<AdminSessionCleanupJob>();
 
 var app = builder.Build();
 
@@ -242,6 +261,8 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+// F20: RequirePermission metadata + the temporary-password gate, before any admin endpoint binds its parameters.
+app.UseMiddleware<AdminAccessMiddleware>();
 
 app.MapOpenApi();
 if (app.Environment.IsDevelopment())
@@ -282,6 +303,8 @@ SupportEndpoints.Map(api);
 CorporateEndpoints.Map(api);
 FileEndpoints.Map(api);
 AdminEndpoints.Map(api);
+RbacEndpoints.Map(api);
+ReportingEndpoints.Map(api);
 api.MapFallback((HttpContext http) => http.WriteErrorAsync(ErrorCodes.NotFound, http.GetLanguage()));
 app.MapHub<TripsHub>("/hubs/trips");
 
@@ -291,6 +314,19 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<AtaDbContext>();
     await db.Database.MigrateAsync();
     await scope.ServiceProvider.GetRequiredService<DataSeeder>().SeedAsync();
+}
+else if (app.Configuration.GetValue("Rbac:SyncOnStartup", true))
+{
+    // F20: the permission catalogue and the system roles are synced from code at every start (DataSeeder does it in Development).
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<RbacSynchronizer>().SyncAsync();
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Permission catalogue sync failed (is the database migrated?)");
+    }
 }
 
 app.Run();

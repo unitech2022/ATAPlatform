@@ -100,23 +100,6 @@ public static class FavoritesFlow
         (await driver.PutAsJsonAsync("/api/v1/driver/location", new { lat, lng, heading = 0, accuracy = 5 })).EnsureSuccessStatusCode();
 
     /// <summary>An admin account holding only <paramref name="permissionsJson"/> (e.g. <c>["trips.view"]</c>).</summary>
-    public static async Task<HttpClient> LimitedAdminAsync(ApiFixture fixture, string username, string permissionsJson)
-    {
-        await fixture.Factory.WithDbAsync(async db =>
-        {
-            if (!await db.AdminAccounts.AnyAsync(a => a.Username == username))
-            {
-                using var scope = fixture.Factory.Services.CreateScope();
-                var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-                var user = new User { PhoneNumber = $"+9665{Random.Shared.Next(10000000, 99999999)}", FullName = $"Admin {username}", PhoneVerifiedAt = DateTime.UtcNow };
-                user.Roles.Add(new UserRole { UserId = user.Id, Role = Role.Admin });
-                db.Users.Add(user);
-                db.AdminAccounts.Add(new AdminAccount { UserId = user.Id, Username = username, PasswordHash = hasher.Hash("Limited@12345"), Permissions = permissionsJson });
-                await db.SaveChangesAsync();
-            }
-
-            return true;
-        });
-        return await fixture.LoginAdminAsync(username, "Limited@12345");
-    }
+    public static Task<HttpClient> LimitedAdminAsync(ApiFixture fixture, string username, string permissionsJson) =>
+        TestAdmins.LoginWithAsync(fixture, username, "Limited@12345", System.Text.Json.JsonSerializer.Deserialize<string[]>(permissionsJson) ?? []);
 }

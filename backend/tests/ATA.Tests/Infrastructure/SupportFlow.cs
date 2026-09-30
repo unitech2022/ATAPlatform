@@ -92,25 +92,8 @@ public static class SupportFlow
     }
 
     /// <summary>An admin account holding exactly <paramref name="permissions"/>.</summary>
-    public static async Task<HttpClient> AdminWithAsync(ApiFixture fixture, string username, params string[] permissions)
-    {
-        await fixture.Factory.WithDbAsync(async db =>
-        {
-            if (!await db.AdminAccounts.AnyAsync(a => a.Username == username))
-            {
-                using var scope = fixture.Factory.Services.CreateScope();
-                var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-                var user = new User { PhoneNumber = $"+9665{Random.Shared.Next(10000000, 99999999)}", FullName = $"Agent {username}", PhoneVerifiedAt = DateTime.UtcNow };
-                user.Roles.Add(new UserRole { UserId = user.Id, Role = Role.Admin });
-                db.Users.Add(user);
-                db.AdminAccounts.Add(new AdminAccount { UserId = user.Id, Username = username, PasswordHash = hasher.Hash("Agent@12345"), Permissions = JsonSerializer.Serialize(permissions) });
-                await db.SaveChangesAsync();
-            }
-
-            return true;
-        });
-        return await fixture.LoginAdminAsync(username, "Agent@12345");
-    }
+    public static Task<HttpClient> AdminWithAsync(ApiFixture fixture, string username, params string[] permissions) =>
+        TestAdmins.LoginWithAsync(fixture, username, "Agent@12345", permissions);
 
     public static Task<SupportTicket> TicketAsync(ApiFixture fixture, string id) =>
         fixture.Factory.WithDbAsync(db => db.SupportTickets.AsNoTracking().FirstAsync(t => t.Id == Guid.Parse(id)));
