@@ -27,6 +27,9 @@ trip exclusively to that driver, the favourite-driver discount rules that fill t
 F17 adds `Modules/Scheduling` (scheduled rides up to 7 days ahead with the new `scheduled` trip status, the driver marketplace and reservations with confirmation
 timeline, reminders, cancellation with a late fee, admin rules / dashboard) and `Modules/Airports` (airport geofence, terminals and pickup zones, flight number,
 waiting policy, the FIFO driver queue of the waiting area, admin CRUD) — see "Scheduled rides and airport (F17)".
+F18 adds `Modules/Support` (the public help center with FULLTEXT search, rider / driver support tickets with messages and attachments, agent console with internal notes, canned responses,
+SLA policies with pause while waiting for the user, fare disputes resolved through the F11 refund service, CSAT, KPIs, auto-close and SLA-monitor jobs) and links the F12 lost items / safety
+cases to tickets — see "Support (F18)".
 
 ## Layout
 
@@ -134,6 +137,8 @@ dotnet test
 | `Scheduling:JobsEnabled`, `Scheduling:WorkerIntervalSeconds`, `Scheduling:ReminderIntervalSeconds` | Runs `ScheduledRideWorker` (confirmation timeline, search start, no-shows; 30 s) and `ScheduledReminderJob` (60 s); `false` in tests, which call `RunOnceAsync` |
 | `Airport:JobsEnabled`, `Airport:JobIntervalSeconds`, `Airport:QueueExitGraceSeconds` | Runs `AirportQueueJob` (30 s); a queue entry not refreshed by a location update within 180 s leaves the queue (`exited_area` / `offline`) |
 | `Airport:RejectAction`, `Airport:QueueMaxOffers` | Driver rejects / lets an airport-queue offer expire: `move_to_back` (default) or `remove`; single-driver queue offers per trip before the normal search (5) |
+| `Support:AutoCloseDays`, `Support:DisputeWindowDays`, `Support:MaxAttachmentsPerMessage` | A `resolved` ticket without a user reply closes after 3 days; a fare can be disputed 14 days after the trip (inclusive); attachments per message (5 → `422 attachment_limit`) |
+| `Support:JobsEnabled`, `Support:AutoCloseIntervalMinutes`, `Support:SlaMonitorIntervalMinutes` | Runs `SupportAutoCloseJob` (hourly) and `SupportSlaMonitorJob` (every 5 min); `false` in tests, which call `RunOnceAsync` |
 | `Favorites:AvailabilityRadiusMeters` | Radius of `/passenger/favorite-drivers/available` and of the exclusive round; `null` (default) = the zone/category `matching_settings.radius_meters` (5000 by default) |
 
 ### Development OTP behaviour
@@ -186,6 +191,10 @@ dotnet test
   driver free release 120 min, penalties 3 / 3 / 6, no-show grace 10 min, 5 reservations per driver, 30 min gap) and an **approximate** King Khalid airport `RUH` (geofence box around
   24.925–24.99 N, 46.67–46.73 E; flagged approximate, refine it in the admin): terminals T1–T5 with two pickup zones each (`T1-P1` … `T5-P2`), the waiting area `WAIT-1` near
   (24.9355, 46.679), default free waiting 15 min and the queue enabled. The `airport` ride category (seeded earlier) only appears in quotes for airport trips.
+- F18 (seeded by code / priority when missing; the help center and the canned responses once, while their tables are empty and no admin ever created or deleted a row): SLA policies
+  (first response / resolution minutes) urgent 15 / 240, high 60 / 1440, normal 240 / 2880, low 1440 / 4320; help categories `trips`, `payments`, `safety`, `account`, `drivers` (audience `driver`)
+  with 14 published bilingual articles (2–3 per category; riders see the four general categories, drivers `safety`, `account` and `drivers`); canned responses `greeting`, `need_more_info`,
+  `refund_approved`, `refund_rejected`, `lost_item_contacted`, `closing` (placeholders `{userName}` `{ticketNumber}` `{tripNumber}`).
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
 
@@ -232,13 +241,17 @@ dotnet test
 | Admin promotions (`promotions.manage`) | `GET /admin/promotions?status=active\|scheduled\|expired\|inactive&search=`, `POST /admin/promotions` (`409 conflict` for a taken code), `GET/PUT /admin/promotions/{id}` (`code`/`type` locked after the first reservation → `409`), `POST /admin/promotions/{id}/deactivate\|activate`, `GET /admin/promotions/{id}/redemptions?status=`, `GET /admin/promotions/{id}/stats`, `GET /admin/promotion-redemptions?promotionId=&status=&from=&to=`. Audited `promotion.create\|update\|activate\|deactivate` |
 | Admin tiers & incentives (`incentives.manage`) | `GET /admin/driver-tier-rules` (+ `driversCount`), `PUT /admin/driver-tier-rules/{id}`, `POST /admin/driver-tiers/recalculate` (`202 { evaluated, changed }`, runs now), `GET /admin/drivers/{id}/tier-history`, `POST /admin/drivers/{id}/tier { tier, reason }`, `GET /admin/drivers/{id}/incentives`, `GET/POST /admin/incentives?status=&cityId=`, `GET/PUT /admin/incentives/{id}`, `POST /admin/incentives/{id}/deactivate\|activate`, `GET /admin/incentives/{id}/progress?status=`, `POST /admin/incentive-progress/{id}/void { reason }` (`409` once paid). Audited `driver_tier_rule.update`, `driver.tier_set`, `incentive.create\|update\|activate\|deactivate`, `incentive_progress.void` |
 | Admin cancellation | `GET/POST /admin/cancellation-reasons`, `PUT/DELETE /admin/cancellation-reasons/{id}` (delete deactivates a used reason), `GET/POST /admin/cancellation-rules`, `PUT/DELETE /admin/cancellation-rules/{id}`, `POST /admin/cancellation-rules/simulate`, `GET /admin/reliability-thresholds?role=`, `PUT /admin/reliability-thresholds/{id}` (`cancellation.manage`); `GET /admin/cancellations?actor=&stage=&atFault=&feeStatus=&excuseStatus=&from=&to=&search=` (`trips.view`); `GET /admin/cancellations/excuses?status=` (+ `ageHours`, `slaBreached`, `pendingPenaltyPoints`), `POST /admin/cancellations/{eventId}/review { decision, note }` (`cancellation.review`); `GET /admin/reliability-profiles?role=&level=&search=`, `GET /admin/reliability-profiles/{userId}?role=`, `POST /admin/reliability-profiles/{userId}/adjust` (`reliability.manage`); `GET /admin/cancellations/stats?from=&to=&cityId=&zoneId=&rideCategoryId=` (`reports.view`); `POST /admin/trips/{id}/cancel { reason, atFault?, chargeFee? }` (`trips.cancel`). Audited: `cancellation_reason.*`, `cancellation_rule.*`, `reliability_threshold.update`, `cancellation.review`, `reliability.adjust`, `reliability.level_change` (system) |
-| Realtime | SignalR hub `/hubs/trips` (JWT via `?access_token=`): `TripUpdated`, `DriverLocation` (passenger), `OfferReceived`, `OfferExpired`, `TripUpdated` (driver), `LiveSnapshot` every 5 s + `TripUpdated` + `DemandChanged` + `PayoutRequested` (`admins` group), `PaymentUpdated`, `NotificationCreated` (user); F12: `TripMessage`, `TripMessagesRead` (trip parties), `SafetyCheck` (passenger), `SafetyCaseOpened`, `SafetyCaseUpdated`, `SafetyAlertRaised` (`admins`) |
+| Help center (F18, public) | `GET /help/categories?audience=passenger\|driver` (active categories with ≥ 1 published article for the audience: `id, code, name, icon, articlesCount`), `GET /help/articles?categoryId=&q=&audience=&sort=&page=&pageSize=` (published only; page 1 without `q` = most read, inside a category the editorial order; `sort=popular\|newest\|order`; `q` = MySQL FULLTEXT boolean search, `LIKE` on SQLite; items `id, slug, title, excerpt (160 chars, no Markdown), categoryId, updatedAt` in the `Accept-Language`), `GET /help/articles/{slug}` (`body` Markdown, `category`, `tags`, `related`, counts a view; `404` for unpublished), `POST /help/articles/{id}/feedback { helpful }` (`204`; one vote per IP / article / Riyadh day, then `429 rate_limited { retryAfterSeconds }`) |
+| Support (F18, rider & driver) | `POST /support/attachments` (multipart `file`, jpg / png / pdf ≤ 10 MB → `201 { fileId, fileName, contentType, sizeBytes }`; `422 unsupported_file_type \| file_too_large`), `POST /support/tickets { type, tripId?, subject, message, fileIds?, dispute?: { reason, requestedRefundAmount? }, lostItem?: { itemCategory?, contactPhone? } }` (`201 TicketDetail`; `422 validation_failed { tripId: "required" }` for `trip_issue` / `payment_issue` / `lost_item`, `403` when not a party of the trip, `409 dispute_exists`, `422 dispute_window_closed`, `422 attachment_limit`), `GET /support/tickets?status=open\|closed&page=&pageSize=` (`open` = every non-closed), `GET /support/tickets/{id}` (public messages only; resets the unread counter), `POST /support/tickets/{id}/messages { body, fileIds? }` (`201`; `409 ticket_closed`), `POST /support/tickets/{id}/csat { score 1-5, comment? }` (`204`; `409 conflict` when not resolved / already rated). `GET /files/{id}` is also open to the requester for the files agents attached to public messages |
+| Admin support (F18) | `GET /admin/support/summary`, `GET /admin/support/stats?from=&to=` (KPIs), `GET /admin/support/tickets?status=&type=&priority=&channel=&requesterUserId=&assignedTo=me\|unassigned\|{userId}&sla=breached\|due_soon&search=&from=&to=&page=&pageSize=`, `GET /admin/support/tickets/{id}`, `GET /admin/support/disputes?status=&tripId=&page=` (`support.view`); `POST /admin/support/tickets` (phone ticket for a user), `POST …/tickets/{id}/messages { body, fileIds?, isInternal, cannedResponseCode? }`, `POST …/assign { userId \| null }`, `…/status { status: pending_user\|in_progress\|resolved\|closed, note? }`, `…/priority { priority }`, `…/type { type }`, `GET/POST /admin/canned-responses`, `PUT/DELETE /admin/canned-responses/{id}`, `GET/PUT /admin/support/sla-policies` (`support.manage`); `POST /admin/support/disputes/{id}/resolve { resolution: refund_full\|refund_partial\|no_refund, amount?, note }` (`support.disputes`; answers the dispute with its F11 `refund`). Audited `support_ticket.create\|assign\|status\|priority\|type`, `support_dispute.resolve`, `canned_response.*`, `support_sla.update` |
+| Admin help center (F18, `help.manage`) | `GET/POST /admin/help/categories`, `PUT/DELETE /admin/help/categories/{id}` (`409` while it has articles), `GET /admin/help/articles?categoryId=&audience=&published=&q=&page=&pageSize=` (full rows incl. bodies, `categoryName`, `viewCount`, `helpfulYes`, `helpfulNo`), `POST /admin/help/articles`, `GET/PUT/DELETE /admin/help/articles/{id}`, `POST /admin/help/articles/{id}/publish\|unpublish`. Audited `help_category.*`, `help_article.create\|update\|delete\|publish\|unpublish` |
+| Realtime | SignalR hub `/hubs/trips` (JWT via `?access_token=`): `TripUpdated`, `DriverLocation` (passenger), `OfferReceived`, `OfferExpired`, `TripUpdated` (driver), `LiveSnapshot` every 5 s + `TripUpdated` + `DemandChanged` + `PayoutRequested` (`admins` group), `PaymentUpdated`, `NotificationCreated` (user); F12: `TripMessage`, `TripMessagesRead` (trip parties), `SafetyCheck` (passenger), `SafetyCaseOpened`, `SafetyCaseUpdated`, `SafetyAlertRaised` (`admins`); F18: `SupportTicketUpdated { ticketId, status, lastMessageAt, unread }` (the requester) and `SupportTicketUpdated { ticketId, status, priority, lastMessageBy, slaState? }` + `SupportTicketCreated(ticketSummary)` (`admins`; `slaState` only from the SLA monitor) |
 | System | `GET /health` (MySQL check), `GET /openapi/v1.json`, `GET /docs` (Development) |
 
 Roles: `passenger`, `driver`, `admin`, `operations` (JWT `roles` claim). F11/F13 admin endpoints also check the JWT `perm` claim
 (`payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust`, `notifications.view`,
 `notifications.manage`, `notifications.sms_broadcast`, `safety.manage`, and since F12/F14 `support.manage`, `trips.view`, `trips.cancel`, `cancellation.manage`,
-`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`, and since F16 `favorites.manage`, and since F17 `scheduling.manage`, `airport.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
+`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`, and since F16 `favorites.manage`, and since F17 `scheduling.manage`, `airport.manage`, and since F18 `support.view`, `support.disputes`, `help.manage` (`support.manage` from F12); `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
 and driver status changes create a notification row for the driver. Approving a driver requires every required
 document type to be `verified`.
 
@@ -353,7 +366,7 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
   `CaptureMaxAttempts` debits the passenger wallet (overdraft). Cancellation / no drivers voids the authorization.
 - **Webhooks**: signature first (`401` + stored `signature_valid=false`), then `(provider, event_id)` dedupe, then one transaction applying the
   forward-only state transition (stale states → `ignored`) and its effect (top-up credit, trip start/cancel, pending capture journal).
-- **Refunds**: ≤ refundable (`422 refund_exceeds_amount { refundable }`); below `RefundAutoApproveLimit` approved and executed at once,
+- **Refunds**: fare-dispute refunds (F18) carry `reason_code = fare_dispute` and `dispute_id`; ≤ refundable (`422 refund_exceeds_amount { refundable }`); below `RefundAutoApproveLimit` approved and executed at once,
   otherwise `pending_approval` until another admin approves (`409 four_eyes_required` for the requester).
 - **Payouts**: the request debits the wallet immediately; reject/cancel reverses; mark-paid posts `payout_paid`; approved payouts are grouped in
   `payout_batches` exported as CSV (`payout_number, beneficiary_name, iban, amount, currency, reference`).
@@ -401,7 +414,8 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
   (`SafetyCheckTimeoutJob`) opens a `high` case (`source = alert`) with the ops fan-out.
 - **Reports / lost items**: safety reports within 7 days (`harassment` → `high`, others `medium`, `subject_user_id` = the other party). Lost items on completed trips
   within 7 days (`LI-YYYYMMDD-####`), `lost_item.reported` to the driver, the driver's answer → `found|not_found` + `lost_item.update` to the rider; ops continue
-  `driver_contacted → returned → closed`. `support_ticket_id` stays `null` until F18.
+  `driver_contacted → returned → closed`. Since F18 every lost item report opens a linked `lost_item` support ticket
+  (`support_ticket_id`; the `lost_item.update` deep link is `ata://support/tickets/{ticketId}`; a system line lands in the ticket on the driver's answer and on every ops update).
 - Case numbers `SC-YYYYMMDD-####`; the first admin action (assign / note / status / resolve) stamps `first_response_at` once.
 
 ## Cancellation & reliability (F14)
@@ -520,6 +534,41 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
 - Migration `AddScheduledRidesAndAirport`; tests: `ScheduleWindowTests`, `ScheduledBookingTests`, `ScheduledTimelineTests`, `ScheduledMarketplaceTests`, `ScheduledCancellationTests`, `ScheduledPaymentTests`,
   `ScheduledFavoriteTests`, `ScheduledAdminTests`, `AirportTripTests`, `AirportWaitingPolicyTests`, the `Airport*Queue*` classes, `AirportAdminTests`, `SchedulingUnitTests` (`SchedulingFlow` helpers).
   The jobs are driven with `RunScheduledWorkerAsync` / `RunScheduledRemindersAsync` / `RunAirportQueueJobAsync` and `FakeClock.Set`.
+
+## Support (F18)
+
+- **Tickets** (`support_tickets`, `support_messages`, `support_message_attachments`): numbers `ST-YYYYMMDD-#####`; `trip_issue` / `payment_issue` / `lost_item` require a trip the user took part in (`422 validation_failed
+  { tripId: "required" }`, `403` for a stranger's trip, `404` for an unknown one); `account` / `other` / `safety` need none. Default priority by type: `safety` urgent, `payment_issue` high, the rest normal; an agent
+  can change it (both SLA due dates are recomputed from the policy: `created + minutes`, resolution `+ sla_paused_seconds`). A rider / driver ticket starts `open`; requester role = the user's role in the trip (else the login role).
+- **Status machine**: assignment or the first public agent message moves `open → in_progress`; the agent sets `pending_user` (pauses the SLA clock), `in_progress`, `resolved` (stamps `resolved_at`; the requester is invited to rate
+  with `support.status`) or `closed` (final: any user / agent message answers `409 ticket_closed`; internal notes are still allowed). A user reply to a `pending_user` / `resolved` ticket goes to `in_progress` (assigned) or `open`,
+  resumes the clock (`resolution_due_at += time paused`) and clears `resolved_at`; an agent can reopen a resolved ticket with `in_progress`. `SupportAutoCloseJob` closes `resolved` tickets older than `Support:AutoCloseDays`.
+  The `note` of `POST …/status` is a public agent message for `pending_user` / `resolved` (the question / the solution) and an internal note otherwise.
+- **SLA**: `first_response_due_at = created + first_response_minutes`, `resolution_due_at = created + resolution_minutes + sla_paused_seconds`; `first_response_at` = the first public agent message. `slaState` (`ok` / `due_soon` /
+  `breached`) is computed for active tickets only: `due_soon` = within 30 minutes of a deadline; while paused the effective resolution deadline moves with the clock (a paused ticket neither breaches nor gets closer).
+  `SupportSlaMonitorJob` pushes `SupportTicketUpdated { …, slaState }` to the `admins` group when a ticket's state changes.
+- **Messages**: agents appear to the requester as "فريق دعم ATA" / "ATA Support" (real names only for agents); internal notes never reach the user. A public agent message raises `unread_by_user`, sends `support.reply`
+  (deep link `ata://support/tickets/{ticketId}`) and pushes `SupportTicketUpdated` to the user; `support.status` goes out for `pending_user`, `resolved`, `closed` and dispute outcomes; a user message pushes `SupportTicketUpdated` to
+  the admins. System lines (lost item updates, dispute outcomes) never change the status or the unread counter.
+- **Attachments**: `POST /support/attachments` stores a file under `support/{userId}/…` (`stored_files.owner_user_id` = the uploader); a message takes up to `Support:MaxAttachmentsPerMessage` of the sender's own support
+  uploads, each attached once. `GET /files/{id}`: owner, any admin, or the requester of the ticket for files on public messages.
+- **Linking with F12**: a `safety` ticket also creates a `safety_cases` row (`type = safety_report`, `source = support`, priority `high`, reporter / subject from the trip) with `safety_cases.support_ticket_id` and
+  `support_tickets.safety_case_id` set; a `lost_item` ticket of a rider creates the `lost_item_reports` row (driver notified) linked both ways (the same 7-day window as the F12 endpoint: `422 lost_item_window_closed`);
+  the other direction: `POST /passenger/trips/{id}/lost-items` opens the ticket. Safety reports / SOS of F12 do not open tickets.
+- **Fare disputes** (`fare_disputes`, UNIQUE trip and ticket): `payment_issue` + `dispute { reason, requestedRefundAmount? }` by the trip's passenger on a `completed` trip (charged = final fare) or a trip cancelled with a fee charged
+  (charged = the fee), within `Support:DisputeWindowDays` of completion / cancellation (`422 dispute_window_closed`), one per trip (`409 dispute_exists`), otherwise `422 validation_failed { tripId: "not_disputable" }`.
+  `POST /admin/support/disputes/{id}/resolve` (`support.disputes`): `refund_full` refunds the charged amount, `refund_partial` the `amount` (0 < amount ≤ charged), `no_refund` nothing; the refund is created first through the F11
+  service (`reason_code = fare_dispute`, `dispute_id`; card trips → the original card, otherwise the passenger wallet; below `Payments:RefundAutoApproveLimit` executed at once, else `pending_approval` until a second admin
+  approves it at `POST /admin/refunds/{id}/approve`), then the dispute becomes `approved` / `partially_approved` / `rejected`, a system line is added to the ticket and `support.status` is sent. The first agent action on the ticket
+  moves an `open` dispute to `under_review`.
+- **Help center** (`help_categories`, `help_articles`): public endpoints need no authentication and show active categories with published articles only; the audience filter applies to the article and its category. MySQL uses the
+  `FULLTEXT(title_ar, title_en, body_ar, body_en)` index (`MATCH … AGAINST` in boolean mode, every word as `+word*`, ordered by relevance) and falls back to `LIKE` when it finds nothing (words shorter than
+  `innodb_ft_min_token_size`); SQLite (tests) always uses `LIKE` (every word in a title or body of either language, title hits first). The result is shown in the request language. Views and votes are plain counters.
+- **KPIs** (`GET /admin/support/stats`): created / resolved / closed in the range, `openNow`, mean and median resolution time (`resolved_at − created_at − sla_paused_seconds`) and first-response time, SLA compliance
+  (share of tickets resolved before `resolution_due_at`), CSAT mean and count, per-type counts; `GET /admin/support/summary` has the live queue counters (`open`, `unassigned`, `pendingUser`, `breachingFirstResponse`,
+  `breachingResolution`, all-time averages and `csatAvg`).
+- Migration `AddSupport`; tests: `HelpCenterTests`, `SupportTicketTests`, `SupportConversationTests`, `SupportWorkflowTests`, `SupportQueueTests`, `SupportAdminTests`, `SupportStatsTests`, `FareDisputeTests`,
+  `SupportUnitTests` (`SupportFlow` helpers, `SupportFixture` with a recording `ISupportNotifier` and `Payments:RefundAutoApproveLimit = 20`). The jobs are driven with `RunSupportAutoCloseAsync` / `RunSupportSlaMonitorAsync`.
 
 ## Migrations
 

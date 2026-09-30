@@ -17,6 +17,7 @@ using ATA.Domain.Promotions;
 using ATA.Domain.Ratings;
 using ATA.Domain.Safety;
 using ATA.Domain.Scheduling;
+using ATA.Domain.Support;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
 using Microsoft.EntityFrameworkCore;
@@ -124,6 +125,15 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<AirportZone> AirportZones => Set<AirportZone>();
     public DbSet<AirportQueueEntry> AirportQueueEntries => Set<AirportQueueEntry>();
 
+    public DbSet<HelpCategory> HelpCategories => Set<HelpCategory>();
+    public DbSet<HelpArticle> HelpArticles => Set<HelpArticle>();
+    public DbSet<SupportSlaPolicy> SupportSlaPolicies => Set<SupportSlaPolicy>();
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    public DbSet<SupportMessageAttachment> SupportMessageAttachments => Set<SupportMessageAttachment>();
+    public DbSet<CannedResponse> CannedResponses => Set<CannedResponse>();
+    public DbSet<FareDispute> FareDisputes => Set<FareDispute>();
+
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -192,6 +202,9 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
                     break;
                 case PaymentWebhookEvent webhook when entry.State == EntityState.Added && webhook.ReceivedAt == default:
                     webhook.ReceivedAt = now;
+                    break;
+                case SupportSlaPolicy policy when entry.State is EntityState.Added or EntityState.Modified:
+                    policy.UpdatedAt = now;
                     break;
                 case DocumentExpiryNotice notice when entry.State == EntityState.Added && notice.SentAt == default:
                     notice.SentAt = now;

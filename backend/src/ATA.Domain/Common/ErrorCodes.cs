@@ -70,5 +70,9 @@ public static class ErrorCodes
     public const string AirportPickupZoneRequired = "airport_pickup_zone_required";
     public const string AirportCategoryNotApplicable = "airport_category_not_applicable";
     public const string NotInAirportWaitingArea = "not_in_airport_waiting_area";
+    public const string TicketClosed = "ticket_closed";
+    public const string DisputeExists = "dispute_exists";
+    public const string DisputeWindowClosed = "dispute_window_closed";
+    public const string AttachmentLimit = "attachment_limit";
     public const string InternalError = "internal_error";
 }

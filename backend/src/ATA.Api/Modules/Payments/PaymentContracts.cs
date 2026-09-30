@@ -63,7 +63,7 @@ public sealed record RefundDto(
     Guid Id, string RefundNumber, Guid? PaymentId, Guid? TripId, string? TripNumber, Guid UserId, string? UserName, string? UserPhone, decimal Amount, RefundType Type,
     RefundDestination Destination, RefundReasonCode ReasonCode, string Reason, RefundStatus Status, Guid RequestedBy, string? RequestedByName, Guid? ApprovedBy,
     string? ApprovedByName, DateTime? ApprovedAt, Guid? RejectedBy, string? RejectedByName, string? RejectedReason, string? GatewayRefundId, string? FailureMessage,
-    DateTime? ProcessedAt, DateTime CreatedAt);
+    DateTime? ProcessedAt, DateTime CreatedAt, Guid? DisputeId = null);
 
 public sealed record ReasonBody(string? Reason);
 

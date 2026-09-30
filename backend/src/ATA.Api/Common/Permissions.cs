@@ -16,7 +16,10 @@ public static class Permissions
     public const string NotificationsManage = "notifications.manage";
     public const string NotificationsSmsBroadcast = "notifications.sms_broadcast";
     public const string SafetyManage = "safety.manage";
+    public const string SupportView = "support.view";
     public const string SupportManage = "support.manage";
+    public const string SupportDisputes = "support.disputes";
+    public const string HelpManage = "help.manage";
     public const string TripsView = "trips.view";
     public const string TripsCancel = "trips.cancel";
     public const string CancellationManage = "cancellation.manage";

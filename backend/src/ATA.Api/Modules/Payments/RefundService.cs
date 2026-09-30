@@ -3,6 +3,7 @@ using ATA.Api.Common;
 using ATA.Api.Modules.Admin;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Payments.Gateways;
+using ATA.Domain.Cancellation;
 using ATA.Domain.Common;
 using ATA.Domain.Notifications;
 using ATA.Domain.Payments;
@@ -38,13 +39,52 @@ public sealed class RefundService(
     {
         Validate(request);
         var payment = Guard.NotFound(await db.Payments.FirstOrDefaultAsync(p => p.Id == paymentId, ct));
-        return await CreateForPaymentAsync(payment, request, ct);
+        return await CreateForPaymentAsync(payment, request, null, ct);
     }
 
     public async Task<RefundDto> CreateForTripAsync(Guid tripId, CreateRefundRequest request, CancellationToken ct)
     {
         Validate(request);
         var trip = Guard.NotFound(await db.Trips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId, ct));
+        return await CreateForCompletedTripAsync(trip, request, null, ct);
+    }
+
+    /// <summary>
+    /// F18: the refund created by resolving a fare dispute (<c>reason_code = fare_dispute</c>, <c>dispute_id</c>). A completed trip is refunded to the original card
+    /// (its captured payment) or to the passenger wallet (cash / wallet trips); a trip cancelled with a fee refunds that fee the same way. The four-eyes rule applies
+    /// as for any refund: from <c>Payments:RefundAutoApproveLimit</c> the refund waits for a second admin.
+    /// </summary>
+    public async Task<RefundDto> CreateForDisputeAsync(Guid tripId, decimal amount, Guid disputeId, string reason, CancellationToken ct)
+    {
+        var request = new CreateRefundRequest(amount, RefundReasonCode.FareDispute, reason.Length > 500 ? reason[..500] : reason, null);
+        Validate(request);
+        var trip = Guard.NotFound(await db.Trips.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tripId, ct));
+        return trip.Status == TripStatus.Cancelled
+            ? await CreateForCancellationFeeAsync(trip, request, disputeId, ct)
+            : await CreateForCompletedTripAsync(trip, request, disputeId, ct);
+    }
+
+    private async Task<RefundDto> CreateForCancellationFeeAsync(Trip trip, CreateRefundRequest request, Guid disputeId, CancellationToken ct)
+    {
+        var cancellation = await db.CancellationEvents.AsNoTracking().Where(e => e.TripId == trip.Id && e.FeeCharged > 0).OrderByDescending(e => e.CreatedAt).FirstOrDefaultAsync(ct)
+            ?? throw new DomainException(ErrorCodes.Conflict, new { status = trip.Status });
+        var cardPayment = cancellation.FeeMethod == CancellationFeeMethod.Card
+            ? await db.Payments.Where(p => p.TripId == trip.Id && p.Purpose == PaymentPurpose.Trip && (p.Status == PaymentStatus.Captured || p.Status == PaymentStatus.PartiallyRefunded))
+                .OrderByDescending(p => p.CreatedAt).FirstOrDefaultAsync(ct)
+            : null;
+        if (cardPayment is not null)
+        {
+            return await CreateForPaymentAsync(cardPayment, request, disputeId, ct);
+        }
+
+        var open = await OpenAmountAsync(r => r.TripId == trip.Id, ct);
+        var passengerUserId = await db.Passengers.AsNoTracking().Where(p => p.Id == trip.PassengerId).Select(p => p.UserId).FirstAsync(ct);
+        return await CreateAsync(null, trip.Id, passengerUserId, cancellation.FeeCharged, Math.Max(0m, cancellation.FeeCharged - open), RefundDestination.Wallet, request, disputeId, ct);
+    }
+
+    private async Task<RefundDto> CreateForCompletedTripAsync(Trip trip, CreateRefundRequest request, Guid? disputeId, CancellationToken ct)
+    {
+        var tripId = trip.Id;
         if (trip.Status != TripStatus.Completed || trip.FinalFare is not { } fare)
         {
             throw new DomainException(ErrorCodes.Conflict, new { status = trip.Status });
@@ -56,17 +96,17 @@ public sealed class RefundService(
             : null;
         if (cardPayment is not null)
         {
-            return await CreateForPaymentAsync(cardPayment, request, ct);
+            return await CreateForPaymentAsync(cardPayment, request, disputeId, ct);
         }
 
         // Cash and wallet trips are refunded to the passenger wallet.
         var open = await OpenAmountAsync(r => r.TripId == tripId, ct);
         var refundable = Math.Max(0m, fare - open);
         var passengerUserId = await db.Passengers.AsNoTracking().Where(p => p.Id == trip.PassengerId).Select(p => p.UserId).FirstAsync(ct);
-        return await CreateAsync(null, tripId, passengerUserId, fare, refundable, RefundDestination.Wallet, request, ct);
+        return await CreateAsync(null, tripId, passengerUserId, fare, refundable, RefundDestination.Wallet, request, disputeId, ct);
     }
 
-    private async Task<RefundDto> CreateForPaymentAsync(Payment payment, CreateRefundRequest request, CancellationToken ct)
+    private async Task<RefundDto> CreateForPaymentAsync(Payment payment, CreateRefundRequest request, Guid? disputeId, CancellationToken ct)
     {
         if (payment.Purpose == PaymentPurpose.Topup || payment.Status is not (PaymentStatus.Captured or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded))
         {
@@ -76,10 +116,11 @@ public sealed class RefundService(
         var pending = await OpenAmountAsync(r => r.PaymentId == payment.Id && r.Status != RefundStatus.Succeeded, ct);
         var refundable = Math.Max(0m, payment.Refundable - pending);
         var destination = request.Destination ?? RefundDestination.OriginalMethod;
-        return await CreateAsync(payment.Id, payment.TripId, payment.UserId, payment.CapturedAmount ?? payment.Amount, refundable, destination, request, ct);
+        return await CreateAsync(payment.Id, payment.TripId, payment.UserId, payment.CapturedAmount ?? payment.Amount, refundable, destination, request, disputeId, ct);
     }
 
-    private async Task<RefundDto> CreateAsync(Guid? paymentId, Guid? tripId, Guid userId, decimal paid, decimal refundable, RefundDestination destination, CreateRefundRequest request, CancellationToken ct)
+    private async Task<RefundDto> CreateAsync(Guid? paymentId, Guid? tripId, Guid userId, decimal paid, decimal refundable, RefundDestination destination, CreateRefundRequest request,
+        Guid? disputeId, CancellationToken ct)
     {
         var amount = request.Amount!.Value;
         if (amount > refundable)
@@ -100,6 +141,7 @@ public sealed class RefundService(
             ReasonCode = request.ReasonCode!.Value,
             Reason = request.Reason!.Trim(),
             RequestedBy = currentUser.UserId,
+            DisputeId = disputeId,
         };
         if (amount < _options.RefundAutoApproveLimit)
         {
@@ -322,7 +364,7 @@ public sealed class RefundService(
         return rows.Select(r => new RefundDto(r.Id, r.RefundNumber, r.PaymentId, r.TripId, r.TripId is { } id ? numbers.GetValueOrDefault(id) : null, r.UserId,
             Name(r.UserId), users.GetValueOrDefault(r.UserId)?.PhoneNumber, r.Amount, r.Type, r.Destination, r.ReasonCode, r.Reason, r.Status, r.RequestedBy,
             Name(r.RequestedBy), r.ApprovedBy, Name(r.ApprovedBy), r.ApprovedAt, r.RejectedBy, Name(r.RejectedBy), r.RejectedReason, r.GatewayRefundId,
-            r.FailureMessage, r.ProcessedAt, r.CreatedAt)).ToList();
+            r.FailureMessage, r.ProcessedAt, r.CreatedAt, r.DisputeId)).ToList();
     }
 
     private async Task<RefundDto> ToDtoAsync(Refund refund, CancellationToken ct) => (await ToDtosAsync([refund], ct))[0];

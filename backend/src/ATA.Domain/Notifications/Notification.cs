@@ -55,6 +55,8 @@ public static class NotificationTypes
     public const string ScheduledReservationReleased = "scheduled.reservation_released";
     public const string ScheduledFavoriteRequest = "scheduled.favorite_request";
     public const string ScheduledRematched = "scheduled.rematched";
+    public const string SupportReply = "support.reply";
+    public const string SupportStatus = "support.status";
 }
 
 public class Notification : Entity

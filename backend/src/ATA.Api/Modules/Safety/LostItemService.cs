@@ -1,9 +1,11 @@
 using ATA.Api.Common;
 using ATA.Api.Modules.Admin;
 using ATA.Api.Modules.Notifications;
+using ATA.Api.Modules.Support;
 using ATA.Domain.Common;
 using ATA.Domain.Notifications;
 using ATA.Domain.Safety;
+using ATA.Domain.Support;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,8 @@ public sealed class LostItemService(
     IClock clock,
     INotificationDispatcher notifications,
     AuditService audit,
+    SupportTicketWriter tickets,
+    SupportTicketEvents ticketEvents,
     IOptions<SafetyOptions> options)
 {
     public const string EntityType = "lost_item";
@@ -33,24 +37,54 @@ public sealed class LostItemService(
                           join p in db.Passengers.AsNoTracking() on t.PassengerId equals p.Id
                           where t.Id == tripId && p.UserId == userId
                           select t).FirstOrDefaultAsync(ct) ?? throw new DomainException(ErrorCodes.NotFound);
+        EnsureReportable(trip);
+        var phone = string.IsNullOrWhiteSpace(request.ContactPhone)
+            ? null
+            : PhoneNumber.Normalize(request.ContactPhone);
+        var description = request.Description!.Trim();
+
+        // F18: every report opens a linked support ticket (type lost_item) whose first message is the description.
+        var language = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Language).FirstAsync(ct);
+        var (itemAr, itemEn) = SafetyLabels.ItemCategory(request.ItemCategory!.Value);
+        var subject = language == Language.En ? $"Lost item report - {itemEn} - trip {trip.TripNumber}" : $"بلاغ مفقودات - {itemAr} - الرحلة {trip.TripNumber}";
+        var ticket = await tickets.AddAsync(new SupportTicketWriter.Draft(userId, SupportRequesterRole.Passenger, SupportTicketType.LostItem, trip.Id, subject, description, null,
+            SupportChannel.App, userId, []), ct);
+        var report = await AddLinkedReportAsync(trip, userId, request.ItemCategory!.Value, description, phone, ticket.Id, ct);
+        ticket.LostItemReportId = report.Id;
+        await tickets.SaveNewAsync(ticket, async (attempt, token) => report.ReportNumber = await NextNumberAsync(attempt, token), ct);
+        await ticketEvents.PublishCreatedAsync(ticket, ct);
+
+        return ToDto(report, trip.TripNumber);
+    }
+
+    /// <summary>The trip must be <c>completed</c> (<c>409</c>) and not older than <c>Safety:LostItemWindowDays</c> (<c>422 lost_item_window_closed</c>).</summary>
+    private void EnsureReportable(Trip trip)
+    {
         if (trip.Status != TripStatus.Completed || trip.CompletedAt is not { } completedAt)
         {
             throw new DomainException(ErrorCodes.Conflict, new { status = trip.Status });
         }
 
-        var now = clock.UtcNow;
-        if (now > completedAt.AddDays(options.Value.LostItemWindowDays))
+        if (clock.UtcNow > completedAt.AddDays(options.Value.LostItemWindowDays))
         {
             throw new DomainException(ErrorCodes.LostItemWindowClosed, new { windowDays = options.Value.LostItemWindowDays });
         }
+    }
 
-        var phone = string.IsNullOrWhiteSpace(request.ContactPhone)
-            ? await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.PhoneNumber).FirstAsync(ct)
-            : PhoneNumber.Normalize(request.ContactPhone);
+    /// <summary>
+    /// Adds the lost item report linked to <paramref name="ticketId"/> to the unit of work (the caller saves) and tells the driver (<c>lost_item.reported</c>);
+    /// used by <c>POST /passenger/trips/{id}/lost-items</c> and by <c>lost_item</c> support tickets. <paramref name="contactPhone"/> defaults to the rider's number.
+    /// </summary>
+    public async Task<LostItemReport> AddLinkedReportAsync(Trip trip, Guid reporterUserId, LostItemCategory category, string description, string? contactPhone, Guid ticketId, CancellationToken ct)
+    {
+        EnsureReportable(trip);
+        var phone = string.IsNullOrWhiteSpace(contactPhone)
+            ? await db.Users.AsNoTracking().Where(u => u.Id == reporterUserId).Select(u => u.PhoneNumber).FirstAsync(ct)
+            : PhoneNumber.Normalize(contactPhone);
         var report = new LostItemReport
         {
-            ReportNumber = string.Empty, TripId = trip.Id, ReporterUserId = userId, DriverId = trip.DriverId, ItemCategory = request.ItemCategory!.Value,
-            Description = request.Description!.Trim(), ContactPhone = phone,
+            ReportNumber = await NextNumberAsync(0, ct), TripId = trip.Id, ReporterUserId = reporterUserId, DriverId = trip.DriverId, ItemCategory = category,
+            Description = description, ContactPhone = phone, SupportTicketId = ticketId,
         };
         db.LostItemReports.Add(report);
         if (trip.DriverId is { } driverId && await db.Drivers.AsNoTracking().Where(d => d.Id == driverId).Select(d => (Guid?)d.UserId).FirstOrDefaultAsync(ct) is { } driverUserId)
@@ -61,20 +95,23 @@ public sealed class LostItemService(
                 new Dictionary<string, object?> { ["tripId"] = trip.Id }), ct);
         }
 
-        for (var attempt = 0; ; attempt++)
+        return report;
+    }
+
+    public async Task<string> NextNumberAsync(int offset, CancellationToken ct) =>
+        await SequenceNumbers.NextAsync(db.LostItemReports.Select(r => r.ReportNumber), $"LI-{clock.UtcNow:yyyyMMdd}-", 4, offset, ct);
+
+    /// <summary>F18: a system line in the linked ticket ("lost item update: …") so the rider sees the follow-up in the conversation; the ticket's status is untouched.</summary>
+    private async Task AddTicketLineAsync(LostItemReport report, CancellationToken ct)
+    {
+        if (report.SupportTicketId is not { } ticketId || await db.SupportTickets.FirstOrDefaultAsync(t => t.Id == ticketId, ct) is not { } ticket)
         {
-            report.ReportNumber = await SequenceNumbers.NextAsync(db.LostItemReports.Select(r => r.ReportNumber), $"LI-{now:yyyyMMdd}-", 4, attempt, ct);
-            try
-            {
-                await db.SaveChangesAsync(ct);
-                break;
-            }
-            catch (DbUpdateException) when (attempt < 3)
-            {
-            }
+            return;
         }
 
-        return ToDto(report, trip.TripNumber);
+        var language = await db.Users.AsNoTracking().Where(u => u.Id == report.ReporterUserId).Select(u => u.Language).FirstAsync(ct);
+        var (ar, en) = SafetyLabels.LostItemStatus(report.Status);
+        tickets.AddSystemMessage(ticket, language == Language.En ? $"Lost item update: {en}" : $"تحديث المفقودات: {ar}");
     }
 
     public async Task<PagedResult<LostItemDto>> ListMineAsync(Paging paging, CancellationToken ct)
@@ -121,7 +158,13 @@ public sealed class LostItemService(
         report.DriverRespondedAt = clock.UtcNow;
         report.Status = found ? LostItemStatus.Found : LostItemStatus.NotFound;
         await NotifyPassengerAsync(report, ct);
+        await AddTicketLineAsync(report, ct);
         await db.SaveChangesAsync(ct);
+        if (report.SupportTicketId is { } respondedTicket)
+        {
+            await ticketEvents.PublishUpdatedAsync(respondedTicket, toUser: true, ct);
+        }
+
         var tripNumber = await db.Trips.AsNoTracking().Where(t => t.Id == report.TripId).Select(t => t.TripNumber).FirstOrDefaultAsync(ct);
         return new DriverLostItemDto(report.Id, report.ReportNumber, tripNumber, report.ItemCategory, report.Description, report.Status, report.DriverResponse, report.CreatedAt);
     }
@@ -174,9 +217,15 @@ public sealed class LostItemService(
         if (changed)
         {
             await NotifyPassengerAsync(report, ct);
+            await AddTicketLineAsync(report, ct);
         }
 
         await db.SaveChangesAsync(ct);
+        if (changed && report.SupportTicketId is { } updatedTicket)
+        {
+            await ticketEvents.PublishUpdatedAsync(updatedTicket, toUser: true, ct);
+        }
+
         return (await AdminListByIdAsync(report.Id, ct))!;
     }
 

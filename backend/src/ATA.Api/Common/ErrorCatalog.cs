@@ -81,6 +81,10 @@ public static class ErrorCatalog
         [ErrorCodes.AirportPickupZoneRequired] = new(StatusCodes.Status422UnprocessableEntity, "اختر منطقة الالتقاط في المطار", "Choose a pickup zone at the airport"),
         [ErrorCodes.AirportCategoryNotApplicable] = new(StatusCodes.Status422UnprocessableEntity, "فئة المطار متاحة لرحلات المطار فقط", "The airport category is only available for airport trips"),
         [ErrorCodes.NotInAirportWaitingArea] = new(StatusCodes.Status422UnprocessableEntity, "يجب أن تكون داخل منطقة انتظار المطار", "You must be inside the airport waiting area"),
+        [ErrorCodes.TicketClosed] = new(StatusCodes.Status409Conflict, "التذكرة مغلقة، أنشئ تذكرة جديدة", "The ticket is closed, please open a new one"),
+        [ErrorCodes.DisputeExists] = new(StatusCodes.Status409Conflict, "يوجد اعتراض سابق على هذه الرحلة", "A dispute already exists for this trip"),
+        [ErrorCodes.DisputeWindowClosed] = new(StatusCodes.Status422UnprocessableEntity, "انتهت مدة الاعتراض على الأجرة", "The fare dispute window has closed"),
+        [ErrorCodes.AttachmentLimit] = new(StatusCodes.Status422UnprocessableEntity, "الحد الأقصى 5 مرفقات", "You can attach at most 5 files"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

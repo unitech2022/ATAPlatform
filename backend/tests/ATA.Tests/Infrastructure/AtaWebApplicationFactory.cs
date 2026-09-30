@@ -1,6 +1,7 @@
 using ATA.Api.Modules.Airports;
 using ATA.Api.Modules.Pricing;
 using ATA.Api.Modules.Scheduling;
+using ATA.Api.Modules.Support;
 using ATA.Api.Modules.Trips.Matching;
 using ATA.Domain.Common;
 using ATA.Infrastructure.Persistence;
@@ -61,6 +62,7 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Incentives:JobsEnabled", "false");
         builder.UseSetting("Scheduling:JobsEnabled", "false");
         builder.UseSetting("Airport:JobsEnabled", "false");
+        builder.UseSetting("Support:JobsEnabled", "false");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);
@@ -111,6 +113,20 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     public async Task<int> RunAirportQueueJobAsync()
     {
         var job = Services.GetServices<IHostedService>().OfType<AirportQueueJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>SupportAutoCloseJob</c> (resolved tickets nobody answered become closed).</summary>
+    public async Task<int> RunSupportAutoCloseAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<SupportAutoCloseJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>SupportSlaMonitorJob</c> (broadcasts SLA state transitions to the admins).</summary>
+    public async Task<int> RunSupportSlaMonitorAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<SupportSlaMonitorJob>().Single();
         return await job.RunOnceAsync(CancellationToken.None);
     }
 

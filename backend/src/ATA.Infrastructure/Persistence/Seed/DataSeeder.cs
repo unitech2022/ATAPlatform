@@ -12,6 +12,7 @@ using ATA.Domain.Favorites;
 using ATA.Domain.Promotions;
 using ATA.Domain.Ratings;
 using ATA.Domain.Scheduling;
+using ATA.Domain.Support;
 using ATA.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -45,7 +46,153 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedIncentivesAsync(cancellationToken);
         await SeedScheduledRideRulesAsync(cancellationToken);
         await SeedAirportsAsync(cancellationToken);
+        await SeedSupportSlaPoliciesAsync(cancellationToken);
+        await SeedCannedResponsesAsync(cancellationToken);
+        await SeedHelpCenterAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>F18 SLA policies (doc 11 seed data), added per priority when missing: urgent 15/240, high 60/1440, normal 240/2880, low 1440/4320 (first response / resolution minutes).</summary>
+    private async Task SeedSupportSlaPoliciesAsync(CancellationToken ct)
+    {
+        (SupportPriority Priority, int First, int Resolution)[] policies =
+        [
+            (SupportPriority.Urgent, 15, 240), (SupportPriority.High, 60, 1440), (SupportPriority.Normal, 240, 2880), (SupportPriority.Low, 1440, 4320),
+        ];
+        var existing = await db.SupportSlaPolicies.Select(p => p.Priority).ToListAsync(ct);
+        foreach (var (priority, first, resolution) in policies.Where(p => !existing.Contains(p.Priority)))
+        {
+            db.SupportSlaPolicies.Add(new SupportSlaPolicy { Priority = priority, FirstResponseMinutes = first, ResolutionMinutes = resolution });
+        }
+    }
+
+    /// <summary>F18 canned responses (doc 11 seed data), seeded once while the table is empty and no canned response was ever created / deleted by an admin.</summary>
+    private async Task SeedCannedResponsesAsync(CancellationToken ct)
+    {
+        if (await db.CannedResponses.AnyAsync(ct) || await db.AuditLogs.AnyAsync(a => a.EntityType == "canned_response", ct))
+        {
+            return;
+        }
+
+        (string Code, string Title, string Ar, string En, SupportTicketType? Type)[] responses =
+        [
+            ("greeting", "ترحيب", "مرحباً {userName}، شكراً لتواصلك مع فريق دعم ATA بخصوص التذكرة {ticketNumber}. كيف يمكننا مساعدتك؟",
+                "Hello {userName}, thank you for contacting ATA support about ticket {ticketNumber}. How can we help you?", null),
+            ("need_more_info", "طلب معلومات إضافية", "مرحباً {userName}، لمتابعة التذكرة {ticketNumber} نحتاج إلى مزيد من التفاصيل عن الرحلة {tripNumber}. هل يمكنك مشاركتنا ما حدث بالتفصيل وأي صور متاحة؟",
+                "Hello {userName}, to continue with ticket {ticketNumber} we need more details about trip {tripNumber}. Could you tell us exactly what happened and share any photos you have?", null),
+            ("refund_approved", "الموافقة على الاسترداد", "مرحباً {userName}، راجعنا اعتراضك على أجرة الرحلة {tripNumber} ووافقنا على استرداد المبلغ. سيظهر في محفظتك أو بطاقتك خلال أيام قليلة.",
+                "Hello {userName}, we reviewed your dispute about the fare of trip {tripNumber} and approved a refund. It will reach your wallet or card within a few days.", SupportTicketType.PaymentIssue),
+            ("refund_rejected", "رفض الاسترداد", "مرحباً {userName}، بعد مراجعة الرحلة {tripNumber} تبيّن أن الأجرة صحيحة ولذلك لا يمكننا استرداد المبلغ. يسعدنا توضيح تفاصيل الأجرة إن رغبت.",
+                "Hello {userName}, after reviewing trip {tripNumber} we found the fare to be correct, so we cannot refund it. We are happy to explain the fare details if you wish.", SupportTicketType.PaymentIssue),
+            ("lost_item_contacted", "التواصل مع الكابتن بخصوص المفقودات", "مرحباً {userName}، تواصلنا مع كابتن الرحلة {tripNumber} بخصوص الغرض المفقود، وسنوافيك بالنتيجة فور ردّه.",
+                "Hello {userName}, we contacted the driver of trip {tripNumber} about your lost item and will update you as soon as they reply.", SupportTicketType.LostItem),
+            ("closing", "إغلاق التذكرة", "مرحباً {userName}، نأمل أن تكون مشكلتك قد حُلّت. سنغلق التذكرة {ticketNumber} ويمكنك تقييم تجربتك معنا أو فتح تذكرة جديدة في أي وقت.",
+                "Hello {userName}, we hope your issue is resolved. We will close ticket {ticketNumber}; you can rate your experience or open a new ticket at any time.", null),
+        ];
+        foreach (var (code, title, ar, en, type) in responses)
+        {
+            db.CannedResponses.Add(new CannedResponse { Code = code, Title = title, BodyAr = ar, BodyEn = en, TicketType = type });
+        }
+    }
+
+    /// <summary>
+    /// F18 help center (doc 11 seed data): five categories (<c>drivers</c> for drivers) with 2–3 bilingual articles each, published. Seeded once while both tables are
+    /// empty and no admin ever created / deleted a category or an article.
+    /// </summary>
+    private async Task SeedHelpCenterAsync(CancellationToken ct)
+    {
+        if (await db.HelpCategories.AnyAsync(ct) || await db.HelpArticles.AnyAsync(ct)
+            || await db.AuditLogs.AnyAsync(a => a.EntityType == "help_category" || a.EntityType == "help_article", ct))
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        (string Code, string NameAr, string NameEn, string Icon, HelpAudience Audience)[] categories =
+        [
+            ("trips", "الرحلات", "Trips", "car", HelpAudience.All),
+            ("payments", "الدفع والمحفظة", "Payments and wallet", "wallet", HelpAudience.All),
+            ("safety", "السلامة", "Safety", "shield", HelpAudience.All),
+            ("account", "الحساب", "Account", "user", HelpAudience.All),
+            ("drivers", "للكباتن", "For drivers", "chart", HelpAudience.Driver),
+        ];
+        var ids = new Dictionary<string, Guid>();
+        var order = 0;
+        foreach (var (code, nameAr, nameEn, icon, audience) in categories)
+        {
+            var category = new HelpCategory { Code = code, NameAr = nameAr, NameEn = nameEn, Icon = icon, Audience = audience, SortOrder = ++order * 10 };
+            ids[code] = category.Id;
+            db.HelpCategories.Add(category);
+        }
+
+        (string Category, string Slug, HelpAudience Audience, string TitleAr, string TitleEn, string BodyAr, string BodyEn, string Tags)[] articles =
+        [
+            ("trips", "how-to-schedule-a-ride", HelpAudience.Passenger, "كيف أجدول رحلة؟", "How do I schedule a ride?",
+                "## جدولة رحلة\n\n1. اختر وجهتك ثم اضغط **جدولة**.\n2. حدّد التاريخ والوقت؛ يمكنك الجدولة حتى **7 أيام** من الآن وبعد 30 دقيقة على الأقل.\n3. أكّد الحجز وسيصلك تذكير قبل الموعد.\n\nيمكنك إلغاء الرحلة المجدولة مجاناً قبل الموعد بساعة على الأقل.",
+                "## Scheduling a ride\n\n1. Choose your destination and tap **Schedule**.\n2. Pick the date and time: up to **7 days** ahead and at least 30 minutes from now.\n3. Confirm the booking; you will get a reminder before pickup.\n\nYou can cancel a scheduled ride for free up to one hour before the pickup time.",
+                "[\"schedule\",\"booking\"]"),
+            ("trips", "cancellation-fees", HelpAudience.Passenger, "رسوم الإلغاء", "Cancellation fees",
+                "## متى تُحتسب رسوم الإلغاء؟\n\nالإلغاء قبل قبول الكابتن مجاني دائماً. بعد القبول يوجد وقت سماح قصير، وبعده قد تُحتسب رسوم بسيطة تُعرض لك قبل تأكيد الإلغاء.\n\nإذا كان لديك عذر مقبول مثل تأخر الكابتن الشديد، اختره عند الإلغاء وسنراجع الحالة.",
+                "## When is a cancellation fee charged?\n\nCancelling before a driver accepts is always free. After acceptance there is a short grace period; after it a small fee may apply and is shown before you confirm.\n\nIf you have a valid excuse, such as a very late driver, choose it when cancelling and we will review the case.",
+                "[\"cancel\",\"fees\"]"),
+            ("trips", "airport-pickup", HelpAudience.Passenger, "الطلب من المطار", "Requesting a ride from the airport",
+                "## الطلب من المطار\n\nعند اختيار موقع الالتقاط داخل المطار سنطلب منك اختيار **منطقة الالتقاط** المناسبة لصالتك، ويمكنك إضافة رقم رحلتك الجوية. اتبع التعليمات الظاهرة لموقع الانتظار.",
+                "## Requesting from the airport\n\nWhen your pickup is inside the airport we ask you to choose the **pickup zone** of your terminal and you can add your flight number. Follow the on-screen instructions for the waiting spot.",
+                "[\"airport\"]"),
+            ("payments", "payment-methods", HelpAudience.Passenger, "طرق الدفع", "Payment methods",
+                "## طرق الدفع المتاحة\n\nيمكنك الدفع **نقداً** أو من **المحفظة** أو ببطاقة **مدى / فيزا / ماستركارد** المحفوظة. عند الدفع بالبطاقة نحجز مبلغاً مؤقتاً ثم نخصم الأجرة النهائية عند انتهاء الرحلة.",
+                "## Available payment methods\n\nPay by **cash**, from your **wallet** or with a saved **mada / Visa / Mastercard** card. Card trips place a temporary hold and charge the final fare when the trip ends.",
+                "[\"payment\",\"card\"]"),
+            ("payments", "dispute-a-fare", HelpAudience.Passenger, "كيف أعترض على الأجرة؟", "How do I dispute a fare?",
+                "## الاعتراض على الأجرة\n\nيمكنك الاعتراض خلال **14 يوماً** من انتهاء الرحلة: افتح الرحلة في سجل رحلاتك واختر **اعتراض على الأجرة**، ثم اذكر السبب وأرفق ما يدعمه. سنراجع الطلب ونعلمك بالنتيجة، وإن تمت الموافقة يُعاد المبلغ إلى البطاقة أو المحفظة.",
+                "## Disputing a fare\n\nYou can dispute a fare within **14 days** of the trip: open the trip in your history and choose **Dispute the fare**, then give the reason and attach any evidence. We review the request and tell you the outcome; if approved the amount returns to your card or wallet.",
+                "[\"refund\",\"dispute\"]"),
+            ("payments", "wallet-topup", HelpAudience.Passenger, "شحن المحفظة", "Topping up your wallet",
+                "## شحن المحفظة\n\nمن **المحفظة** اختر **شحن**، ثم أدخل المبلغ وبطاقتك. يُضاف الرصيد فور نجاح العملية ويمكنك استخدامه لدفع رحلاتك.",
+                "## Topping up your wallet\n\nOpen **Wallet**, tap **Top up**, then enter the amount and choose your card. The balance is added as soon as the payment succeeds and can be used to pay for trips.",
+                "[\"wallet\",\"topup\"]"),
+            ("safety", "share-your-trip", HelpAudience.Passenger, "كيف أشارك رحلتي؟", "How do I share my trip?",
+                "## مشاركة الرحلة\n\nأثناء الرحلة اضغط **مشاركة الرحلة** لإرسال رابط تتبع مباشر إلى من تثق به، ويمكنك إضافة **جهات موثوقة** لمشاركة رحلاتك معهم تلقائياً. ينتهي الرابط بعد انتهاء الرحلة.",
+                "## Sharing your trip\n\nDuring the trip tap **Share trip** to send a live tracking link to someone you trust. You can also add **trusted contacts** who receive your trips automatically. The link expires after the trip ends.",
+                "[\"share\",\"safety\"]"),
+            ("safety", "sos-button", HelpAudience.All, "زر الطوارئ SOS", "The SOS button",
+                "## زر الطوارئ\n\nفي حالة الخطر اضغط **SOS**: يصل بلاغك فوراً إلى فريق العمليات ويمكنه رؤية موقعك، وتُبلَّغ جهاتك الموثوقة إن اخترت ذلك. في الطوارئ الحقيقية اتصل بالرقم **911** أولاً.",
+                "## The SOS button\n\nIn danger tap **SOS**: your alert reaches our operations team immediately with your location, and your trusted contacts are notified if you choose so. In a real emergency call **911** first.",
+                "[\"sos\",\"emergency\"]"),
+            ("safety", "report-a-safety-issue", HelpAudience.All, "الإبلاغ عن مشكلة سلامة", "Reporting a safety issue",
+                "## الإبلاغ عن مشكلة\n\nيمكنك الإبلاغ عن قيادة غير آمنة أو سلوك غير لائق خلال 7 أيام من الرحلة من صفحة الرحلة، أو بفتح تذكرة من نوع **سلامة** وسيتابعها فريق مختص بأولوية عالية.",
+                "## Reporting an issue\n\nYou can report unsafe driving or misconduct within 7 days of the trip from the trip page, or open a **safety** ticket that a dedicated team follows with high priority.",
+                "[\"report\",\"safety\"]"),
+            ("account", "update-profile", HelpAudience.All, "تعديل بيانات حسابي", "Updating my account details",
+                "## تعديل بياناتي\n\nمن **حسابي** يمكنك تعديل اسمك وصورتك ولغتك وتفضيلات الإشعارات. لتغيير رقم الجوال تواصل مع الدعم.",
+                "## Updating my details\n\nFrom **My account** you can change your name, photo, language and notification preferences. To change your phone number contact support.",
+                "[\"profile\",\"account\"]"),
+            ("account", "contact-support", HelpAudience.All, "كيف أتواصل مع الدعم؟", "How do I contact support?",
+                "## التواصل مع الدعم\n\nمن تطبيق ATA افتح **المساعدة والدعم** ثم **تواصل معنا** لإنشاء تذكرة، أو اختر **مشكلة في الرحلة؟** من تفاصيل الرحلة. ستصلك ردودنا داخل التطبيق.",
+                "## Contacting support\n\nIn the ATA app open **Help and support** then **Contact us** to create a ticket, or choose **Problem with the trip?** from the trip details. Our replies arrive inside the app.",
+                "[\"support\",\"ticket\"]"),
+            ("drivers", "withdraw-earnings", HelpAudience.Driver, "كيف أسحب أرباحي؟", "How do I withdraw my earnings?",
+                "## سحب الأرباح\n\nمن **الأرباح** اختر **طلب سحب** وحدد المبلغ (الحد الأدنى 100 ر.س). تأكد من إضافة رقم الآيبان أولاً. تتم مراجعة الطلب وتحويله إلى حسابك البنكي.",
+                "## Withdrawing earnings\n\nFrom **Earnings** choose **Request payout** and pick the amount (minimum SAR 100). Make sure your IBAN is added first. The request is reviewed and transferred to your bank account.",
+                "[\"payout\",\"earnings\"]"),
+            ("drivers", "scheduled-rides-for-drivers", HelpAudience.Driver, "الرحلات المجدولة للكباتن", "Scheduled rides for drivers",
+                "## الرحلات المجدولة\n\nتصفّح **سوق الرحلات المجدولة** واحجز الرحلة التي تناسبك. سنطلب منك التأكيد قبل الموعد بساعة ثم قبله بـ15 دقيقة؛ التأخر في التأكيد أو تحرير الحجز متأخراً يضيف نقاط موثوقية.",
+                "## Scheduled rides\n\nBrowse the **scheduled rides marketplace** and reserve the trip that suits you. We ask you to confirm one hour before pickup and again 15 minutes before; missing a confirmation or releasing late adds reliability points.",
+                "[\"scheduled\"]"),
+            ("drivers", "cancellations-and-reliability", HelpAudience.Driver, "الإلغاء والموثوقية", "Cancellations and reliability",
+                "## الإلغاء والموثوقية\n\nتؤثر إلغاءات الكابتن بعد قبول الرحلة على **نقاط الموثوقية**، وارتفاع النقاط قد يقلل أولويتك في الطلبات أو يقيّد حسابك مؤقتاً. إن كان لديك عذر قهري اختره عند الإلغاء لتتم مراجعته.",
+                "## Cancellations and reliability\n\nCancelling after accepting a trip affects your **reliability points**; high points can lower your priority for requests or restrict your account temporarily. If you have a compelling excuse choose it when cancelling so it can be reviewed.",
+                "[\"cancel\",\"reliability\"]"),
+        ];
+        var sort = 0;
+        foreach (var (category, slug, audience, titleAr, titleEn, bodyAr, bodyEn, tags) in articles)
+        {
+            db.HelpArticles.Add(new HelpArticle
+            {
+                CategoryId = ids[category], Slug = slug, TitleAr = titleAr, TitleEn = titleEn, BodyAr = bodyAr, BodyEn = bodyEn,
+                Audience = audience, Tags = tags, SortOrder = ++sort * 10, IsPublished = true, PublishedAt = now,
+            });
+        }
     }
 
     /// <summary>The global scheduled-ride rule with the doc 11 §F17.2 defaults, seeded once while the table is empty (an admin's deletion, audited, is never undone).</summary>
