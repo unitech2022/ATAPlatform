@@ -10,6 +10,7 @@ import { DriverTierCard } from '../components/DriverTierCard'
 import { RatingSummaryCard } from '../components/RatingSummaryCard'
 import { Stars } from '../components/Stars'
 import { ReliabilityCard } from '../components/ReliabilityCard'
+import { UserTicketsCard } from '../components/UserTicketsCard'
 import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { FilePreviewModal, type FilePreviewTarget } from '../components/FilePreviewModal'
@@ -265,6 +266,9 @@ export function DriverDetailPage() {
 
       {(driver.status === 'approved' || driver.status === 'suspended') && <DriverFinanceCard driver={driver} />}
       {(driver.status === 'approved' || driver.status === 'suspended') && <ReliabilityCard userId={driver.user.id} role="driver" />}
+      {(driver.status === 'approved' || driver.status === 'suspended') && (
+        <UserTicketsCard userId={driver.user.id} name={driver.user.fullName ?? driver.profile.fullName} phone={driver.user.phoneNumber} />
+      )}
       {(driver.status === 'approved' || driver.status === 'suspended') && (
         <>
           <DriverTierCard driverId={driver.id} tier={driver.tier} onChanged={query.reload} />

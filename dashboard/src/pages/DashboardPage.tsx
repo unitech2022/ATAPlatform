@@ -12,14 +12,16 @@ import { StatCard } from '../components/StatCard'
 import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
+import { useSpanUnits } from '../hooks/useSpanUnits'
 import type { TranslationKey } from '../i18n'
-import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety, scheduledTrips } from '../lib/admin'
+import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety, scheduledTrips, support } from '../lib/admin'
 import { favoriteRateShare } from '../lib/favorites'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
 import { daysAgoIso, todayIso } from '../lib/pricing'
 import { upcomingWithin } from '../lib/scheduling'
 import { formatRatio } from '../lib/rewards'
 import { formatDuration } from '../lib/safety'
+import { formatMinuteSpan } from '../lib/support'
 import type { DashboardSummary, SafetySummary } from '../lib/types'
 
 const STATS: { key: Exclude<keyof DashboardSummary, 'today'>; label: TranslationKey; icon: IconName; tone?: 'brand' | 'danger' }[] = [
@@ -110,6 +112,32 @@ export function DashboardPage() {
           tone: 'danger',
         },
       ]
+  // F18 — support counters; the whole block hides on 403 (`support.view`) or any error.
+  const supportSummary = useQuery(() => support.summary(), 'dashboard-support')
+  const spanUnits = useSpanUnits()
+  const supportPending = supportSummary.loading && !supportSummary.data
+  const ss = supportSummary.data
+  const supportStats: { key: TranslationKey; value: string; icon: IconName; to: string; meta: string; tone?: 'brand' | 'danger' }[] = supportSummary.error
+    ? []
+    : [
+        { key: 'statOpenTickets', value: supportPending ? '…' : formatNumber(ss?.open), icon: 'chat', to: '/support', meta: t('navGroupSupport') },
+        {
+          key: 'statBreachedSla',
+          value: supportPending ? '…' : formatNumber((ss?.breachingFirstResponse ?? 0) + (ss?.breachingResolution ?? 0)),
+          icon: 'alert',
+          to: '/support?sla=breached',
+          meta: supportPending ? t('navGroupSupport') : `${t('spSlaFirstResponseShort')} ${formatNumber(ss?.breachingFirstResponse)} · ${t('spSlaResolutionShort')} ${formatNumber(ss?.breachingResolution)}`,
+          tone: 'danger',
+        },
+        { key: 'statAvgFirstResponse', value: supportPending ? '…' : formatMinuteSpan(ss?.avgFirstResponseMinutes, spanUnits), icon: 'clock', to: '/support', meta: t('navGroupSupport') },
+        {
+          key: 'statAvgResolution',
+          value: supportPending ? '…' : formatMinuteSpan(typeof ss?.avgResolutionHours === 'number' ? ss.avgResolutionHours * 60 : null, spanUnits),
+          icon: 'check',
+          to: '/support',
+          meta: t('navGroupSupport'),
+        },
+      ]
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
     ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
@@ -165,6 +193,16 @@ export function DashboardPage() {
       {scheduledStats.length > 0 && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2">
           {scheduledStats.map((stat) => (
+            <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
+              <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={stat.meta} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {supportStats.length > 0 && (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {supportStats.map((stat) => (
             <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
               <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={stat.meta} />
             </Link>

@@ -28,6 +28,11 @@ const CODE_KEY: Record<string, TranslationKey> = {
   promo_not_eligible: 'errPromoNotEligible',
   promo_usage_limit_reached: 'errPromoUsageLimit',
   incentive_opt_in_closed: 'errIncentiveOptInClosed',
+  // F18 (docs/11)
+  ticket_closed: 'errTicketClosed',
+  dispute_exists: 'errDisputeExists',
+  dispute_window_closed: 'errDisputeWindowClosed',
+  attachment_limit: 'errAttachmentLimit',
 }
 
 /** Turns any thrown value into a human-readable message in the current language. */

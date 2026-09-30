@@ -115,7 +115,11 @@ export function LostItemsPage() {
       render: (row) => (
         <span className="block">
           <MetaBadge record={lostItemStatusMeta} value={row.status} />
-          {row.supportTicketId && <span className="ltr-nums mt-1 block max-w-40 truncate text-[11px] text-muted">#{row.supportTicketId}</span>}
+          {row.supportTicketId && (
+            <Link to={`/support/tickets/${row.supportTicketId}`} className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-brand hover:underline">
+              {t('spViewTicket')}
+            </Link>
+          )}
         </span>
       ),
     },

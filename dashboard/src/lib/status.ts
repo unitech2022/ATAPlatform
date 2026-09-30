@@ -1,5 +1,9 @@
 import type { TranslationKey } from '../i18n'
 import type {
+  DisputeStatus,
+  TicketPriority,
+  TicketSlaState,
+  TicketStatus,
   DriverTier,
   FavoriteStatus,
   IncentiveListStatus,
@@ -309,4 +313,35 @@ export const airportQueueStatusMeta: Record<AirportQueueStatus, StatusMeta> = {
   dispatched: { tone: 'ink', key: 'apQueueDispatched' },
   left: { tone: 'muted', key: 'apQueueLeft' },
   removed: { tone: 'danger', key: 'apQueueRemoved' },
+}
+
+// F18 — support
+
+export const ticketStatusMeta: Record<TicketStatus, StatusMeta> = {
+  open: { tone: 'warning', key: 'spStatusOpen' },
+  in_progress: { tone: 'ink', key: 'spStatusInProgress' },
+  pending_user: { tone: 'muted', key: 'spStatusPendingUser' },
+  resolved: { tone: 'brand', key: 'spStatusResolved' },
+  closed: { tone: 'muted', key: 'spStatusClosed' },
+}
+
+export const ticketPriorityMeta: Record<TicketPriority, StatusMeta> = {
+  urgent: { tone: 'danger', key: 'spPriorityUrgent' },
+  high: { tone: 'warning', key: 'spPriorityHigh' },
+  normal: { tone: 'ink', key: 'spPriorityNormal' },
+  low: { tone: 'muted', key: 'spPriorityLow' },
+}
+
+export const slaStateMeta: Record<TicketSlaState, StatusMeta> = {
+  ok: { tone: 'brand', key: 'spSlaOk' },
+  due_soon: { tone: 'warning', key: 'spSlaDueSoon' },
+  breached: { tone: 'danger', key: 'spSlaBreached' },
+}
+
+export const disputeStatusMeta: Record<DisputeStatus, StatusMeta> = {
+  open: { tone: 'warning', key: 'spDisputeOpen' },
+  under_review: { tone: 'ink', key: 'spDisputeUnderReview' },
+  approved: { tone: 'brand', key: 'spDisputeApproved' },
+  partially_approved: { tone: 'brand', key: 'spDisputePartiallyApproved' },
+  rejected: { tone: 'muted', key: 'spDisputeRejected' },
 }

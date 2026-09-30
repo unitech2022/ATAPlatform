@@ -77,3 +77,102 @@ body {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* Help-center Markdown preview (sanitized by rehype-sanitize) */
+.prose-ata {
+  line-height: 1.9;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.prose-ata > * + * {
+  margin-top: 0.85rem;
+}
+
+.prose-ata h1,
+.prose-ata h2,
+.prose-ata h3 {
+  font-weight: 700;
+  line-height: 1.5;
+  margin-top: 1.5rem;
+}
+
+.prose-ata h1 {
+  font-size: 1.4rem;
+}
+
+.prose-ata h2 {
+  font-size: 1.2rem;
+}
+
+.prose-ata h3 {
+  font-size: 1.05rem;
+}
+
+.prose-ata ul,
+.prose-ata ol {
+  padding-inline-start: 1.5rem;
+}
+
+.prose-ata ul {
+  list-style: disc;
+}
+
+.prose-ata ol {
+  list-style: decimal;
+}
+
+.prose-ata li + li {
+  margin-top: 0.25rem;
+}
+
+.prose-ata a {
+  color: var(--color-brand);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prose-ata blockquote {
+  border-inline-start: 4px solid var(--color-brand);
+  background: var(--color-brand-soft);
+  border-radius: 1rem;
+  padding: 0.6rem 1rem;
+}
+
+.prose-ata code {
+  background: var(--color-cloud);
+  border-radius: 0.375rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.9em;
+}
+
+.prose-ata pre {
+  background: var(--color-cloud);
+  border-radius: 1rem;
+  padding: 1rem;
+  overflow-x: auto;
+  direction: ltr;
+}
+
+.prose-ata table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.prose-ata th,
+.prose-ata td {
+  border: 1px solid var(--color-line);
+  padding: 0.4rem 0.7rem;
+  text-align: start;
+}
+
+.prose-ata img {
+  max-width: 100%;
+  border-radius: 1rem;
+}
+
+.prose-ata hr {
+  border-color: var(--color-line);
+}

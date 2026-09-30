@@ -2171,3 +2171,322 @@ export interface TripAirportInfo {
   flightNumber?: string | null
   freeWaitingMinutes?: number | null
 }
+
+// ---------------------------------------------------------------------------
+// F18 — support (docs/11 §F18.1 / §F18.3)
+// ---------------------------------------------------------------------------
+
+export type TicketStatus = 'open' | 'pending_user' | 'in_progress' | 'resolved' | 'closed'
+export type TicketPriority = 'urgent' | 'high' | 'normal' | 'low'
+export type TicketType = 'trip_issue' | 'payment_issue' | 'lost_item' | 'safety' | 'account' | 'other'
+export type TicketChannel = 'app' | 'website' | 'dashboard' | 'phone'
+export type TicketRequesterRole = 'passenger' | 'driver' | 'corporate_admin'
+export type TicketSlaState = 'ok' | 'due_soon' | 'breached'
+export type TicketMessageAuthor = 'user' | 'agent' | 'system'
+
+export type DisputeReason = 'overcharged' | 'route_longer' | 'waiting_charged' | 'cancellation_fee' | 'promo_not_applied' | 'other'
+export type DisputeStatus = 'open' | 'under_review' | 'approved' | 'partially_approved' | 'rejected'
+export type DisputeResolution = 'refund_full' | 'refund_partial' | 'no_refund'
+
+export type HelpAudience = 'passenger' | 'driver' | 'all'
+
+/** `GET /admin/support/summary` (§F18.3). */
+export interface SupportSummary {
+  open: number
+  unassigned: number
+  pendingUser: number
+  breachingFirstResponse: number
+  breachingResolution: number
+  avgFirstResponseMinutes: number | null
+  avgResolutionHours: number | null
+  csatAvg: number | null
+}
+
+/**
+ * Row of `GET /admin/support/tickets` (§F18.3). `channel`, `firstResponseAt` and `requesterUserId` are assumed optional
+ * extras (the spec lists a channel filter in the dashboard brief but not the response field).
+ */
+export interface TicketListItem {
+  id: string
+  ticketNumber: string
+  type: TicketType
+  subject: string
+  status: TicketStatus
+  priority: TicketPriority
+  requesterName: string | null
+  requesterRole: TicketRequesterRole
+  tripNumber: string | null
+  assignedToName: string | null
+  firstResponseDueAt: string
+  resolutionDueAt: string
+  slaState: TicketSlaState
+  lastMessageAt: string
+  lastMessageBy: TicketMessageAuthor
+  createdAt: string
+  channel?: TicketChannel | null
+  firstResponseAt?: string | null
+  requesterUserId?: string | null
+}
+
+export interface TicketAttachment {
+  fileId: string
+  fileName: string | null
+  contentType: string | null
+}
+
+export interface SupportMessage {
+  id: string
+  authorRole: TicketMessageAuthor
+  authorName: string | null
+  body: string
+  isInternal: boolean
+  attachments: TicketAttachment[]
+  createdAt: string
+  cannedResponseCode?: string | null
+}
+
+/** Refund created by F11 for a resolved dispute (`refund` of the resolve answer, §F18.3). */
+export interface DisputeRefund {
+  id: string
+  refundNumber?: string | null
+  status: RefundStatus
+  amount?: number | null
+  destination?: RefundDestination | null
+}
+
+/** Fare dispute as returned inline by the admin ticket detail and by `GET /admin/support/disputes` (§F18.1 `fare_disputes`). */
+export interface FareDispute {
+  id: string
+  ticketId: string
+  tripId: string
+  requesterUserId?: string | null
+  reason: DisputeReason
+  chargedAmount: number
+  requestedRefundAmount: number | null
+  status: DisputeStatus
+  resolution: DisputeResolution | null
+  approvedRefundAmount: number | null
+  refundId: string | null
+  resolvedAt: string | null
+  resolutionNote: string | null
+  createdAt: string
+  /** Assumed display extras of the admin list. */
+  ticketNumber?: string | null
+  tripNumber?: string | null
+  requesterName?: string | null
+  resolvedByName?: string | null
+  refund?: DisputeRefund | null
+  refundNumber?: string | null
+  refundStatus?: RefundStatus | null
+}
+
+export interface DisputeResolveInput {
+  resolution: DisputeResolution
+  amount?: number
+  note: string
+}
+
+export interface DisputeResolveResult extends FareDispute {
+  refund: DisputeRefund | null
+}
+
+export interface TicketRequester {
+  userId: string
+  fullName: string | null
+  role: TicketRequesterRole
+  /** Full phone number (§F18.3 — agents see it complete). */
+  phoneNumber: string | null
+  language?: 'ar' | 'en' | null
+  createdAt?: string
+  /** Assumed extra for the driver profile link. */
+  driverId?: string | null
+}
+
+/** `trip` of the admin ticket detail (backend `AdminTicketTripDto`); `receipt` is the F11 receipt of a completed trip. */
+export interface TicketTripSummary {
+  id: string
+  tripNumber: string
+  status?: string | null
+  pickupName?: string | null
+  dropoffName?: string | null
+  finalFare?: number | null
+  estimatedFare?: number | null
+  paymentMethod?: PaymentMethod | null
+  requestedAt?: string | null
+  completedAt?: string | null
+  cancelledAt?: string | null
+  driverName?: string | null
+  receipt?: { total?: number | null; netPaid?: number | null } | null
+}
+
+export interface TicketLinkedCase {
+  id: string
+  /** `caseNumber` / `reportNumber`. */
+  number?: string | null
+  status?: string | null
+}
+
+/** `linked` of the admin ticket detail (§F18.3 "الحالات المرتبطة"). */
+export interface TicketLinks {
+  safetyCase?: TicketLinkedCase | null
+  lostItemReport?: TicketLinkedCase | null
+}
+
+/**
+ * `GET /admin/support/tickets/{id}` (§F18.3). Requester, trip, linked cases and the SLA clock fields follow §F18.1;
+ * the nested shapes of `requester`, `trip`, `safetyCase` and `lostItem` are assumed.
+ */
+export interface SupportTicketDetail {
+  id: string
+  ticketNumber: string
+  type: TicketType
+  subject: string
+  status: TicketStatus
+  priority: TicketPriority
+  channel: TicketChannel
+  requester: TicketRequester
+  trip: TicketTripSummary | null
+  messages: SupportMessage[]
+  dispute: FareDispute | null
+  assignedToUserId: string | null
+  assignedToName: string | null
+  assignedAt?: string | null
+  firstResponseDueAt: string
+  resolutionDueAt: string
+  firstResponseAt: string | null
+  slaPausedAt: string | null
+  slaPausedSeconds: number
+  slaState?: TicketSlaState
+  resolvedAt: string | null
+  closedAt: string | null
+  lastMessageAt: string
+  lastMessageBy: TicketMessageAuthor
+  csatScore: number | null
+  csatComment: string | null
+  unreadByUser?: number
+  linked?: TicketLinks | null
+  /** Flat ids of §F18.1 (`safety_case_id`, `lost_item_report_id`), used when `linked` is absent. */
+  safetyCaseId?: string | null
+  lostItemReportId?: string | null
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface SupportMessageInput {
+  body: string
+  isInternal: boolean
+  fileIds?: string[]
+  cannedResponseCode?: string
+}
+
+/** Payload of the `SupportTicketUpdated` / `SupportTicketCreated` hub events for the `admins` group (§F18.3 SignalR). */
+export interface SupportTicketUpdate {
+  ticketId: string
+  status: TicketStatus
+  priority?: TicketPriority
+  lastMessageBy?: TicketMessageAuthor
+}
+
+export interface CannedResponse {
+  id: string
+  code: string
+  title: string
+  bodyAr: string
+  bodyEn: string
+  ticketType: TicketType | null
+  isActive: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CannedResponseInput {
+  code: string
+  title: string
+  bodyAr: string
+  bodyEn: string
+  ticketType: TicketType | null
+  isActive: boolean
+}
+
+export interface SlaPolicy {
+  id?: string
+  priority: TicketPriority
+  firstResponseMinutes: number
+  resolutionMinutes: number
+  updatedAt?: string | null
+}
+
+export interface HelpCategory {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string
+  icon: string | null
+  audience: HelpAudience
+  sortOrder: number
+  isActive: boolean
+  /** Assumed extra shown in the CMS table. */
+  articlesCount?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface HelpCategoryInput {
+  code: string
+  nameAr: string
+  nameEn: string
+  icon: string | null
+  audience: HelpAudience
+  sortOrder: number
+  isActive: boolean
+}
+
+export interface HelpArticle {
+  id: string
+  categoryId: string
+  categoryName?: string | null
+  slug: string
+  titleAr: string
+  titleEn: string
+  bodyAr: string
+  bodyEn: string
+  audience: HelpAudience
+  tags: string[] | null
+  sortOrder: number
+  isPublished: boolean
+  publishedAt: string | null
+  viewCount: number
+  helpfulYes: number
+  helpfulNo: number
+  updatedBy?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface HelpArticleInput {
+  categoryId: string
+  slug: string
+  titleAr: string
+  titleEn: string
+  bodyAr: string
+  bodyEn: string
+  audience: HelpAudience
+  tags: string[]
+  sortOrder: number
+}
+
+/** `GET /admin/support/stats` (§F18.5): KPIs over a period; `slaCompliance` is a 0..1 share. */
+export interface SupportStats {
+  created: number
+  resolved: number
+  closed: number
+  openNow: number
+  avgResolutionMinutes: number | null
+  medianResolutionMinutes: number | null
+  avgFirstResponseMinutes: number | null
+  medianFirstResponseMinutes: number | null
+  slaCompliance: number | null
+  csatAvg: number | null
+  csatCount: number
+  byType: { type: TicketType; created: number; resolved: number }[]
+}

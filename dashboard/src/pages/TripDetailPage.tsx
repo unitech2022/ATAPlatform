@@ -19,6 +19,7 @@ import { TripPaymentCard } from '../components/TripPaymentCard'
 import { TripRewardsCard } from '../components/TripRewardsCard'
 import { TripSafetyCard } from '../components/TripSafetyCard'
 import { TripSchedulingCard } from '../components/TripSchedulingCard'
+import { TripSupportCard } from '../components/TripSupportCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -213,6 +214,8 @@ export function TripDetailPage() {
       {(isCancelled || trip.cancellation) && <TripCancellationCard trip={trip} onChanged={query.reload} />}
 
       <TripSafetyCard trip={trip} />
+
+      <TripSupportCard trip={trip} />
 
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
         <Card title={t('timeline')}>

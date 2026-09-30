@@ -126,6 +126,26 @@ export const SCHEDULING_ITEMS: NavItem[] = [
   { key: 'navAirports', icon: 'plane', to: '/airports', isActive: (pathname) => pathname.startsWith('/airports') },
 ]
 
+const SUPPORT_SUBPAGES = ['disputes', 'canned-responses', 'sla']
+
+/** F18 — support group ("الدعم"). The ticket page lives at `/support/tickets/:id` (also reachable as `/support/:id`). */
+export const SUPPORT_ITEMS: NavItem[] = [
+  {
+    key: 'navSupportTickets',
+    icon: 'chat',
+    to: '/support',
+    isActive: (pathname) => {
+      if (pathname === '/support' || pathname.startsWith('/support/tickets')) return true
+      const match = /^\/support\/([^/]+)/.exec(pathname)
+      return Boolean(match) && !SUPPORT_SUBPAGES.includes(match?.[1] ?? '')
+    },
+  },
+  { key: 'navSupportDisputes', icon: 'receipt', to: '/support/disputes', isActive: (pathname) => pathname.startsWith('/support/disputes') },
+  { key: 'navSupportCanned', icon: 'edit', to: '/support/canned-responses', isActive: (pathname) => pathname.startsWith('/support/canned-responses') },
+  { key: 'navSupportSla', icon: 'clock', to: '/support/sla', isActive: (pathname) => pathname.startsWith('/support/sla') },
+  { key: 'navHelpCenter', icon: 'book', to: '/help-center', isActive: (pathname) => pathname.startsWith('/help-center') },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -136,6 +156,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { items: NAV_ITEMS },
   { key: 'navGroupSafety', items: SAFETY_ITEMS },
   { key: 'navGroupCancellation', items: CANCELLATION_ITEMS },
+  { key: 'navGroupSupport', items: SUPPORT_ITEMS },
   { key: 'navGroupScheduling', items: SCHEDULING_ITEMS },
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
   { key: 'navGroupMarketing', items: MARKETING_ITEMS },
@@ -193,6 +214,12 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/scheduled')) return 'sdTitle'
   if (/^\/airports\/[^/]+/.test(pathname)) return 'apDetailTitle'
   if (pathname.startsWith('/airports')) return 'apTitle'
+  if (pathname.startsWith('/support/disputes')) return 'spDisputesTitle'
+  if (pathname.startsWith('/support/canned-responses')) return 'spCannedTitlePage'
+  if (pathname.startsWith('/support/sla')) return 'spSlaTitle'
+  if (/^\/support\/[^/]+/.test(pathname)) return 'spTicketDetailTitle'
+  if (pathname.startsWith('/support')) return 'spQueueTitle'
+  if (pathname.startsWith('/help-center')) return 'hcTitle'
   if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
   if (pathname.startsWith('/reliability')) return 'rlTitle'
   return 'appName'

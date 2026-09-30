@@ -221,9 +221,20 @@ export function SafetyCaseDetailPage() {
               { label: t('sfLastLocationAt'), value: formatDateTime(detail.lastLocationAt, lang) },
               { label: t('sfContactsNotified'), value: formatNumber(notifiedCount ?? 0), ltr: true },
               { label: t('sfSharesCount'), value: formatNumber(detail.sharesCount ?? 0), ltr: true },
-              ...(detail.supportTicketId ? [{ label: t('sfSupportTicket'), value: detail.supportTicketId, ltr: true }] : []),
             ]}
           />
+          {detail.supportTicketId && (
+            <Link
+              to={`/support/tickets/${detail.supportTicketId}`}
+              className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-line px-4 py-3 text-sm font-bold text-brand transition hover:bg-cloud"
+            >
+              <span className="flex items-center gap-2">
+                <Icon name="chat" className="size-4" />
+                {t('sfSupportTicket')}
+              </span>
+              <Icon name="chevron" className="size-4 rtl:rotate-180" />
+            </Link>
+          )}
           {detail.description && <p className="mt-4 whitespace-pre-wrap break-words rounded-2xl bg-cloud px-4 py-3 text-sm">{detail.description}</p>}
           {Array.isArray(notifiedContacts) && notifiedContacts.length > 0 && (
             <ul className="mt-4 space-y-1 text-sm">

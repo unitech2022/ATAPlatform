@@ -1,5 +1,28 @@
 import { api } from './api'
 import type {
+  CannedResponse,
+  CannedResponseInput,
+  DisputeResolveInput,
+  DisputeResolveResult,
+  DisputeStatus,
+  FareDispute,
+  HelpArticle,
+  HelpArticleInput,
+  HelpAudience,
+  HelpCategory,
+  HelpCategoryInput,
+  SlaPolicy,
+  SupportMessage,
+  SupportMessageInput,
+  SupportStats,
+  SupportSummary,
+  SupportTicketDetail,
+  TicketChannel,
+  TicketListItem,
+  TicketPriority,
+  TicketSlaState,
+  TicketStatus,
+  TicketType,
   Airport,
   AirportInput,
   AirportQueueEntry,
@@ -734,4 +757,99 @@ export const airports = {
   /** Audited as `airport_queue.remove`; the body carries the reason. */
   removeFromQueue: (airportId: string, entryId: string, reason: string) =>
     api.delete<void>(`/admin/airports/${airportId}/queue/${entryId}`, { reason }),
+}
+
+// ---------------------------------------------------------------------------
+// F18 — support & help center (docs/11 §F18.3 "الإدارة")
+// ---------------------------------------------------------------------------
+
+export type SupportTicketQuery = DateRange &
+  PageQuery & {
+    status?: TicketStatus | ''
+    type?: TicketType | ''
+    priority?: TicketPriority | ''
+    /** Not in §F18.3 — sent for backends that support it; the page also filters client-side when rows carry the field. */
+    channel?: TicketChannel | ''
+    /** `me`, `unassigned` or an admin user id. */
+    assignedTo?: string
+    sla?: Exclude<TicketSlaState, 'ok'> | ''
+    search?: string
+    /** Not in §F18.3 — used by the driver/passenger "recent tickets" cards; callers also filter client-side. */
+    requesterUserId?: string
+  }
+
+export const support = {
+  summary: () => api.get<SupportSummary>('/admin/support/summary'),
+  /** §F18.5 KPIs over a period (`from`/`to` as `YYYY-MM-DD`; no range = all time). */
+  stats: (query: DateRange) => api.get<SupportStats>('/admin/support/stats', query),
+  tickets: (query: SupportTicketQuery) =>
+    api.get<Paginated<TicketListItem> | TicketListItem[]>('/admin/support/tickets', query).then(asPage),
+  get: (id: string) => api.get<SupportTicketDetail>(`/admin/support/tickets/${id}`),
+  /** Public or internal message; `cannedResponseCode` records which canned response was inserted. */
+  reply: (id: string, input: SupportMessageInput) => api.post<SupportMessage>(`/admin/support/tickets/${id}/messages`, input),
+  /** `userId` must be an active admin; `null` unassigns the ticket. An unassigned `open` ticket that gets an assignee moves to `in_progress`. Audited `support_ticket.assign`. */
+  assign: (id: string, userId: string | null) => api.post<unknown>(`/admin/support/tickets/${id}/assign`, { userId }),
+  /** Audited `support_ticket.status`. The optional `note` is a public message for `pending_user` / `resolved` and an internal note otherwise. */
+  setStatus: (id: string, input: { status: Exclude<TicketStatus, 'open'>; note?: string }) =>
+    api.post<unknown>(`/admin/support/tickets/${id}/status`, input),
+  /** Audited `support_ticket.priority`; recomputes the SLA due dates. */
+  setPriority: (id: string, priority: TicketPriority) => api.post<unknown>(`/admin/support/tickets/${id}/priority`, { priority }),
+  /** Audited `support_ticket.type`. */
+  setType: (id: string, type: TicketType) => api.post<unknown>(`/admin/support/tickets/${id}/type`, { type }),
+}
+
+export type DisputeListQuery = PageQuery & {
+  status?: DisputeStatus | ''
+  /** Not in §F18.3 — sent for backends that support it; the trip card also filters client-side. */
+  tripId?: string
+}
+
+export const disputes = {
+  list: (query: DisputeListQuery) => api.get<Paginated<FareDispute> | FareDispute[]>('/admin/support/disputes', query).then(asPage),
+  /** Needs `support.disputes`; creates the F11 refund (four-eyes above the limit) and audits `support_dispute.resolve`. */
+  resolve: (id: string, input: DisputeResolveInput) => api.post<DisputeResolveResult>(`/admin/support/disputes/${id}/resolve`, input),
+}
+
+export const cannedResponses = {
+  list: () => api.get<Paginated<CannedResponse> | CannedResponse[]>('/admin/canned-responses', ALL).then(unwrapList),
+  create: (input: CannedResponseInput) => api.post<CannedResponse>('/admin/canned-responses', input),
+  update: (id: string, input: CannedResponseInput) => api.put<CannedResponse>(`/admin/canned-responses/${id}`, input),
+  remove: (id: string) => api.delete<void>(`/admin/canned-responses/${id}`),
+}
+
+export const slaPolicies = {
+  list: () => api.get<Paginated<SlaPolicy> | SlaPolicy[]>('/admin/support/sla-policies').then(unwrapList),
+  /** Assumed body: the full array of the four policies (`PUT` replaces them); audited `support_sla.update`. */
+  save: (policies: SlaPolicy[]) =>
+    api
+      .put<Paginated<SlaPolicy> | SlaPolicy[]>(
+        '/admin/support/sla-policies',
+        policies.map(({ priority, firstResponseMinutes, resolutionMinutes }) => ({ priority, firstResponseMinutes, resolutionMinutes })),
+      )
+      .then(unwrapList),
+}
+
+export type HelpArticleListQuery = PageQuery & {
+  categoryId?: string
+  audience?: HelpAudience | ''
+  /** Assumed filter: `true` published, `false` drafts. */
+  published?: 'true' | 'false' | ''
+  q?: string
+}
+
+export const helpCategories = {
+  list: () => api.get<Paginated<HelpCategory> | HelpCategory[]>('/admin/help/categories', ALL).then(unwrapList),
+  create: (input: HelpCategoryInput) => api.post<HelpCategory>('/admin/help/categories', input),
+  update: (id: string, input: HelpCategoryInput) => api.put<HelpCategory>(`/admin/help/categories/${id}`, input),
+  remove: (id: string) => api.delete<void>(`/admin/help/categories/${id}`),
+}
+
+export const helpArticles = {
+  list: (query: HelpArticleListQuery) => api.get<Paginated<HelpArticle> | HelpArticle[]>('/admin/help/articles', query).then(asPage),
+  get: (id: string) => api.get<HelpArticle>(`/admin/help/articles/${id}`),
+  create: (input: HelpArticleInput) => api.post<HelpArticle>('/admin/help/articles', input),
+  update: (id: string, input: HelpArticleInput) => api.put<HelpArticle>(`/admin/help/articles/${id}`, input),
+  remove: (id: string) => api.delete<void>(`/admin/help/articles/${id}`),
+  publish: (id: string) => api.post<HelpArticle>(`/admin/help/articles/${id}/publish`),
+  unpublish: (id: string) => api.post<HelpArticle>(`/admin/help/articles/${id}/unpublish`),
 }

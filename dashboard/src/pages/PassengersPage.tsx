@@ -12,6 +12,7 @@ import { Stars } from '../components/Stars'
 import { ReasonModal } from '../components/ReasonModal'
 import { ReliabilityCard } from '../components/ReliabilityCard'
 import { Table, type Column } from '../components/Table'
+import { UserTicketsCard } from '../components/UserTicketsCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -159,6 +160,7 @@ export function PassengersPage() {
                   <div className="space-y-6">
                     <ReliabilityCard userId={userIdOf(row)} role="passenger" bare />
                     <RatingSummaryCard userId={userIdOf(row)} role="passenger" ratingAvg={row.ratingAvg} ratingCount={row.ratingCount} bare />
+                    <UserTicketsCard userId={userIdOf(row)} name={row.fullName} phone={row.phoneNumber} bare />
                   </div>
                 ) : null
               }
