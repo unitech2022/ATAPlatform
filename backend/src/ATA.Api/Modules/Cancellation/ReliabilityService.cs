@@ -7,6 +7,7 @@ using ATA.Domain.Cancellation;
 using ATA.Domain.Common;
 using ATA.Domain.Drivers;
 using ATA.Domain.Notifications;
+using ATA.Domain.Scheduling;
 using ATA.Domain.Trips;
 using ATA.Infrastructure.Locking;
 using ATA.Infrastructure.Persistence;
@@ -141,7 +142,13 @@ public sealed class ReliabilityService(
 
             var trips = await db.Trips.AsNoTracking().Where(t => t.DriverId == driverId && t.AssignedAt >= windowStart).Select(t => t.Status).ToListAsync(ct);
             var offers = await db.TripOffers.AsNoTracking().Where(o => o.DriverId == driverId && o.SentAt >= windowStart).Select(o => o.Status).ToListAsync(ct);
-            profile.TripsAccepted = trips.Count;
+            // F17: reservations the driver failed (late release, missed confirmation, no-show) count like at-fault cancellations and as accepted trips (doc 11 §F17.3.10).
+            var reservationFaults = await db.ScheduledRideReservations.AsNoTracking()
+                .Where(r => r.DriverId == driverId && r.ReleasedAt != null && r.ReleasedAt >= windowStart
+                            && (r.Status == ReservationStatus.NoShow
+                                || (r.Status == ReservationStatus.Released && (r.IsLateRelease || r.ReleaseReason == ReservationReleaseReason.ConfirmationMissed || r.ReleaseReason == ReservationReleaseReason.FinalConfirmationMissed))))
+                .Select(r => new { ReleasedAt = r.ReleasedAt!.Value, r.Status, r.PenaltyPoints }).ToListAsync(ct);
+            profile.TripsAccepted = trips.Count + reservationFaults.Count;
             profile.TripsCompleted = trips.Count(s => s == TripStatus.Completed);
             profile.OffersReceived = offers.Count;
             profile.OffersAccepted = offers.Count(s => s == OfferStatus.Accepted);
@@ -152,6 +159,7 @@ public sealed class ReliabilityService(
                              where t.DriverId == driverId && e.AtFault == AtFault.Driver && e.CreatedAt >= windowStart
                              select new { e.CreatedAt, e.CountsTowardRate, e.Stage, e.ExcuseStatus, e.PenaltyPoints }).ToListAsync(ct))
                 .Select(e => (e.CreatedAt, e.CountsTowardRate, e.Stage, e.ExcuseStatus, e.PenaltyPoints)).ToList();
+            events.AddRange(reservationFaults.Select(f => (f.ReleasedAt, true, f.Status == ReservationStatus.NoShow ? CancellationStage.NoShow : CancellationStage.Scheduled, ExcuseStatus.NotApplicable, f.PenaltyPoints)));
         }
         else
         {

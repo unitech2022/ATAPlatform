@@ -12,6 +12,7 @@ public sealed record RouteEstimate(int DistanceMeters, int DurationSeconds);
 /// <summary>
 /// Inputs of a fare calculation. <paramref name="At"/> is the pickup time (UTC) used for time multipliers and demand; a locked demand
 /// multiplier (from the quote the trip was created with) can be supplied so the final fare keeps the multiplier the passenger accepted.
+/// <paramref name="WaitingPerMinute"/> (F17 airport waiting policy) replaces the pricing rule's per-minute waiting charge.
 /// </summary>
 public sealed record FareRequest(
     RideCategory Category,
@@ -21,7 +22,8 @@ public sealed record FareRequest(
     int DurationSeconds,
     DateTime At,
     int WaitingSeconds = 0,
-    DemandReading? LockedDemand = null);
+    DemandReading? LockedDemand = null,
+    decimal? WaitingPerMinute = null);
 
 /// <summary>Route estimation and fare calculation; <see cref="RulePricingService"/> is the F10 engine, <see cref="FlatPricing"/> its fallback.</summary>
 public interface IPricingService
@@ -35,6 +37,9 @@ public interface IPricingService
 
     /// <summary>Free waiting minutes at the pickup for this category/zone (from the pricing rule, else <c>Trips:FreeWaitingMinutes</c>).</summary>
     Task<int> FreeWaitingMinutesAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct);
+
+    /// <summary>Per-minute waiting charge for this category/zone (from the pricing rule, else the category's per-minute rate).</summary>
+    Task<decimal> WaitingPerMinuteAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct);
 }
 
 /// <summary>
@@ -70,6 +75,8 @@ public sealed class FlatPricing(IOptions<PricingOptions> pricingOptions, IOption
 
     public Task<int> FreeWaitingMinutesAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct) => Task.FromResult(_trips.FreeWaitingMinutes);
 
+    public Task<decimal> WaitingPerMinuteAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct) => Task.FromResult(category.PerMinute);
+
     public FareCalculation Calculate(FareRequest request)
     {
         var category = request.Category;
@@ -78,7 +85,7 @@ public sealed class FlatPricing(IOptions<PricingOptions> pricingOptions, IOption
         var waitingMinutes = Math.Max(0, request.WaitingSeconds) / 60m;
         var distanceFare = PricingMath.Round2(category.PerKm * km);
         var timeFare = PricingMath.Round2(category.PerMinute * minutes);
-        var waitingFare = PricingMath.Round2(category.PerMinute * waitingMinutes);
+        var waitingFare = PricingMath.Round2((request.WaitingPerMinute ?? category.PerMinute) * waitingMinutes);
         var fare = category.BaseFare + distanceFare + timeFare + waitingFare + category.BookingFee;
         var minApplied = fare < category.MinFare;
         fare = Math.Max(category.MinFare, PricingMath.Round2(fare));

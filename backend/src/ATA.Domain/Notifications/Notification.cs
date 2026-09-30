@@ -48,6 +48,13 @@ public static class NotificationTypes
     public const string IncentiveAchieved = "incentive.achieved";
     public const string DriverTierChanged = "driver.tier_changed";
     public const string PromoNew = "promo.new";
+    public const string ScheduledBooked = "scheduled.booked";
+    public const string ScheduledReminder = "scheduled.reminder";
+    public const string ScheduledDriverReserved = "scheduled.driver_reserved";
+    public const string ScheduledConfirmRequest = "scheduled.confirm_request";
+    public const string ScheduledReservationReleased = "scheduled.reservation_released";
+    public const string ScheduledFavoriteRequest = "scheduled.favorite_request";
+    public const string ScheduledRematched = "scheduled.rematched";
 }
 
 public class Notification : Entity

@@ -36,7 +36,11 @@ public sealed class PassengerTripService(
     Cancellation.ReliabilityService reliability,
     Promotions.PromotionService promotions,
     Favorites.FavoriteService favorites,
-    Favorites.FavoriteMatchingService favoriteMatching)
+    Favorites.FavoriteMatchingService favoriteMatching,
+    Scheduling.ScheduleRuleProvider scheduleRules,
+    Scheduling.ScheduledRideService scheduledRides,
+    Scheduling.ScheduledRideEngine scheduledEngine,
+    Airports.AirportTripService airportTrips)
 {
     private const int TripNumberRetries = 3;
 
@@ -52,7 +56,7 @@ public sealed class PassengerTripService(
         var now = clock.UtcNow;
         var v = new Validator()
             .Route(request.Pickup, request.Dropoff, request.Stops)
-            .Booking(request.BookingType, request.ScheduledAt, now)
+            .Booking(request.BookingType, request.ScheduledAt)
             .Require(nameof(request.RideCategoryId), request.RideCategoryId)
             .Rule(nameof(request.PricingMode), request.PricingMode is null or PricingMode.Fixed or PricingMode.Offer or PricingMode.Saver, "must be fixed|saver|offer")
             .Rule(nameof(request.OfferedPrice), request.PricingMode != PricingMode.Offer || request.OfferedPrice is > 0, "required and positive for pricingMode=offer")
@@ -73,12 +77,35 @@ public sealed class PassengerTripService(
         // F14: a temporarily restricted or suspended passenger cannot request trips (403 account_restricted).
         await reliability.EnsureNotRestrictedAsync(passenger.UserId, Role.Passenger, ct);
 
-        var active = await db.Trips.AsNoTracking()
-            .Where(t => t.PassengerId == passenger.Id && Trip.ActiveStatuses.Contains(t.Status))
-            .Select(t => new { t.Id, t.TripNumber, t.Status }).FirstOrDefaultAsync(ct);
-        if (active is not null)
+        // F17: airport detection and validation (pickup zone, flight number, terminal); an airport pickup zone replaces the pickup point.
+        var airport = await airportTrips.PrepareAsync(request.Pickup!.Lat!.Value, request.Pickup.Lng!.Value, request.Dropoff!.Lat!.Value, request.Dropoff.Lng!.Value,
+            new Airports.AirportRequestInput(request.AirportPickupZoneId, request.AirportTerminalCode, request.FlightNumber), requirePickupZone: true, ct);
+        if (airport is null && category!.Code == Airports.AirportTripService.AirportCategoryCode)
         {
-            throw new DomainException(ErrorCodes.TripActiveExists, new { activeTripId = active.Id, active.TripNumber, status = active.Status });
+            throw new DomainException(ErrorCodes.AirportCategoryNotApplicable);
+        }
+
+        var bookingType = request.BookingType ?? BookingType.Now;
+        var scheduled = bookingType == BookingType.Scheduled;
+        var pickup = airport is null ? request.Pickup.Point() : new GeoPoint(airport.PickupLat, airport.PickupLng);
+        Domain.Scheduling.ScheduledRideRule? scheduleRule = null;
+        if (scheduled)
+        {
+            // F17: the booking window is measured from the booking time; a scheduled trip is not an active trip, so it neither needs nor blocks one — up to
+            // `max_open_per_passenger` scheduled bookings may be open.
+            scheduleRule = await scheduleRules.ResolveForPickupAsync(pickup.Lat, pickup.Lng, category!.Id, now, ct);
+            Scheduling.ScheduleRuleProvider.EnsureWindow(scheduleRule, request.ScheduledAt!.Value, now);
+            await scheduledRides.EnsureCanBookAsync(passenger.Id, scheduleRule, ct);
+        }
+        else
+        {
+            var active = await db.Trips.AsNoTracking()
+                .Where(t => t.PassengerId == passenger.Id && Trip.ActiveStatuses.Contains(t.Status))
+                .Select(t => new { t.Id, t.TripNumber, t.Status }).FirstOrDefaultAsync(ct);
+            if (active is not null)
+            {
+                throw new DomainException(ErrorCodes.TripActiveExists, new { activeTripId = active.Id, active.TripNumber, status = active.Status });
+            }
         }
 
         // A negative passenger balance is a debt (failed card collection, cancellation fees): top up before requesting again.
@@ -97,13 +124,12 @@ public sealed class PassengerTripService(
             new Validator().Fail(nameof(request.FavoriteDriverId), "not_favorite").ThrowIfInvalid();
         }
 
-        var pickup = request.Pickup!.Point();
         var stops = request.Stops ?? [];
         var route = pricing.EstimateRoute(pickup, stops.Select(s => s.Point()).ToList(), request.Dropoff!.Point());
         var pricingMode = request.PricingMode ?? PricingMode.Fixed;
         var offered = pricingMode == PricingMode.Offer ? request.OfferedPrice : null;
         var pickupAt = request.BookingType == BookingType.Scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : now;
-        var quote = await ResolveQuoteAsync(request.QuoteId, passenger.Id, category!, pickup, request.Dropoff!.Point(), route, pickupAt, now, ct);
+        var quote = await ResolveQuoteAsync(request.QuoteId, passenger.Id, category!, pickup, request.Dropoff!.Point(), route, pickupAt, now, scheduleRule is { LockDemandNormal: true }, ct);
         if (offered is { } offeredPrice && (offeredPrice < quote.OfferMin || offeredPrice > quote.OfferMax))
         {
             throw new DomainException(ErrorCodes.OfferOutOfRange, new { quote.OfferMin, quote.OfferMax, offeredPrice });
@@ -118,7 +144,6 @@ public sealed class PassengerTripService(
         }
 
         var preferFemale = request.PreferFemaleDriver ?? passenger.PreferFemaleDriver;
-        var bookingType = request.BookingType ?? BookingType.Now;
         (FavoriteStatus Status, string? Reason)? favorite = request.FavoriteDriverId is { } favoriteId
             ? await favoriteMatching.InitialStatusAsync(favoriteId, pickup.Lat, pickup.Lng, category!.Id, preferFemale, bookingType, ct)
             : null;
@@ -128,8 +153,9 @@ public sealed class PassengerTripService(
             PassengerId = passenger.Id,
             RideCategoryId = category!.Id,
             BookingType = bookingType,
-            ScheduledAt = request.BookingType == BookingType.Scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : null,
-            PickupName = request.Pickup!.Name!.Trim(),
+            Status = scheduled ? TripStatus.Scheduled : TripStatus.Requested,
+            ScheduledAt = scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : null,
+            PickupName = airport?.PickupZone is { } pickupZone ? lang.Pick(pickupZone.NameAr, pickupZone.NameEn) : request.Pickup!.Name!.Trim(),
             PickupAddress = request.Pickup.Address!.Trim(),
             PickupLat = pickup.Lat,
             PickupLng = pickup.Lng,
@@ -152,6 +178,12 @@ public sealed class PassengerTripService(
             PinCodeProtected = string.Empty,
             PlannedRoute = Safety.PlannedRoutes.Serialize(Safety.PlannedRoutes.Straight(pickup.Lat, pickup.Lng, stops.Select(st => (st.Lat!.Value, st.Lng!.Value)), request.Dropoff!.Lat!.Value, request.Dropoff.Lng!.Value)),
             PlannedRouteSource = Domain.Safety.PlannedRouteSource.Straight,
+            AirportId = airport?.Airport.Id,
+            AirportDirection = airport?.Direction,
+            AirportZoneId = airport?.PickupZone?.Id,
+            TerminalCode = airport?.TerminalCode,
+            FlightNumber = airport?.FlightNumber,
+            WaitingPolicy = airport is null ? null : (await airportTrips.WaitingPolicyAsync(airport, category!, pickupAt, ct))?.ToJson(),
         };
         var pin = pins.Create(trip.Id);
         trip.PinCodeHash = pin.Hash;
@@ -161,24 +193,38 @@ public sealed class PassengerTripService(
             trip.Stops.Add(new TripStop { TripId = trip.Id, Sequence = (byte)(i + 1), Name = stops[i].Name!.Trim(), Address = stops[i].Address!.Trim(), Lat = stops[i].Lat!.Value, Lng = stops[i].Lng!.Value });
         }
 
-        // Card trips are authorized before the trip row exists; an immediate decline rejects the request (422 payment_failed).
+        // Card trips are authorized before the trip row exists; an immediate decline rejects the request (422 payment_failed). Scheduled card trips only check the card
+        // now: the authorization is made when the search starts or the final confirmation assigns the driver.
         Payment? payment = null;
         if (trip.PaymentMethod == PaymentMethodKind.Card)
         {
-            payment = await cardPayments.AuthorizeForTripAsync(trip, passenger.UserId, request.PaymentMethodId, passenger.DefaultPaymentMethodId, ct);
+            if (scheduled)
+            {
+                await cardPayments.ResolveCardAsync(trip, passenger.UserId, request.PaymentMethodId, passenger.DefaultPaymentMethodId, ct);
+            }
+            else
+            {
+                payment = await cardPayments.AuthorizeForTripAsync(trip, passenger.UserId, request.PaymentMethodId, passenger.DefaultPaymentMethodId, ct);
+            }
         }
 
         db.Trips.Add(trip);
         quote.UsedTripId = trip.Id;
         events.Add(trip.Id, TripEventTypes.Requested, TripActor.Passenger, passenger.UserId, pickup.Lat, pickup.Lng,
             new { trip.PaymentMethod, trip.PricingMode, trip.OfferedPrice, trip.EstimatedFare, trip.PreferFemaleDriver, quoteId = quote.Id, quote.DemandLevelCode, quote.PricingRuleId, paymentId = payment?.Id,
-                promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount, favoriteDriverId = request.FavoriteDriverId, favoriteStatus = favorite?.Status });
+                promoCode = promo?.Promotion.Code, promoReservedAmount = promo?.Amount, favoriteDriverId = request.FavoriteDriverId, favoriteStatus = favorite?.Status,
+                bookingType, scheduledAt = trip.ScheduledAt, airportId = trip.AirportId, airportDirection = trip.AirportDirection, airportZoneId = trip.AirportZoneId });
         if (favorite is { Status: FavoriteStatus.Unavailable })
         {
             events.Add(trip.Id, TripEventTypes.FavoriteUnavailable, TripActor.System, data: new { driverId = request.FavoriteDriverId, reason = favorite.Value.Reason });
         }
 
-        if (payment is { Status: PaymentStatus.Initiated })
+        if (scheduled)
+        {
+            // F17: the trip stays `scheduled` (not searching) until T − search_start_minutes_before; rider reminders and the booking / favourite-request notifications.
+            await scheduledEngine.OnBookedAsync(trip, scheduleRule!, passenger.UserId, user.FullName, ct);
+        }
+        else if (payment is { Status: PaymentStatus.Initiated })
         {
             // 3-D Secure: the trip stays `requested` (out of matching) until the payment is authorized or the action expires.
             events.Add(trip.Id, TripEventTypes.PaymentActionRequired, TripActor.System, data: new { paymentId = payment.Id, payment.Amount, payment.ActionExpiresAt });
@@ -305,11 +351,12 @@ public sealed class PassengerTripService(
     /// The quote that fixes the trip's price: the referenced <c>fare_quotes</c> row (or its sibling for the chosen category) when it is
     /// still valid, otherwise a fresh calculation stored as an already-used quote so the driver share and demand level stay with the trip.
     /// </summary>
-    private async Task<FareQuote> ResolveQuoteAsync(Guid? quoteId, Guid passengerId, RideCategory category, GeoPoint pickup, GeoPoint dropoff, RouteEstimate route, DateTime pickupAt, DateTime now, CancellationToken ct)
+    private async Task<FareQuote> ResolveQuoteAsync(
+        Guid? quoteId, Guid passengerId, RideCategory category, GeoPoint pickup, GeoPoint dropoff, RouteEstimate route, DateTime pickupAt, DateTime now, bool lockDemandNormal, CancellationToken ct)
     {
         if (quoteId is null)
         {
-            var fresh = await quotes.QuoteForTripAsync(category, pickup, dropoff, route, pickupAt, passengerId, ct);
+            var fresh = await quotes.QuoteForTripAsync(category, pickup, dropoff, route, pickupAt, passengerId, ct, lockDemandNormal ? DemandReading.Neutral() : null);
             db.FareQuotes.Add(fresh);
             return fresh;
         }

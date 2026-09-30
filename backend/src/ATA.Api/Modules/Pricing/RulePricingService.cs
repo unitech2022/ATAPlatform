@@ -44,7 +44,7 @@ public sealed class RulePricingService(AtaDbContext db, ZoneResolver zones, Dema
         var waitingMinutes = Math.Max(0, request.WaitingSeconds) / 60m;
         var distanceFare = PricingMath.Round2(rule.PerKm * km);
         var timeFare = PricingMath.Round2(rule.PerMinute * minutes);
-        var waitingFare = PricingMath.Round2(rule.WaitingPerMinute * waitingMinutes);
+        var waitingFare = PricingMath.Round2((request.WaitingPerMinute ?? rule.WaitingPerMinute) * waitingMinutes);
         var subtotal = rule.BaseFare + distanceFare + timeFare + waitingFare;
         var minApplied = subtotal < rule.MinFare;
         subtotal = Math.Max(subtotal, rule.MinFare);
@@ -74,6 +74,13 @@ public sealed class RulePricingService(AtaDbContext db, ZoneResolver zones, Dema
         var zone = await zones.ResolveAsync(pickup.Lat, pickup.Lng, at, ct);
         var rule = await SelectRuleAsync(category.Id, zone?.Id, at, ct);
         return rule?.FreeWaitingMinutes ?? await fallback.FreeWaitingMinutesAsync(category, pickup, at, ct);
+    }
+
+    public async Task<decimal> WaitingPerMinuteAsync(RideCategory category, GeoPoint pickup, DateTime at, CancellationToken ct)
+    {
+        var zone = await zones.ResolveAsync(pickup.Lat, pickup.Lng, at, ct);
+        var rule = await SelectRuleAsync(category.Id, zone?.Id, at, ct);
+        return rule?.WaitingPerMinute ?? await fallback.WaitingPerMinuteAsync(category, pickup, at, ct);
     }
 
     /// <summary>Active rules effective at <paramref name="at"/>: the zone's rules first (highest priority), then the city-wide ones.</summary>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using ATA.Api.Common;
+using ATA.Api.Modules.Airports;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
@@ -48,6 +49,7 @@ public static class TripHubEvents
     public const string PaymentUpdated = "PaymentUpdated";
     public const string PayoutRequested = "PayoutRequested";
     public const string NotificationCreated = "NotificationCreated";
+    public const string AirportQueueUpdated = "AirportQueueUpdated";
 }
 
 public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifier
@@ -81,6 +83,9 @@ public sealed class SignalRTripNotifier(IHubContext<TripsHub> hub) : ITripNotifi
 
     public Task NotificationCreatedAsync(Guid userId, NotificationDto notification, CancellationToken ct) =>
         hub.Clients.Group(TripsHub.UserGroup(userId)).SendAsync(TripHubEvents.NotificationCreated, notification, ct);
+
+    public Task AirportQueueUpdatedAsync(Guid userId, AirportQueueUpdatedEvent update, CancellationToken ct) =>
+        hub.Clients.Group(TripsHub.UserGroup(userId)).SendAsync(TripHubEvents.AirportQueueUpdated, update, ct);
 }
 
 /// <summary>Pushes <c>LiveSnapshot</c> to the admins group every <see cref="RealtimeOptions.LiveSnapshotSeconds"/> seconds.</summary>

@@ -284,14 +284,19 @@ public class FavoriteMatchingTests(ApiFixture fixture) : IClassFixture<ApiFixtur
         var scheduledAt = clock.UtcNow.AddMinutes(40);
         var created = await FavoritesFlow.RequestAsync(passenger.Client, FavoritesFlow.Request(area, driverId, bookingType: "scheduled", scheduledAt: scheduledAt));
         var tripId = created.GetProperty("id").GetString()!;
-        // Not eligible-checked at request time for scheduled trips: still requested, and nobody is searched for before T − lead.
+        // F17: the booking is `scheduled` (not searching) and the favourite is not eligible-checked yet: still requested, and nobody is searched for before T − 10 minutes.
+        Assert.Equal("scheduled", created.GetProperty("status").GetString());
         Assert.Equal("requested", created.GetProperty("favorite").GetProperty("status").GetString());
+        await fixture.Factory.RunScheduledWorkerAsync();
         await fixture.Factory.RunMatcherAsync();
         Assert.Equal(JsonValueKind.Null, (await FavoritesFlow.ActiveOfferAsync(driver.Client)).ValueKind);
 
-        clock.Advance(TimeSpan.FromMinutes(26));
+        // The search window opens at T − 10 minutes: the F16 exclusive round then goes to the favourite before the closer rival.
+        clock.Advance(TimeSpan.FromMinutes(31));
         await FavoritesFlow.MoveDriverAsync(driver.Client, area.Lat + TwoKm, area.Lng);
         await FavoritesFlow.MoveDriverAsync(rival.Client, area.Lat, area.Lng);
+        Assert.Equal(1, await fixture.Factory.RunScheduledWorkerAsync());
+        Assert.Equal("searching", (await FavoritesFlow.TripAsync(passenger.Client, tripId)).GetProperty("status").GetString());
         await fixture.Factory.RunMatcherAsync();
         var offer = await FavoritesFlow.ActiveOfferAsync(driver.Client);
         Assert.True(offer.GetProperty("exclusive").GetBoolean());

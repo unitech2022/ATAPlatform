@@ -49,8 +49,10 @@ public enum MatchingOutcome { Assigned, Exhausted, Timeout, Cancelled }
 
 public enum CandidateResponse { Accepted, Rejected, Expired }
 
-/// <summary>F16 <c>matching_attempts.mode</c>: the exclusive favourite-driver round (round 0) or a normal round.</summary>
-public enum MatchingMode { Normal, Favorite }
+/// <summary>
+/// <c>matching_attempts.mode</c>: a normal round, the exclusive favourite-driver round (F16, round 0) or a single-driver offer from the airport FIFO queue (F17).
+/// </summary>
+public enum MatchingMode { Normal, Favorite, AirportQueue }
 
 /// <summary>One search round for a trip (<c>matching_attempts</c>).</summary>
 public class MatchingAttempt

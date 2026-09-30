@@ -30,12 +30,17 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.Property(x => x.RiderNote).HasMaxLength(500);
         b.Property(x => x.FareBreakdown).HasColumnType("json");
         b.Property(x => x.PlannedRoute).HasColumnType("json");
+        b.Property(x => x.WaitingPolicy).HasColumnType("json");
+        b.Property(x => x.TerminalCode).HasMaxLength(10);
+        b.Property(x => x.FlightNumber).HasMaxLength(8);
         b.Property(x => x.TierCommissionDiscountPercent).HasPrecision(5, 2);
         b.Property(x => x.PlannedRouteSource).HasDefaultValue(ATA.Domain.Safety.PlannedRouteSource.Straight).HasSentinel((ATA.Domain.Safety.PlannedRouteSource)(-1));
         b.HasIndex(x => new { x.PassengerId, x.CreatedAt });
         b.HasIndex(x => new { x.DriverId, x.CreatedAt });
         b.HasIndex(x => x.Status);
         b.HasIndex(x => new { x.FavoriteDriverId, x.FavoriteStatus });
+        b.HasIndex(x => new { x.Status, x.ScheduledAt });
+        b.HasIndex(x => x.ReservedDriverId);
         b.Ignore(x => x.IsTerminal);
         b.Ignore(x => x.HasDriver);
         b.Ignore(x => x.CanBeCancelled);
@@ -46,6 +51,9 @@ public sealed class TripConfiguration : IEntityTypeConfiguration<Trip>
         b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.FavoriteDriverId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ATA.Domain.Favorites.FavoriteDriverDiscountRule>().WithMany().HasForeignKey(x => x.FavoriteDiscountRuleId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<PaymentMethod>().WithMany().HasForeignKey(x => x.PaymentMethodId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<DriverProfile>().WithMany().HasForeignKey(x => x.ReservedDriverId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ATA.Domain.Airports.Airport>().WithMany().HasForeignKey(x => x.AirportId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ATA.Domain.Airports.AirportZone>().WithMany().HasForeignKey(x => x.AirportZoneId).OnDelete(DeleteBehavior.Restrict);
         b.HasMany(x => x.Stops).WithOne().HasForeignKey(s => s.TripId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(x => x.Events).WithOne().HasForeignKey(e => e.TripId).OnDelete(DeleteBehavior.Cascade);
     }

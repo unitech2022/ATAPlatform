@@ -81,6 +81,28 @@ public sealed class FavoriteDiscountService(AtaDbContext db, IClock clock, ZoneR
     }
 
     /// <summary>
+    /// F17: the favourite driver no longer holds the scheduled trip (no-show / cancellation → re-match): the pinned rule is dropped and <c>estimated_fare</c> returns to the
+    /// undiscounted total (a reserved promo code still applies).
+    /// </summary>
+    public async Task RevertAsync(Trip trip, CancellationToken ct)
+    {
+        var hadRule = trip.FavoriteDiscountRuleId is not null;
+        trip.FavoriteDiscountRuleId = null;
+        if (!hadRule || trip.PricingMode == PricingMode.Offer)
+        {
+            return;
+        }
+
+        var quote = await db.FareQuotes.AsNoTracking().FirstOrDefaultAsync(q => q.UsedTripId == trip.Id, ct);
+        PromoTripContext? context = quote is null ? null : await promotions.ContextOfQuoteAsync(quote, trip.PaymentMethod, trip.BookingType, trip.PricingMode, ct);
+        if (context?.BaseFare is { } baseFare)
+        {
+            var promo = await promotions.ReservedCandidateAsync(trip.Id, baseFare, context.BookingFee, ct);
+            trip.EstimatedFare = engine.Combine(baseFare, promo, null).Total;
+        }
+    }
+
+    /// <summary>
     /// The discount of a completing trip: only when the favourite driver is the assigned one (<c>favorite_status = accepted</c>) with the rule pinned at acceptance (still
     /// honoured after it was deactivated); <c>min_fare</c> is re-checked on the final base fare; none with "offer your price".
     /// </summary>

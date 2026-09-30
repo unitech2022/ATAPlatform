@@ -1,4 +1,6 @@
+using ATA.Api.Modules.Airports;
 using ATA.Api.Modules.Pricing;
+using ATA.Api.Modules.Scheduling;
 using ATA.Api.Modules.Trips.Matching;
 using ATA.Domain.Common;
 using ATA.Infrastructure.Persistence;
@@ -57,6 +59,8 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseSetting("Reliability:JobsEnabled", "false");
         builder.UseSetting("Ratings:JobsEnabled", "false");
         builder.UseSetting("Incentives:JobsEnabled", "false");
+        builder.UseSetting("Scheduling:JobsEnabled", "false");
+        builder.UseSetting("Airport:JobsEnabled", "false");
         foreach (var (key, value) in _settings)
         {
             builder.UseSetting(key, value);
@@ -87,6 +91,27 @@ public sealed class AtaWebApplicationFactory : WebApplicationFactory<Program>
     {
         var matcher = Services.GetServices<IHostedService>().OfType<MatchingBackgroundService>().Single();
         return await matcher.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>ScheduledRideWorker</c> (confirmation requests / timeouts, search start, driver no-show, favourite window).</summary>
+    public async Task<int> RunScheduledWorkerAsync()
+    {
+        var worker = Services.GetServices<IHostedService>().OfType<ScheduledRideWorker>().Single();
+        return await worker.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>ScheduledReminderJob</c>.</summary>
+    public async Task<int> RunScheduledRemindersAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<ScheduledReminderJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
+    }
+
+    /// <summary>Runs one pass of <c>AirportQueueJob</c> (stale entries leave, positions are broadcast).</summary>
+    public async Task<int> RunAirportQueueJobAsync()
+    {
+        var job = Services.GetServices<IHostedService>().OfType<AirportQueueJob>().Single();
+        return await job.RunOnceAsync(CancellationToken.None);
     }
 
     /// <summary>Runs one demand pass (snapshots per zone + <c>DemandChanged</c>) exactly like the background service would.</summary>
@@ -144,4 +169,7 @@ public sealed class FakeClock : IClock
     public DateTime UtcNow { get; private set; } = new(2026, 9, 28, 12, 0, 0, DateTimeKind.Utc);
 
     public void Advance(TimeSpan by) => UtcNow = UtcNow.Add(by);
+
+    /// <summary>Jumps to an absolute instant (e.g. the booking date of a window-boundary scenario).</summary>
+    public void Set(DateTime utc) => UtcNow = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
 }

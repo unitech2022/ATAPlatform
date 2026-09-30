@@ -60,5 +60,15 @@ public static class ErrorCodes
     public const string FavoriteNotEligible = "favorite_not_eligible";
     public const string FavoriteExists = "favorite_exists";
     public const string FavoritesLimit = "favorites_limit";
+    public const string ScheduleWindowExceeded = "schedule_window_exceeded";
+    public const string ScheduleLeadTooShort = "schedule_lead_too_short";
+    public const string ScheduledLimitReached = "scheduled_limit_reached";
+    public const string ReservationTaken = "reservation_taken";
+    public const string ReservationConflict = "reservation_conflict";
+    public const string ReservationLimitReached = "reservation_limit_reached";
+    public const string ReservationNotConfirmable = "reservation_not_confirmable";
+    public const string AirportPickupZoneRequired = "airport_pickup_zone_required";
+    public const string AirportCategoryNotApplicable = "airport_category_not_applicable";
+    public const string NotInAirportWaitingArea = "not_in_airport_waiting_area";
     public const string InternalError = "internal_error";
 }

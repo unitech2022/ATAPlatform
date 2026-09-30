@@ -11,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace ATA.Api.Modules.Trips;
 
 /// <summary>Trip browsing, forced cancellation (audited) and the live map snapshot for the admin console.</summary>
-public sealed class AdminTripService(AtaDbContext db, TripReadService reads, AuditService audit, Cancellation.CancellationEngine cancellations, ICurrentUser currentUser, IClock clock)
+public sealed class AdminTripService(
+    AtaDbContext db, TripReadService reads, AuditService audit, Cancellation.CancellationEngine cancellations, ICurrentUser currentUser, IClock clock, Scheduling.SchedulingViewBuilder schedulingViews)
 {
     public const string EntityType = "trip";
     private static readonly TimeSpan RecentlyOffline = TimeSpan.FromMinutes(15);
@@ -163,7 +164,8 @@ public sealed class AdminTripService(AtaDbContext db, TripReadService reads, Aud
             passenger, driver, dto.Vehicle, dto.WaitingSeconds, dto.CancelledBy, dto.CancellationReason, trip.RiderNote, dto.Timeline,
             events, offers, route, dto.Cancellation, Safety.PlannedRoutes.Of(trip, trip.Stops.Count > 0 ? trip.Stops : await db.TripStops.AsNoTracking().Where(s => s.TripId == trip.Id).ToListAsync(ct)),
             dto.Promotion, trip.DiscountTotal, stored?.Discounts.Select(d => d with { Label = Promotions.DiscountEngine.Label(d.Source, d.Reference, lang) }).ToList(),
-            trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent, dto.Favorite);
+            trip.FareBreakdown is null ? null : JsonSerializer.Deserialize<JsonElement>(trip.FareBreakdown), ratings, trip.TierCommissionDiscountPercent, dto.Favorite,
+            await schedulingViews.BuildAdminAsync(trip, ct), dto.Airport);
     }
 
     private async Task<Dictionary<Guid, string?>> DriverNamesAsync(IEnumerable<Guid> driverIds, CancellationToken ct)

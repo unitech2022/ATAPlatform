@@ -71,6 +71,16 @@ public static class ErrorCatalog
         [ErrorCodes.FavoriteNotEligible] = new(StatusCodes.Status422UnprocessableEntity, "يمكنك إضافة الكابتن بعد إكمال رحلة معه", "You can add a driver after completing a trip with them"),
         [ErrorCodes.FavoriteExists] = new(StatusCodes.Status409Conflict, "الكابتن موجود في مفضلتك بالفعل", "This driver is already in your favourites"),
         [ErrorCodes.FavoritesLimit] = new(StatusCodes.Status422UnprocessableEntity, "وصلت إلى الحد الأقصى للكباتن المفضلين", "You have reached the maximum number of favourite drivers"),
+        [ErrorCodes.ScheduleWindowExceeded] = new(StatusCodes.Status422UnprocessableEntity, "لا يمكن الجدولة لأكثر من 7 أيام من الآن", "You cannot schedule a trip more than 7 days ahead"),
+        [ErrorCodes.ScheduleLeadTooShort] = new(StatusCodes.Status422UnprocessableEntity, "يجب أن يكون الموعد بعد 30 دقيقة على الأقل", "The pickup time must be at least 30 minutes from now"),
+        [ErrorCodes.ScheduledLimitReached] = new(StatusCodes.Status422UnprocessableEntity, "وصلت للحد الأقصى من الرحلات المجدولة", "You have reached the maximum number of scheduled trips"),
+        [ErrorCodes.ReservationTaken] = new(StatusCodes.Status409Conflict, "تم حجز هذه الرحلة من كابتن آخر", "This trip was reserved by another driver"),
+        [ErrorCodes.ReservationConflict] = new(StatusCodes.Status409Conflict, "يتعارض الموعد مع رحلة محجوزة لديك", "The time conflicts with a trip you have reserved"),
+        [ErrorCodes.ReservationLimitReached] = new(StatusCodes.Status422UnprocessableEntity, "وصلت للحد الأقصى من الحجوزات", "You have reached the maximum number of reservations"),
+        [ErrorCodes.ReservationNotConfirmable] = new(StatusCodes.Status409Conflict, "لا يمكن التأكيد الآن", "The reservation cannot be confirmed right now"),
+        [ErrorCodes.AirportPickupZoneRequired] = new(StatusCodes.Status422UnprocessableEntity, "اختر منطقة الالتقاط في المطار", "Choose a pickup zone at the airport"),
+        [ErrorCodes.AirportCategoryNotApplicable] = new(StatusCodes.Status422UnprocessableEntity, "فئة المطار متاحة لرحلات المطار فقط", "The airport category is only available for airport trips"),
+        [ErrorCodes.NotInAirportWaitingArea] = new(StatusCodes.Status422UnprocessableEntity, "يجب أن تكون داخل منطقة انتظار المطار", "You must be inside the airport waiting area"),
         [ErrorCodes.InternalError] = new(StatusCodes.Status500InternalServerError, "حدث خطأ غير متوقع", "An unexpected error occurred"),
     };
 

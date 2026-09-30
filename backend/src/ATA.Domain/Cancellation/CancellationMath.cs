@@ -14,6 +14,7 @@ public static class CancellationMath
     /// <summary>The stage of a cancellation now (<c>no_show</c> only through the no-show endpoint; <c>in_trip</c> and terminal trips cannot be cancelled).</summary>
     public static CancellationStage StageOf(Trip trip, int freeWaitingSeconds, DateTime now) => trip.Status switch
     {
+        TripStatus.Scheduled => CancellationStage.Scheduled,
         TripStatus.Requested or TripStatus.Searching => CancellationStage.BeforeAccept,
         TripStatus.DriverAssigned => CancellationStage.AfterAccept,
         TripStatus.DriverEnRoute => CancellationStage.EnRoute,
@@ -81,7 +82,9 @@ public static class CancellationMath
     }
 
     public static decimal Compensation(decimal feeCharged, CancellationRule? rule) =>
-        rule is null ? 0m : Round2(feeCharged * rule.DriverCompensationPercent / 100m);
+        rule is null ? 0m : Compensation(feeCharged, rule.DriverCompensationPercent);
+
+    public static decimal Compensation(decimal feeCharged, decimal compensationPercent) => Round2(feeCharged * compensationPercent / 100m);
 
     public static decimal Round2(decimal value) => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
 }

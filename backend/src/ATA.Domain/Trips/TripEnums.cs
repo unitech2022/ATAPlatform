@@ -13,6 +13,8 @@ public enum TripStatus
     Completed,
     Cancelled,
     NoDrivers,
+    /// <summary>F17: a booked trip waiting for its time; not the passenger's active trip until its search starts or a driver is finally confirmed.</summary>
+    Scheduled,
 }
 
 public enum BookingType { Now, Scheduled }
@@ -59,4 +61,12 @@ public static class TripEventTypes
     public const string FavoriteFallback = "favorite_fallback";
     public const string PassengerNoShow = "passenger_no_show";
     public const string CancellationFeeCharged = "cancellation_fee_charged";
+    public const string ScheduledBooked = "scheduled_booked";
+    public const string DriverReserved = "driver_reserved";
+    public const string ReservationConfirmed = "reservation_confirmed";
+    public const string ReservationReleased = "reservation_released";
+    public const string DriverUnassigned = "driver_unassigned";
+    public const string DriverNoShow = "driver_no_show";
+    public const string Rematched = "rematched";
+    public const string FavoriteWindowExpired = "favorite_window_expired";
 }

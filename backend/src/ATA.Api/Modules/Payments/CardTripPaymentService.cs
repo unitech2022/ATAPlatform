@@ -38,17 +38,8 @@ public sealed class CardTripPaymentService(
     /// </summary>
     public async Task<Payment?> AuthorizeForTripAsync(Trip trip, Guid passengerUserId, Guid? requestedMethodId, Guid? defaultMethodId, CancellationToken ct)
     {
-        var methodId = requestedMethodId ?? defaultMethodId;
-        if (methodId is null)
-        {
-            throw new DomainException(ErrorCodes.ValidationFailed, new Dictionary<string, string> { ["paymentMethodId"] = "required" });
-        }
-
-        var card = await db.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(m => m.Id == methodId && m.UserId == passengerUserId && m.Status != SavedCardStatus.Removed, ct)
-                   ?? throw new DomainException(ErrorCodes.NotFound, new { paymentMethodId = methodId });
+        var card = await ResolveCardAsync(trip, passengerUserId, requestedMethodId, defaultMethodId, ct);
         var now = clock.UtcNow;
-        card.EnsureUsable(now);
-        trip.PaymentMethodId = card.Id;
         if (!_options.AuthorizeCardTrips)
         {
             return null;
@@ -89,6 +80,25 @@ public sealed class CardTripPaymentService(
         }
 
         return payment;
+    }
+
+    /// <summary>
+    /// Resolves and checks the card of a trip (<c>404</c> unknown, <c>422 payment_method_expired</c>) and sets <c>trip.PaymentMethodId</c>. Scheduled trips (F17) only do this at
+    /// booking; the authorization itself is made when the search starts or the final confirmation assigns the driver.
+    /// </summary>
+    public async Task<PaymentMethod> ResolveCardAsync(Trip trip, Guid passengerUserId, Guid? requestedMethodId, Guid? defaultMethodId, CancellationToken ct)
+    {
+        var methodId = requestedMethodId ?? defaultMethodId;
+        if (methodId is null)
+        {
+            throw new DomainException(ErrorCodes.ValidationFailed, new Dictionary<string, string> { ["paymentMethodId"] = "required" });
+        }
+
+        var card = await db.PaymentMethods.AsNoTracking().FirstOrDefaultAsync(m => m.Id == methodId && m.UserId == passengerUserId && m.Status != SavedCardStatus.Removed, ct)
+                   ?? throw new DomainException(ErrorCodes.NotFound, new { paymentMethodId = methodId });
+        card.EnsureUsable(clock.UtcNow);
+        trip.PaymentMethodId = card.Id;
+        return card;
     }
 
     /// <summary>

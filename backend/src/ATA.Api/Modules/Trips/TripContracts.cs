@@ -12,8 +12,6 @@ public sealed class TripOptions
     /// <summary>Distance from the pickup beyond which an "arrived" report is recorded with a warning event.</summary>
     public int ArrivalRadiusMeters { get; set; } = 300;
     public int PinMaxAttempts { get; set; } = Trip.DefaultPinMaxAttempts;
-    /// <summary>How long before <c>scheduledAt</c> the matcher starts searching for a scheduled trip.</summary>
-    public int ScheduledLeadMinutes { get; set; } = 15;
 }
 
 public sealed class MatchingOptions
@@ -49,7 +47,7 @@ public sealed record PlaceRequest(string? Name, string? Address, decimal? Lat, d
 /// favourites) adds the favourite-driver discount to the quote, conditional on that driver accepting.
 /// </summary>
 public sealed record EstimateRequest(PlaceRequest? Pickup, PlaceRequest? Dropoff, List<PlaceRequest>? Stops, Guid? RideCategoryId, BookingType? BookingType, DateTime? ScheduledAt,
-    string? PromoCode = null, Guid? FavoriteDriverId = null);
+    string? PromoCode = null, Guid? FavoriteDriverId = null, Guid? AirportPickupZoneId = null, string? AirportTerminalCode = null, string? FlightNumber = null);
 
 public sealed record CreateTripRequest(
     PlaceRequest? Pickup,
@@ -66,7 +64,10 @@ public sealed record CreateTripRequest(
     Guid? QuoteId,
     Guid? PaymentMethodId = null,
     string? PromoCode = null,
-    Guid? FavoriteDriverId = null);
+    Guid? FavoriteDriverId = null,
+    Guid? AirportPickupZoneId = null,
+    string? AirportTerminalCode = null,
+    string? FlightNumber = null);
 
 public sealed record CancelTripRequest(string? ReasonCode, string? Note, decimal? ExpectedFee = null, int? ExpectedPenaltyPoints = null);
 
@@ -126,7 +127,9 @@ public sealed record TripDto(
     ATA.Api.Modules.Ratings.MyRatingDto? MyRating = null,
     bool CanRate = false,
     DateTime? RateUntil = null,
-    ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null);
+    ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null,
+    ATA.Api.Modules.Scheduling.TripSchedulingDto? Scheduling = null,
+    ATA.Api.Modules.Airports.TripAirportDto? Airport = null);
 
 public sealed record OfferPassengerDto(string? FirstName, decimal RatingAvg);
 
@@ -147,7 +150,8 @@ public sealed record OfferDto(
     bool PassengerOffered,
     PaymentMethodKind PaymentMethod = PaymentMethodKind.Cash,
     bool IsFavoriteRequest = false,
-    bool Exclusive = false);
+    bool Exclusive = false,
+    ATA.Api.Modules.Airports.TripAirportDto? Airport = null);
 
 public sealed record DriverLocationEvent(Guid TripId, decimal Lat, decimal Lng, decimal? Heading, int EtaSeconds);
 
@@ -216,7 +220,9 @@ public sealed record AdminTripDetailDto(
     System.Text.Json.JsonElement? FareBreakdown = null,
     IReadOnlyList<ATA.Api.Modules.Ratings.TripRatingDto>? Ratings = null,
     decimal TierCommissionDiscountPercent = 0m,
-    ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null);
+    ATA.Api.Modules.Favorites.TripFavoriteDto? Favorite = null,
+    ATA.Api.Modules.Scheduling.AdminTripSchedulingDto? Scheduling = null,
+    ATA.Api.Modules.Airports.TripAirportDto? Airport = null);
 
 public sealed record LiveDriverDto(Guid DriverId, string? Name, decimal Lat, decimal Lng, bool IsOnline, string Status, string? CategoryCode, Guid? CurrentTripId, decimal? Heading, DateTime UpdatedAt);
 

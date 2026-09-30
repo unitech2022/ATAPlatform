@@ -18,16 +18,43 @@ namespace ATA.Api.Modules.Pricing;
 /// </summary>
 public sealed class QuoteService(
     AtaDbContext db, IPricingService pricing, IMatcher matcher, IClock clock, IOptions<PricingOptions> options,
-    Promotions.PromotionService promotions, Promotions.IDiscountEngine discounts, Favorites.FavoriteDiscountService favoriteDiscounts, Favorites.FavoriteService favorites)
+    Promotions.PromotionService promotions, Promotions.IDiscountEngine discounts, Favorites.FavoriteDiscountService favoriteDiscounts, Favorites.FavoriteService favorites,
+    Scheduling.ScheduleRuleProvider scheduleRules, Airports.AirportTripService airportTrips)
 {
     private readonly PricingOptions _options = options.Value;
+
+    /// <summary>What a quote knows about the trip beyond the route: a scheduled booking (its rule may lock the demand level to <c>normal</c>) and whether it touches an airport.</summary>
+    private sealed record QuoteContext(bool Scheduled, Guid? CityId, bool AirportTrip);
 
     public async Task<QuoteResponse> QuoteAsync(EstimateRequest request, Guid passengerId, Language lang, CancellationToken ct)
     {
         var now = clock.UtcNow;
-        new Validator().Route(request.Pickup, request.Dropoff, request.Stops, requireLabels: false).Booking(request.BookingType, request.ScheduledAt, now).ThrowIfInvalid();
-        var at = request.BookingType == BookingType.Scheduled && request.ScheduledAt is { } scheduled ? scheduled.ToUniversalTime() : now;
-        var (response, quotes) = await BuildAsync(request, at, passengerId, lang, ct);
+        new Validator().Route(request.Pickup, request.Dropoff, request.Stops, requireLabels: false).Booking(request.BookingType, request.ScheduledAt).ThrowIfInvalid();
+        var scheduled = request.BookingType == BookingType.Scheduled;
+        // F17: an airport pickup zone replaces the pickup point; the zone is optional for a quote (a trip request requires it).
+        var airport = await airportTrips.PrepareAsync(request.Pickup!.Lat!.Value, request.Pickup.Lng!.Value, request.Dropoff!.Lat!.Value, request.Dropoff.Lng!.Value,
+            new Airports.AirportRequestInput(request.AirportPickupZoneId, request.AirportTerminalCode, request.FlightNumber), requirePickupZone: false, ct);
+        if (airport?.PickupZone is { } zone)
+        {
+            request = request with { Pickup = new PlaceRequest(request.Pickup.Name, request.Pickup.Address, zone.Lat, zone.Lng) };
+        }
+
+        if (request.RideCategoryId is { } requestedCategory && airport is null
+            && await db.RideCategories.AsNoTracking().AnyAsync(c => c.Id == requestedCategory && c.Code == Airports.AirportTripService.AirportCategoryCode, ct))
+        {
+            throw new DomainException(ErrorCodes.AirportCategoryNotApplicable);
+        }
+
+        Guid? cityId = null;
+        if (scheduled)
+        {
+            var pickup = request.Pickup!.Point();
+            cityId = await scheduleRules.CityOfAsync(pickup.Lat, pickup.Lng, now, ct);
+            Scheduling.ScheduleRuleProvider.EnsureWindow(await scheduleRules.ResolveAsync(cityId, request.RideCategoryId, ct), request.ScheduledAt!.Value, now);
+        }
+
+        var at = scheduled ? request.ScheduledAt!.Value.ToUniversalTime() : now;
+        var (response, quotes) = await BuildAsync(request, at, passengerId, lang, new QuoteContext(scheduled, cityId, airport is not null), ct);
         db.FareQuotes.AddRange(quotes);
         await db.SaveChangesAsync(ct);
         return response;
@@ -39,14 +66,17 @@ public sealed class QuoteService(
         new Validator().Route(request.Pickup, request.Dropoff, request.Stops, requireLabels: false).ThrowIfInvalid();
         var at = (request.At ?? request.ScheduledAt ?? now).ToUniversalTime();
         var estimate = new EstimateRequest(request.Pickup, request.Dropoff, request.Stops, request.RideCategoryId, request.BookingType, request.ScheduledAt);
-        var (response, _) = await BuildAsync(estimate, at, null, lang, ct);
+        var scheduled = request.BookingType == BookingType.Scheduled;
+        var cityId = scheduled ? await scheduleRules.CityOfAsync(request.Pickup!.Lat!.Value, request.Pickup.Lng!.Value, now, ct) : null;
+        var (response, _) = await BuildAsync(estimate, at, null, lang, new QuoteContext(scheduled, cityId, AirportTrip: true), ct);
         return response;
     }
 
     /// <summary>Prices one category for a trip request made without a quote and returns the (already used) quote row to persist with the trip.</summary>
-    public async Task<FareQuote> QuoteForTripAsync(RideCategory category, GeoPoint pickup, GeoPoint dropoff, RouteEstimate route, DateTime at, Guid passengerId, CancellationToken ct)
+    public async Task<FareQuote> QuoteForTripAsync(
+        RideCategory category, GeoPoint pickup, GeoPoint dropoff, RouteEstimate route, DateTime at, Guid passengerId, CancellationToken ct, DemandReading? lockedDemand = null)
     {
-        var calculation = await pricing.CalculateAsync(new FareRequest(category, pickup, dropoff, route.DistanceMeters, route.DurationSeconds, at), ct);
+        var calculation = await pricing.CalculateAsync(new FareRequest(category, pickup, dropoff, route.DistanceMeters, route.DurationSeconds, at, LockedDemand: lockedDemand), ct);
         return ToRecord(calculation, Guid.CreateVersion7(), passengerId, category.Id, route, at);
     }
 
@@ -92,9 +122,11 @@ public sealed class QuoteService(
 
     public static ZoneRefDto? ToDto(ZoneSnapshot? z, Language lang) => z is null ? null : new ZoneRefDto(z.Id, z.Code, lang.Pick(z.NameAr, z.NameEn));
 
-    private async Task<(QuoteResponse Response, List<FareQuote> Quotes)> BuildAsync(EstimateRequest request, DateTime at, Guid? passengerId, Language lang, CancellationToken ct)
+    private async Task<(QuoteResponse Response, List<FareQuote> Quotes)> BuildAsync(EstimateRequest request, DateTime at, Guid? passengerId, Language lang, QuoteContext context, CancellationToken ct)
     {
-        var categories = await db.RideCategories.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.SortOrder).ToListAsync(ct);
+        // F17: the airport category is only offered for trips that touch an airport.
+        var categories = (await db.RideCategories.AsNoTracking().Where(c => c.IsActive).OrderBy(c => c.SortOrder).ToListAsync(ct))
+            .Where(c => context.AirportTrip || c.Code != Airports.AirportTripService.AirportCategoryCode).ToList();
         if (request.RideCategoryId is { } requestedId)
         {
             new Validator().Rule(nameof(request.RideCategoryId), categories.Any(c => c.Id == requestedId), "unknown or inactive ride category").ThrowIfInvalid();
@@ -127,7 +159,9 @@ public sealed class QuoteService(
         FareCalculation? first = null;
         foreach (var category in categories)
         {
-            var calculation = await pricing.CalculateAsync(new FareRequest(category, pickup, dropoff, route.DistanceMeters, route.DurationSeconds, at), ct);
+            // F17: a scheduled booking is priced with the time multipliers at `scheduled_at` and a locked `normal` demand level (no surge) when its rule says so.
+            var lockedDemand = context.Scheduled && (await scheduleRules.ResolveAsync(context.CityId, category.Id, ct)).LockDemandNormal ? DemandReading.Neutral() : null;
+            var calculation = await pricing.CalculateAsync(new FareRequest(category, pickup, dropoff, route.DistanceMeters, route.DurationSeconds, at, LockedDemand: lockedDemand), ct);
             first ??= calculation;
             var candidates = await matcher.FindCandidatesAsync(new MatchCriteria(pickup.Lat, pickup.Lng, category.Id, false, []), ct);
             int? eta = candidates.Count == 0 ? null : Math.Max(1, (int)Math.Ceiling(candidates.Min(c => c.EtaSeconds) / 60d));

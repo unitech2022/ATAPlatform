@@ -21,13 +21,17 @@ public static class TripDtoRatings
     public static TripDto WithRating(this TripDto dto, TripRatingState state) => dto with { MyRating = state.MyRating, CanRate = state.CanRate, RateUntil = state.RateUntil };
 
     public static TripDto WithFavorite(this TripDto dto, Favorites.TripFavoriteDto? favorite) => dto with { Favorite = favorite };
+
+    public static TripDto WithScheduling(this TripDto dto, Scheduling.TripSchedulingDto? scheduling, Airports.TripAirportDto? airport) => dto with { Scheduling = scheduling, Airport = airport };
 }
 
 /// <summary>Participants of a trip resolved to user ids (for notifications and real-time fan-out).</summary>
 public sealed record TripParticipants(Guid PassengerUserId, Guid? DriverUserId);
 
 /// <summary>Builds the <see cref="TripDto"/>/<see cref="OfferDto"/> read models and publishes <c>TripUpdated</c> to both parties.</summary>
-public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripNotifier notifier, IClock clock, Microsoft.Extensions.Options.IOptions<Ratings.RatingsOptions> ratingOptions)
+public sealed class TripReadService(
+    AtaDbContext db, TripPinService pins, ITripNotifier notifier, IClock clock, Microsoft.Extensions.Options.IOptions<Ratings.RatingsOptions> ratingOptions,
+    Scheduling.SchedulingViewBuilder schedulingViews, Airports.AirportViewBuilder airportViews)
 {
     public async Task<Trip?> FindAsync(Guid tripId, CancellationToken ct) =>
         await db.Trips.Include(t => t.Stops).FirstOrDefaultAsync(t => t.Id == tripId, ct);
@@ -107,7 +111,8 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             await CancellationForAsync(trip, viewer, lang, ct),
             await PromotionForAsync(trip.Id, ct))
             .WithRating(await RatingForAsync(trip, viewer, ct))
-            .WithFavorite(await FavoriteForAsync(trip, viewer, ct));
+            .WithFavorite(await FavoriteForAsync(trip, viewer, ct))
+            .WithScheduling(await schedulingViews.BuildAsync(trip, ct), await airportViews.BuildAsync(trip, lang, includeFlightNumber: true, ct));
     }
 
     /// <summary>
@@ -294,7 +299,8 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
             trip.PricingMode == PricingMode.Offer,
             trip.PaymentMethod,
             isFavorite,
-            isFavorite && latest?.Mode == MatchingMode.Favorite);
+            isFavorite && latest?.Mode == MatchingMode.Favorite,
+            await airportViews.BuildAsync(trip, Language.Ar, includeFlightNumber: false, ct));
     }
 
     /// <summary>
@@ -337,8 +343,9 @@ public sealed class TripReadService(AtaDbContext db, TripPinService pins, ITripN
     {
         null or "all" => Enum.GetValues<TripStatus>(),
         "active" => Trip.ActiveStatuses,
+        "scheduled" => [TripStatus.Scheduled],
         "completed" => [TripStatus.Completed],
         "cancelled" => [TripStatus.Cancelled, TripStatus.NoDrivers],
-        _ => throw new DomainException(ErrorCodes.ValidationFailed, new Dictionary<string, string> { ["status"] = "must be all|active|completed|cancelled" }),
+        _ => throw new DomainException(ErrorCodes.ValidationFailed, new Dictionary<string, string> { ["status"] = "must be all|active|scheduled|completed|cancelled" }),
     };
 }

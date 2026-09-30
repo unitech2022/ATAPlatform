@@ -1,3 +1,4 @@
+using ATA.Api.Modules.Airports;
 using ATA.Api.Modules.Notifications;
 using ATA.Api.Modules.Payments;
 using ATA.Api.Modules.Pricing;
@@ -30,4 +31,7 @@ public interface ITripNotifier
 
     /// <summary>A new inbox notification for the user (F13).</summary>
     Task NotificationCreatedAsync(Guid userId, NotificationDto notification, CancellationToken ct);
+
+    /// <summary>The driver's place in the airport queue changed (F17).</summary>
+    Task AirportQueueUpdatedAsync(Guid userId, AirportQueueUpdatedEvent update, CancellationToken ct);
 }

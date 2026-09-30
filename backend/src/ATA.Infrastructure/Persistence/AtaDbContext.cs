@@ -1,4 +1,5 @@
 using ATA.Domain.Admin;
+using ATA.Domain.Airports;
 using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
@@ -15,6 +16,7 @@ using ATA.Domain.Pricing;
 using ATA.Domain.Promotions;
 using ATA.Domain.Ratings;
 using ATA.Domain.Safety;
+using ATA.Domain.Scheduling;
 using ATA.Domain.Trips;
 using ATA.Domain.Wallet;
 using Microsoft.EntityFrameworkCore;
@@ -114,6 +116,13 @@ public class AtaDbContext(DbContextOptions<AtaDbContext> options, IClock clock) 
     public DbSet<DriverIncentiveTrip> DriverIncentiveTrips => Set<DriverIncentiveTrip>();
     public DbSet<FavoriteDriver> FavoriteDrivers => Set<FavoriteDriver>();
     public DbSet<FavoriteDriverDiscountRule> FavoriteDriverDiscountRules => Set<FavoriteDriverDiscountRule>();
+
+    public DbSet<ScheduledRideRule> ScheduledRideRules => Set<ScheduledRideRule>();
+    public DbSet<ScheduledRideReservation> ScheduledRideReservations => Set<ScheduledRideReservation>();
+    public DbSet<ScheduledRideReminder> ScheduledRideReminders => Set<ScheduledRideReminder>();
+    public DbSet<Airport> Airports => Set<Airport>();
+    public DbSet<AirportZone> AirportZones => Set<AirportZone>();
+    public DbSet<AirportQueueEntry> AirportQueueEntries => Set<AirportQueueEntry>();
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 

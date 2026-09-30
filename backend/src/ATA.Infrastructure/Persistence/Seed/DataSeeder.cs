@@ -1,3 +1,4 @@
+using ATA.Domain.Airports;
 using ATA.Domain.Cancellation;
 using ATA.Domain.Catalog;
 using ATA.Domain.Common;
@@ -10,6 +11,7 @@ using ATA.Domain.Pricing;
 using ATA.Domain.Favorites;
 using ATA.Domain.Promotions;
 using ATA.Domain.Ratings;
+using ATA.Domain.Scheduling;
 using ATA.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -41,7 +43,76 @@ public sealed class DataSeeder(AtaDbContext db, IPasswordHasher passwordHasher, 
         await SeedPromotionsAsync(cancellationToken);
         await SeedFavoriteDiscountRulesAsync(cancellationToken);
         await SeedIncentivesAsync(cancellationToken);
+        await SeedScheduledRideRulesAsync(cancellationToken);
+        await SeedAirportsAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>The global scheduled-ride rule with the doc 11 §F17.2 defaults, seeded once while the table is empty (an admin's deletion, audited, is never undone).</summary>
+    private async Task SeedScheduledRideRulesAsync(CancellationToken ct)
+    {
+        if (await db.ScheduledRideRules.AnyAsync(ct) || await db.AuditLogs.AnyAsync(a => a.EntityType == "scheduled_ride_rule", ct))
+        {
+            return;
+        }
+
+        var rule = ScheduledRideRule.Default();
+        rule.Id = SeedIds.ScheduledRideRuleDefault;
+        db.ScheduledRideRules.Add(rule);
+    }
+
+    /// <summary>
+    /// King Khalid International Airport (<c>RUH</c>) with terminals T1–T5, two pickup zones per terminal and one driver waiting area (doc 11 seed data).
+    /// <b>The coordinates and polygons are approximate development values and must be reviewed against the airport's official layout before production.</b>
+    /// Seeded once; an admin's changes or deletion (audited) are never overwritten.
+    /// </summary>
+    private async Task SeedAirportsAsync(CancellationToken ct)
+    {
+        if (await db.Airports.AnyAsync(a => a.Code == "RUH", ct) || await db.AuditLogs.AnyAsync(a => a.EntityType == "airport", ct)
+            || !await db.Cities.AnyAsync(c => c.Id == SeedIds.CityRiyadh, ct))
+        {
+            return;
+        }
+
+        db.Airports.Add(new Airport
+        {
+            Id = SeedIds.AirportRuh, CityId = SeedIds.CityRiyadh, Code = "RUH", NameAr = "مطار الملك خالد الدولي", NameEn = "King Khalid International Airport",
+            Lat = 24.9576m, Lng = 46.6988m, Geofence = "[[24.9250,46.6700],[24.9250,46.7300],[24.9900,46.7300],[24.9900,46.6700],[24.9250,46.6700]]",
+            RequiresPickupZone = true, DefaultFreeWaitingMinutes = 15, DefaultWaitingPerMinute = null, QueueEnabled = true, IsActive = true,
+        });
+        (string Code, decimal Lat, decimal Lng)[] terminals =
+        [
+            ("T1", 24.9612m, 46.6968m), ("T2", 24.9624m, 46.7040m), ("T3", 24.9489m, 46.7004m), ("T4", 24.9463m, 46.7046m), ("T5", 24.9431m, 46.6992m),
+        ];
+        var order = 0;
+        foreach (var (code, lat, lng) in terminals)
+        {
+            var number = code[1..];
+            order++;
+            db.AirportZones.Add(new AirportZone
+            {
+                AirportId = SeedIds.AirportRuh, Kind = AirportZoneKind.Terminal, Code = code, TerminalCode = code, NameAr = $"صالة {number}", NameEn = $"Terminal {number}",
+                Lat = lat, Lng = lng, SortOrder = order * 10, IsActive = true,
+            });
+            for (var p = 1; p <= 2; p++)
+            {
+                var offset = (p - 1) * 0.0012m;
+                db.AirportZones.Add(new AirportZone
+                {
+                    AirportId = SeedIds.AirportRuh, Kind = AirportZoneKind.PickupZone, Code = $"{code}-P{p}", TerminalCode = code,
+                    NameAr = $"منطقة الالتقاط {p} - صالة {number}", NameEn = $"Pickup zone {p} - Terminal {number}",
+                    Lat = lat - 0.0008m - offset, Lng = lng + 0.0006m + offset,
+                    InstructionsAr = $"انتظر عند البوابة {p} خارج صالة {number}", InstructionsEn = $"Wait at gate {p} outside Terminal {number}",
+                    SortOrder = order * 10 + p, IsActive = true,
+                });
+            }
+        }
+
+        db.AirportZones.Add(new AirportZone
+        {
+            AirportId = SeedIds.AirportRuh, Kind = AirportZoneKind.DriverWaitingArea, Code = "WAIT-1", NameAr = "منطقة انتظار الكباتن", NameEn = "Driver waiting area",
+            Polygon = "[[24.9330,46.6760],[24.9330,46.6820],[24.9380,46.6820],[24.9380,46.6760],[24.9330,46.6760]]", Lat = 24.9355m, Lng = 46.6790m, SortOrder = 100, IsActive = true,
+        });
     }
 
     /// <summary>F15 rating tags (doc 10 "البيانات الأولية"), added by (target role, code) when missing.</summary>

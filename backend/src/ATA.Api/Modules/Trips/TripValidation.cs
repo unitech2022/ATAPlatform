@@ -43,14 +43,12 @@ internal static class TripValidation
         return v;
     }
 
-    public static Validator Booking(this Validator v, BookingType? bookingType, DateTime? scheduledAt, DateTime now)
-    {
-        var type = bookingType ?? BookingType.Now;
-        return v
-            .Rule("scheduledAt", type != BookingType.Scheduled || scheduledAt is not null, "required")
-            .Rule("scheduledAt", scheduledAt is null || scheduledAt.Value.ToUniversalTime() > now.AddMinutes(10), "must be at least 10 minutes in the future")
-            .Rule("scheduledAt", scheduledAt is null || scheduledAt.Value.ToUniversalTime() <= now.AddDays(30), "must be within 30 days");
-    }
+    /// <summary>
+    /// A scheduled booking needs <c>scheduledAt</c>. The window (<c>max_days_ahead</c> measured from the booking time, <c>min_lead_minutes</c>) is enforced by
+    /// <c>ScheduleRuleProvider.EnsureWindow</c> with the applicable <c>scheduled_ride_rules</c> row (F17 replaces the F8 10-minute / 30-day limits).
+    /// </summary>
+    public static Validator Booking(this Validator v, BookingType? bookingType, DateTime? scheduledAt) =>
+        v.Rule("scheduledAt", (bookingType ?? BookingType.Now) != BookingType.Scheduled || scheduledAt is not null, "required");
 
     public static GeoPoint Point(this PlaceRequest place) => new(place.Lat!.Value, place.Lng!.Value);
 }

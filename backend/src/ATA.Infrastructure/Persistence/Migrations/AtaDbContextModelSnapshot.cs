@@ -82,6 +82,257 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Airports.Airport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("char(3)")
+                        .HasColumnName("code")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("DefaultFreeWaitingMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("default_free_waiting_minutes");
+
+                    b.Property<decimal?>("DefaultWaitingPerMinute")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("default_waiting_per_minute");
+
+                    b.Property<string>("Geofence")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("geofence");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("Lat")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)")
+                        .HasColumnName("lat");
+
+                    b.Property<decimal>("Lng")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)")
+                        .HasColumnName("lng");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_en");
+
+                    b.Property<bool>("QueueEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("queue_enabled");
+
+                    b.Property<bool>("RequiresPickupZone")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("requires_pickup_zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_airports");
+
+                    b.HasIndex("CityId")
+                        .HasDatabaseName("ix_airports_city_id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_airports_code");
+
+                    b.ToTable("airports", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Airports.AirportQueueEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AirportId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("airport_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<DateTime>("EnteredAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("entered_at");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<DateTime?>("LeftAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("left_at");
+
+                    b.Property<string>("LeftReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("left_reason");
+
+                    b.Property<Guid?>("OfferedTripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("offered_trip_id");
+
+                    b.Property<Guid>("RideCategoryId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("ride_category_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_airport_queue_entries");
+
+                    b.HasIndex("OfferedTripId")
+                        .HasDatabaseName("ix_airport_queue_entries_offered_trip_id");
+
+                    b.HasIndex("RideCategoryId")
+                        .HasDatabaseName("ix_airport_queue_entries_ride_category_id");
+
+                    b.HasIndex("DriverId", "Status")
+                        .HasDatabaseName("ix_airport_queue_entries_driver_id_status");
+
+                    b.HasIndex("AirportId", "Status", "EnteredAt")
+                        .HasDatabaseName("ix_airport_queue_entries_airport_id_status_entered_at");
+
+                    b.ToTable("airport_queue_entries", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Airports.AirportZone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AirportId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("airport_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("FreeWaitingMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("free_waiting_minutes");
+
+                    b.Property<string>("InstructionsAr")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("instructions_ar");
+
+                    b.Property<string>("InstructionsEn")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("instructions_en");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<decimal>("Lat")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)")
+                        .HasColumnName("lat");
+
+                    b.Property<decimal>("Lng")
+                        .HasPrecision(10, 7)
+                        .HasColumnType("decimal(10,7)")
+                        .HasColumnName("lng");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)")
+                        .HasColumnName("name_en");
+
+                    b.Property<string>("Polygon")
+                        .HasColumnType("json")
+                        .HasColumnName("polygon");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("TerminalCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("terminal_code");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.Property<decimal?>("WaitingPerMinute")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("waiting_per_minute");
+
+                    b.HasKey("Id")
+                        .HasName("pk_airport_zones");
+
+                    b.HasIndex("AirportId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_airport_zones_airport_id_code");
+
+                    b.ToTable("airport_zones", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Cancellation.CancellationEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5456,6 +5707,309 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.ToTable("trusted_contacts", (string)null);
                 });
 
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideReminder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("OffsetMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("offset_minutes");
+
+                    b.Property<string>("RecipientRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("recipient_role");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("recipient_user_id");
+
+                    b.Property<Guid?>("ReservationId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("reservation_id");
+
+                    b.Property<DateTime>("SendAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("send_at");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_ride_reminders");
+
+                    b.HasIndex("RecipientUserId")
+                        .HasDatabaseName("ix_scheduled_ride_reminders_recipient_user_id");
+
+                    b.HasIndex("ReservationId")
+                        .HasDatabaseName("ix_scheduled_ride_reminders_reservation_id");
+
+                    b.HasIndex("TripId")
+                        .HasDatabaseName("ix_scheduled_ride_reminders_trip_id");
+
+                    b.HasIndex("Status", "SendAt")
+                        .HasDatabaseName("ix_scheduled_ride_reminders_status_send_at");
+
+                    b.ToTable("scheduled_ride_reminders", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideReservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("assigned_at");
+
+                    b.Property<DateTime?>("ConfirmRequestedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("confirm_requested_at");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("driver_id");
+
+                    b.Property<DateTime?>("FinalConfirmRequestedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("final_confirm_requested_at");
+
+                    b.Property<bool>("IsLateRelease")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_late_release");
+
+                    b.Property<int>("PenaltyPoints")
+                        .HasColumnType("int")
+                        .HasColumnName("penalty_points");
+
+                    b.Property<string>("ReleaseReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("release_reason");
+
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("released_at");
+
+                    b.Property<DateTime>("ReservedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("reserved_at");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TripId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("trip_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_ride_reservations");
+
+                    b.HasIndex("DriverId", "Status")
+                        .HasDatabaseName("ix_scheduled_ride_reservations_driver_id_status");
+
+                    b.HasIndex("TripId", "Status")
+                        .HasDatabaseName("ix_scheduled_ride_reservations_trip_id_status");
+
+                    b.ToTable("scheduled_ride_reservations", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("city_id");
+
+                    b.Property<int>("ConfirmationTimeoutMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("confirmation_timeout_minutes");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("DriverAssignmentLeadMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_assignment_lead_minutes");
+
+                    b.Property<int>("DriverConfirmationMissedPenaltyPoints")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_confirmation_missed_penalty_points");
+
+                    b.Property<int>("DriverFreeReleaseMinutesBefore")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_free_release_minutes_before");
+
+                    b.Property<int>("DriverLateReleasePenaltyPoints")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_late_release_penalty_points");
+
+                    b.Property<int>("DriverNoShowGraceMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_no_show_grace_minutes");
+
+                    b.Property<int>("DriverNoShowPenaltyPoints")
+                        .HasColumnType("int")
+                        .HasColumnName("driver_no_show_penalty_points");
+
+                    b.Property<string>("DriverReminderOffsets")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("driver_reminder_offsets");
+
+                    b.Property<int>("FavoriteExclusiveMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("favorite_exclusive_minutes");
+
+                    b.Property<int>("FinalConfirmationMinutesBefore")
+                        .HasColumnType("int")
+                        .HasColumnName("final_confirmation_minutes_before");
+
+                    b.Property<int>("FinalConfirmationTimeoutMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("final_confirmation_timeout_minutes");
+
+                    b.Property<int>("FreeCancelMinutesBefore")
+                        .HasColumnType("int")
+                        .HasColumnName("free_cancel_minutes_before");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("is_active");
+
+                    b.Property<decimal>("LateCancelDriverCompensationPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("late_cancel_driver_compensation_percent");
+
+                    b.Property<decimal?>("LateCancelFeeAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasColumnName("late_cancel_fee_amount");
+
+                    b.Property<decimal?>("LateCancelFeePercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("late_cancel_fee_percent");
+
+                    b.Property<string>("LateCancelFeeType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("late_cancel_fee_type");
+
+                    b.Property<bool>("LockDemandNormal")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("lock_demand_normal");
+
+                    b.Property<bool>("MarketplaceEnabled")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("marketplace_enabled");
+
+                    b.Property<int>("MarketplaceRadiusKm")
+                        .HasColumnType("int")
+                        .HasColumnName("marketplace_radius_km");
+
+                    b.Property<int>("MaxDaysAhead")
+                        .HasColumnType("int")
+                        .HasColumnName("max_days_ahead");
+
+                    b.Property<int>("MaxOpenPerPassenger")
+                        .HasColumnType("int")
+                        .HasColumnName("max_open_per_passenger");
+
+                    b.Property<int>("MaxReservationsPerDriver")
+                        .HasColumnType("int")
+                        .HasColumnName("max_reservations_per_driver");
+
+                    b.Property<int>("MinLeadMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("min_lead_minutes");
+
+                    b.Property<int>("ReservationGapMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("reservation_gap_minutes");
+
+                    b.Property<Guid?>("RideCategoryId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("ride_category_id");
+
+                    b.Property<string>("RiderReminderOffsets")
+                        .IsRequired()
+                        .HasColumnType("json")
+                        .HasColumnName("rider_reminder_offsets");
+
+                    b.Property<int>("SearchStartMinutesBefore")
+                        .HasColumnType("int")
+                        .HasColumnName("search_start_minutes_before");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_ride_rules");
+
+                    b.HasIndex("RideCategoryId")
+                        .HasDatabaseName("ix_scheduled_ride_rules_ride_category_id");
+
+                    b.HasIndex("CityId", "RideCategoryId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_scheduled_ride_rules_city_id_ride_category_id");
+
+                    b.ToTable("scheduled_ride_rules", (string)null);
+                });
+
             modelBuilder.Entity("ATA.Domain.Trips.DriverLocation", b =>
                 {
                     b.Property<Guid>("DriverId")
@@ -5553,6 +6107,19 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("char(36)")
                         .HasColumnName("id");
+
+                    b.Property<string>("AirportDirection")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasColumnName("airport_direction");
+
+                    b.Property<Guid?>("AirportId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("airport_id");
+
+                    b.Property<Guid?>("AirportZoneId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("airport_zone_id");
 
                     b.Property<DateTime?>("ArrivedAt")
                         .HasColumnType("datetime(6)")
@@ -5669,6 +6236,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("decimal(12,2)")
                         .HasColumnName("final_fare");
 
+                    b.Property<string>("FlightNumber")
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)")
+                        .HasColumnName("flight_number");
+
                     b.Property<decimal?>("OfferedPrice")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)")
@@ -5756,6 +6328,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("requested_at");
 
+                    b.Property<Guid?>("ReservedDriverId")
+                        .HasColumnType("char(36)")
+                        .HasColumnName("reserved_driver_id");
+
                     b.Property<Guid>("RideCategoryId")
                         .HasColumnType("char(36)")
                         .HasColumnName("ride_category_id");
@@ -5779,6 +6355,11 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(32)")
                         .HasColumnName("status");
 
+                    b.Property<string>("TerminalCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("terminal_code");
+
                     b.Property<decimal>("TierCommissionDiscountPercent")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)")
@@ -5798,6 +6379,10 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasColumnType("char(36)")
                         .HasColumnName("vehicle_id");
 
+                    b.Property<string>("WaitingPolicy")
+                        .HasColumnType("json")
+                        .HasColumnName("waiting_policy");
+
                     b.Property<int>("WaitingSeconds")
                         .HasColumnType("int")
                         .HasColumnName("waiting_seconds");
@@ -5805,11 +6390,20 @@ namespace ATA.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_trips");
 
+                    b.HasIndex("AirportId")
+                        .HasDatabaseName("ix_trips_airport_id");
+
+                    b.HasIndex("AirportZoneId")
+                        .HasDatabaseName("ix_trips_airport_zone_id");
+
                     b.HasIndex("FavoriteDiscountRuleId")
                         .HasDatabaseName("ix_trips_favorite_discount_rule_id");
 
                     b.HasIndex("PaymentMethodId")
                         .HasDatabaseName("ix_trips_payment_method_id");
+
+                    b.HasIndex("ReservedDriverId")
+                        .HasDatabaseName("ix_trips_reserved_driver_id");
 
                     b.HasIndex("RideCategoryId")
                         .HasDatabaseName("ix_trips_ride_category_id");
@@ -5832,6 +6426,9 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PassengerId", "CreatedAt")
                         .HasDatabaseName("ix_trips_passenger_id_created_at");
+
+                    b.HasIndex("Status", "ScheduledAt")
+                        .HasDatabaseName("ix_trips_status_scheduled_at");
 
                     b.ToTable("trips", (string)null);
                 });
@@ -6219,6 +6816,56 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_wallet_transactions_wallet_id_created_at");
 
                     b.ToTable("wallet_transactions", (string)null);
+                });
+
+            modelBuilder.Entity("ATA.Domain.Airports.Airport", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_airports_city_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Airports.AirportQueueEntry", b =>
+                {
+                    b.HasOne("ATA.Domain.Airports.Airport", null)
+                        .WithMany()
+                        .HasForeignKey("AirportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_airport_queue_entries_airport_id");
+
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_airport_queue_entries_driver_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("OfferedTripId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_airport_queue_entries_offered_trip_id");
+
+                    b.HasOne("ATA.Domain.Catalog.RideCategory", null)
+                        .WithMany()
+                        .HasForeignKey("RideCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_airport_queue_entries_ride_category_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Airports.AirportZone", b =>
+                {
+                    b.HasOne("ATA.Domain.Airports.Airport", null)
+                        .WithMany()
+                        .HasForeignKey("AirportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_airport_zones_airport_id");
                 });
 
             modelBuilder.Entity("ATA.Domain.Cancellation.CancellationEvent", b =>
@@ -7157,6 +7804,61 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_trusted_contacts_user_id");
                 });
 
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideReminder", b =>
+                {
+                    b.HasOne("ATA.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_ride_reminders_recipient_user_id");
+
+                    b.HasOne("ATA.Domain.Scheduling.ScheduledRideReservation", null)
+                        .WithMany()
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_scheduled_ride_reminders_reservation_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_ride_reminders_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideReservation", b =>
+                {
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_ride_reservations_driver_id");
+
+                    b.HasOne("ATA.Domain.Trips.Trip", null)
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_ride_reservations_trip_id");
+                });
+
+            modelBuilder.Entity("ATA.Domain.Scheduling.ScheduledRideRule", b =>
+                {
+                    b.HasOne("ATA.Domain.Catalog.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_scheduled_ride_rules_city_id");
+
+                    b.HasOne("ATA.Domain.Catalog.RideCategory", null)
+                        .WithMany()
+                        .HasForeignKey("RideCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_scheduled_ride_rules_ride_category_id");
+                });
+
             modelBuilder.Entity("ATA.Domain.Trips.DriverLocation", b =>
                 {
                     b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
@@ -7185,6 +7887,18 @@ namespace ATA.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ATA.Domain.Trips.Trip", b =>
                 {
+                    b.HasOne("ATA.Domain.Airports.Airport", null)
+                        .WithMany()
+                        .HasForeignKey("AirportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trips_airport_id");
+
+                    b.HasOne("ATA.Domain.Airports.AirportZone", null)
+                        .WithMany()
+                        .HasForeignKey("AirportZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trips_airport_zone_id");
+
                     b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
                         .WithMany()
                         .HasForeignKey("DriverId")
@@ -7215,6 +7929,12 @@ namespace ATA.Infrastructure.Persistence.Migrations
                         .HasForeignKey("PaymentMethodId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_trips_payment_method_id");
+
+                    b.HasOne("ATA.Domain.Drivers.DriverProfile", null)
+                        .WithMany()
+                        .HasForeignKey("ReservedDriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_trips_reserved_driver_id");
 
                     b.HasOne("ATA.Domain.Catalog.RideCategory", null)
                         .WithMany()

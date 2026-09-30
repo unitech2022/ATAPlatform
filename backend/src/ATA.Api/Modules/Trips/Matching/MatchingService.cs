@@ -60,21 +60,27 @@ public sealed class MatchingService(
     ITripNotifier notifier,
     INotificationDispatcher notifications,
     CardTripPaymentService cardPayments,
-    IOptions<TripOptions> tripOptions,
     IClock clock,
     ILogger<MatchingService> logger,
     Incentives.TierRuleProvider tierRules,
-    Favorites.FavoriteMatchingService favoriteMatching)
+    Favorites.FavoriteMatchingService favoriteMatching,
+    Airports.AirportQueueService airportQueue,
+    Airports.AirportCatalog airportCatalog,
+    IOptions<Airports.AirportOptions> airportOptions)
 {
-    private readonly TripOptions _trips = tripOptions.Value;
+    private readonly Airports.AirportOptions _airport = airportOptions.Value;
 
+    /// <summary>
+    /// One pass over the <c>searching</c> trips, scheduled ones first (doc 11 §F17.3): a scheduled trip only becomes <c>searching</c> when its search window opens
+    /// (<c>ScheduledRideWorker</c>, <c>T − search_start_minutes_before</c>) or its driver failed the final confirmation, so no lead filter is needed here.
+    /// </summary>
     public async Task<int> RunOnceAsync(CancellationToken ct)
     {
         var now = clock.UtcNow;
-        var searchStartsBefore = now.AddMinutes(_trips.ScheduledLeadMinutes);
         var trips = await db.Trips.Include(t => t.Stops)
-            .Where(t => t.Status == TripStatus.Searching && (t.ScheduledAt == null || t.ScheduledAt <= searchStartsBefore))
-            .OrderBy(t => t.RequestedAt)
+            .Where(t => t.Status == TripStatus.Searching)
+            .OrderBy(t => t.BookingType == BookingType.Scheduled ? 0 : 1)
+            .ThenBy(t => t.RequestedAt)
             .ToListAsync(ct);
 
         var processed = 0;
@@ -122,9 +128,21 @@ public sealed class MatchingService(
             await EndFavoriteRoundAsync(trip, attempt, now, ct);
         }
 
-        var searchStartedAt = trip.ScheduledAt is { } scheduledAt
-            ? Max(trip.RequestedAt, scheduledAt.AddMinutes(-_trips.ScheduledLeadMinutes))
-            : trip.RequestedAt;
+        // F17: a queued airport driver did not take the offer (rejected / expired) → back of the queue or out of it, per Airport:RejectAction.
+        if (attempt is { Mode: MatchingMode.AirportQueue, IsOpen: true })
+        {
+            await EndQueueRoundAsync(trip, attempt, now, ct);
+        }
+
+        // A scheduled trip's search starts when it left `scheduled` (or was re-matched): the latest `search_started` event, not the booking time.
+        var searchStartedAt = trip.RequestedAt;
+        if (trip.IsScheduledBooking)
+        {
+            searchStartedAt = await db.TripEvents.AsNoTracking().Where(e => e.TripId == trip.Id && e.Type == TripEventTypes.SearchStarted)
+                .OrderByDescending(e => e.CreatedAt).Select(e => (DateTime?)e.CreatedAt).FirstOrDefaultAsync(ct)
+                ?? Max(trip.RequestedAt, (trip.ScheduledAt ?? trip.RequestedAt).AddMinutes(-10));
+        }
+
         if (trip.FavoriteDriverId is not null
             && await db.MatchingAttempts.AsNoTracking().Where(a => a.TripId == trip.Id && a.Mode == MatchingMode.Favorite).Select(a => a.FinishedAt).FirstOrDefaultAsync(ct) is { } favoriteEndedAt)
         {
@@ -137,10 +155,16 @@ public sealed class MatchingService(
             return;
         }
 
-        // F16 hook for scheduled trips (F17): the exclusive round runs when the search starts (T − ScheduledLeadMinutes); F17's `favorite_exclusive_minutes` window
-        // (reservation before the marketplace opens) plugs in here without changing the round.
+        // F16 hook for scheduled trips (F17): the exclusive round runs when the search starts (a scheduled trip leaves `scheduled` at T − search_start_minutes_before); the
+        // `favorite_exclusive_minutes` window before it is the reservation priority of ScheduledRideEngine (a favourite who held the reservation but lost it is `unavailable`).
         if (attempt is null && trip.FavoriteDriverId is { } favoriteId && trip.FavoriteStatus == FavoriteStatus.Requested
             && await TryStartFavoriteRoundAsync(trip, favoriteId, settings, now, ct))
+        {
+            return;
+        }
+
+        // F17: an airport pickup is offered to the FIFO queue first (no score), then falls back to the normal search.
+        if (await TryOfferToQueueAsync(trip, settings, now, ct))
         {
             return;
         }
@@ -167,7 +191,7 @@ public sealed class MatchingService(
         }
 
         var round = (attempt?.Round ?? 0) + 1;
-        var radius = attempt is null or { Mode: MatchingMode.Favorite } ? settings.RadiusMeters : Math.Min(attempt.RadiusMeters + settings.RadiusStepMeters, settings.MaxRadiusMeters);
+        var radius = attempt is null or { Mode: MatchingMode.Favorite or MatchingMode.AirportQueue } ? settings.RadiusMeters : Math.Min(attempt.RadiusMeters + settings.RadiusStepMeters, settings.MaxRadiusMeters);
         if (attempt is { IsOpen: false, CandidatesCount: 0 } && attempt.RadiusMeters >= settings.MaxRadiusMeters
             && attempt.FinishedAt is { } finishedAt && finishedAt.AddSeconds(settings.OfferTimeoutSeconds) > now)
         {
@@ -237,6 +261,54 @@ public sealed class MatchingService(
         db.MatchingAttempts.Add(round);
         await SendOfferAsync(trip, round, candidate.DriverId, candidate.UserId, candidate.DistanceMeters, candidate.EtaSeconds, favoriteMatching.ExclusiveTimeoutSeconds, now, ct);
         return true;
+    }
+
+    /// <summary>
+    /// F17 queue round: the next FIFO driver of the airport queue who is eligible for the trip (F9) gets a single-driver offer (mode <c>airport_queue</c>), up to
+    /// <c>Airport:QueueMaxOffers</c> offers per trip and only before the normal search started.
+    /// </summary>
+    private async Task<bool> TryOfferToQueueAsync(Trip trip, ResolvedMatchingSettings settings, DateTime now, CancellationToken ct)
+    {
+        if (trip.AirportId is not { } airportId || trip.AirportDirection != Domain.Airports.AirportDirection.Pickup
+            || await airportCatalog.FindAsync(airportId, ct) is not { QueueEnabled: true }
+            || await db.MatchingAttempts.AnyAsync(a => a.TripId == trip.Id && a.Mode == MatchingMode.Normal, ct)
+            || await db.MatchingAttempts.CountAsync(a => a.TripId == trip.Id && a.Mode == MatchingMode.AirportQueue, ct) >= _airport.QueueMaxOffers)
+        {
+            return false;
+        }
+
+        var next = await airportQueue.NextForTripAsync(trip, settings.MaxRadiusMeters, ct);
+        if (next is null)
+        {
+            return false;
+        }
+
+        var latest = await recorder.LatestAttemptAsync(trip.Id, ct);
+        var round = new MatchingAttempt
+        {
+            TripId = trip.Id, Round = (latest?.Round ?? 0) + 1, Mode = MatchingMode.AirportQueue, RadiusMeters = settings.MaxRadiusMeters, CandidatesCount = 1, StartedAt = now,
+        };
+        round.Candidates.Add(new MatchingCandidate
+        {
+            AttemptId = round.Id, DriverId = next.Candidate.DriverId, DistanceM = next.Candidate.DistanceMeters, EtaS = next.Candidate.EtaSeconds, Score = next.Candidate.Score, Rank = 1, Offered = true,
+        });
+        db.MatchingAttempts.Add(round);
+        airportQueue.MarkOffered(next.Entry, trip.Id);
+        await SendOfferAsync(trip, round, next.Candidate.DriverId, next.Candidate.UserId, next.Candidate.DistanceMeters, next.Candidate.EtaSeconds, settings.OfferTimeoutSeconds, now, ct);
+        return true;
+    }
+
+    /// <summary>The queued driver's offer ended (<c>rejected</c> / <c>expired</c>): the round is closed and the queue entry goes back or is removed.</summary>
+    private async Task EndQueueRoundAsync(Trip trip, MatchingAttempt round, DateTime now, CancellationToken ct)
+    {
+        var driverId = round.Candidates.Select(c => c.DriverId).FirstOrDefault();
+        if (driverId != Guid.Empty)
+        {
+            await airportQueue.OfferEndedAsync(trip.Id, driverId, ct);
+        }
+
+        round.Finish(MatchingOutcome.Exhausted, now);
+        await db.SaveChangesAsync(ct);
     }
 
     /// <summary>The favourite did not take the exclusive offer: <c>rejected</c> / <c>expired</c>, the round is closed and <c>TripUpdated</c> tells the passenger we search on.</summary>

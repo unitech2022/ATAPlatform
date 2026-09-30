@@ -49,11 +49,12 @@ public sealed class TripCancellationService(
             {
                 CancellationStage.EnRoute => ("لأن الكابتن في الطريق إليك", "because the driver is on the way"),
                 CancellationStage.Arrived or CancellationStage.Waiting => ("لأن الكابتن وصل إلى موقعك", "because the driver has arrived"),
+                CancellationStage.Scheduled => ("لأن موعد الرحلة قريب", "because the trip is about to start"),
                 _ => ("لأن الكابتن قبل الرحلة", "because a driver accepted the trip"),
             };
             message = lang.Pick($"سيتم خصم {Formats.MoneyAr(fee)} رسوم إلغاء {why.Item1}", $"A {Formats.MoneyEn(fee)} cancellation fee applies {why.Item2}");
         }
-        else if (quote.Outcome.FreeUntil is { } freeUntil)
+        else if (quote.Outcome.FreeUntil is { } freeUntil && freeUntil > clock.UtcNow)
         {
             message = lang.Pick($"الإلغاء مجاني حتى {Formats.LocalTime(freeUntil)}", $"Cancelling is free until {Formats.LocalTime(freeUntil)}");
         }
@@ -89,7 +90,9 @@ public sealed class TripCancellationService(
         trip.EnsureStatus(TripStatus.Waiting);
         var now = clock.UtcNow;
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
-        var freeWaitingMinutes = await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct);
+        // F17: an airport pickup's waiting policy replaces the pricing rule's free waiting time.
+        var freeWaitingMinutes = WaitingPolicy.Parse(trip.WaitingPolicy)?.FreeMinutes
+                                 ?? await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct);
         var requiredSeconds = Math.Max(options.Value.NoShowWaitMinutes, freeWaitingMinutes) * 60;
         var waited = trip.ArrivedAt is { } arrived ? (int)(now - arrived).TotalSeconds : 0;
         if (waited < requiredSeconds)

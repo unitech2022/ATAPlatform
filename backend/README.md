@@ -24,6 +24,9 @@ breakdown, receipt and ledger) and `Modules/Incentives` (weekly driver tiers wit
 quests with progress, payouts to the driver wallet reduced by the F14 reliability multiplier).
 F16 adds `Modules/Favorites` (favourite drivers saved after a completed trip, the "available favourites" list, a trip request with `favoriteDriverId` that first offers the
 trip exclusively to that driver, the favourite-driver discount rules that fill the favourite slot of the discount engine, admin rules CRUD and KPIs).
+F17 adds `Modules/Scheduling` (scheduled rides up to 7 days ahead with the new `scheduled` trip status, the driver marketplace and reservations with confirmation
+timeline, reminders, cancellation with a late fee, admin rules / dashboard) and `Modules/Airports` (airport geofence, terminals and pickup zones, flight number,
+waiting policy, the FIFO driver queue of the waiting area, admin CRUD) — see "Scheduled rides and airport (F17)".
 
 ## Layout
 
@@ -92,7 +95,7 @@ dotnet test
 | `Trips:FreeWaitingMinutes` | Free waiting at the pickup before waiting time is billed (default 3) |
 | `Trips:ArrivalRadiusMeters` | "Arrived" reported farther than this from the pickup adds an `arrival_distance_warning` event (default 300) |
 | `Trips:PinMaxAttempts` | Wrong-PIN attempts before `pin_locked` (default 5) |
-| `Trips:ScheduledLeadMinutes` | How long before `scheduledAt` the matcher starts searching for a scheduled trip (default 15) |
+| `Trips:ScheduledLeadMinutes` | Removed in F17 (ignored): the search of a scheduled trip starts at `scheduled_ride_rules.search_start_minutes_before` (10) |
 | `Matching:Enabled` | Runs the matching loop (`false` in tests, which call one pass explicitly) |
 | `Matching:RadiusMeters`, `Matching:MaxRadiusMeters`, `Matching:RadiusStepMeters` | First-round radius, widest radius and step between rounds, used when no `matching_settings` row applies (defaults 5000 / 12000 / 2500) |
 | `Matching:OfferTimeoutSeconds` | How long a driver has to accept an offer when no `matching_settings` row applies (default 20) |
@@ -128,6 +131,9 @@ dotnet test
 | `Tiers:PeriodDays`, `Tiers:RecalcDayOfWeek`, `Tiers:RecalcHourLocal` | Completed trips counted over 28 days; weekly recalculation on Sunday (0) at 03:00 Riyadh |
 | `Incentives:PayoutDelayHours`, `Incentives:JobsEnabled` | Achieved periods are paid 2 h after they end; runs the period / payout / tier jobs (`false` in tests) |
 | `Favorites:MaxPerPassenger`, `Favorites:ExclusiveOfferTimeoutSeconds` | Favourite drivers per passenger (20 → `422 favorites_limit`); seconds the favourite has to answer the exclusive first offer (30) |
+| `Scheduling:JobsEnabled`, `Scheduling:WorkerIntervalSeconds`, `Scheduling:ReminderIntervalSeconds` | Runs `ScheduledRideWorker` (confirmation timeline, search start, no-shows; 30 s) and `ScheduledReminderJob` (60 s); `false` in tests, which call `RunOnceAsync` |
+| `Airport:JobsEnabled`, `Airport:JobIntervalSeconds`, `Airport:QueueExitGraceSeconds` | Runs `AirportQueueJob` (30 s); a queue entry not refreshed by a location update within 180 s leaves the queue (`exited_area` / `offline`) |
+| `Airport:RejectAction`, `Airport:QueueMaxOffers` | Driver rejects / lets an airport-queue offer expire: `move_to_back` (default) or `remove`; single-driver queue offers per trip before the normal search (5) |
 | `Favorites:AvailabilityRadiusMeters` | Radius of `/passenger/favorite-drivers/available` and of the exclusive round; `null` (default) = the zone/category `matching_settings.radius_meters` (5000 by default) |
 
 ### Development OTP behaviour
@@ -175,6 +181,11 @@ dotnet test
 - Favourite-driver discount rule "خصم الكابتن المفضل" (seeded once while the table is empty and no rule was ever created / deleted by an admin): 10 %, max 10 SAR,
   not stackable, every category / zone / booking type, valid from 2026-01-01, priority 0.
 - Incentive (seeded once while the table is empty): "10 رحلات مساء الخميس والجمعة" — weekly, Riyadh, Thursday/Friday 16:00–23:59, 10 trips → 75 SAR.
+- F17 (seeded once while the tables are empty and no audit entry exists): the global `scheduled_ride_rules` row (7 days, 30 min lead, 3 open trips, demand locked to normal, free cancel
+  60 min, late fee fixed 10 SAR, driver compensation 50 %, first confirmation T−60 / 10 min, final T−15 / 5 min, search from T−10, reminders `[1440,60,15]` rider / `[1440,180]` driver,
+  driver free release 120 min, penalties 3 / 3 / 6, no-show grace 10 min, 5 reservations per driver, 30 min gap) and an **approximate** King Khalid airport `RUH` (geofence box around
+  24.925–24.99 N, 46.67–46.73 E; flagged approximate, refine it in the admin): terminals T1–T5 with two pickup zones each (`T1-P1` … `T5-P2`), the waiting area `WAIT-1` near
+  (24.9355, 46.679), default free waiting 15 min and the queue enabled. The `airport` ride category (seeded earlier) only appears in quotes for airport trips.
 
 ## API summary (`/api/v1`, JSON camelCase, `Accept-Language: ar|en`, errors as `{ "error": { code, message, details } }`)
 
@@ -211,6 +222,11 @@ dotnet test
 | Driver tiers & incentives | `GET /driver/tier`, `GET /driver/incentives?status=active\|upcoming\|completed`, `GET /driver/incentives/{id}` (+ `zonesPolygons`), `POST /driver/incentives/{id}/opt-in` (`409 incentive_opt_in_closed`); items add `rewardMultiplier` and `effectiveRewardAmount` (reward × current F14 multiplier) |
 | Favourite drivers (rider, F16) | `GET /passenger/favorite-drivers` (`[FavoriteDriver]`: `driverId, firstName, photoUrl, ratingAvg, vehicle, rideCategoryCode, tripsTogether, lastTripAt, createdAt`), `POST /passenger/favorite-drivers` (`{ driverId? \| tripId? }` exactly one → `201`; `422 favorite_not_eligible` without a completed trip together, `409 favorite_exists`, `422 favorites_limit`), `DELETE /passenger/favorite-drivers/{driverId}` (204; `404` when not saved), `GET /passenger/favorite-drivers/{driverId}/photo` (only for saved drivers), `GET /passenger/favorite-drivers/available?lat=&lng=&rideCategoryId=` (eligible favourites now: `driverId, firstName, photoUrl, ratingAvg, vehicle, etaMinutes, discount { percent, maxAmount, stackableWithPromotions } \| null, availableNow`; no coordinates) |
 | Favourites (driver, F16) | `GET /driver/favorites/count` → `{ count }` (riders who saved the driver) |
+| Scheduled rides (F17, rider) | `GET /passenger/scheduling/rules?rideCategoryId=&lat=&lng=` (window, lead, free-cancel minutes, late fee, reminders), `POST /passenger/trips` / `estimate` with `bookingType: "scheduled"` + `scheduledAt` (`422 schedule_window_exceeded { maxScheduledAt }`, `422 schedule_lead_too_short { minScheduledAt }`, `422 scheduled_limit_reached { max }`), `GET /passenger/trips/scheduled` (plain array of `scheduled` trips, soonest first), `GET /passenger/scheduled/{tripId}/driver-photo` (reserved driver only); `POST /passenger/trips/{id}/cancel/preview` / `cancel` use stage `scheduled` (`freeUntil`, `fee`) |
+| Scheduled rides (F17, driver) | `GET /driver/scheduled/marketplace?lat=&lng=&from=&to=&page=&pageSize=` (paged, approximate pickup, area names), `GET /driver/scheduled?status=active\|history&page=&pageSize=` (paged `Reservation` envelope), `POST /driver/scheduled/{tripId}/reserve` (`201`; `409 reservation_taken \| reservation_conflict`, `422 reservation_limit_reached`, `404` for a trip the driver cannot see), `POST /driver/scheduled/{tripId}/confirm` (first / final confirmation; `409` outside a confirmation window), `POST /driver/scheduled/{tripId}/release { reason? }` (late release adds points) |
+| Airports (F17) | `GET /catalog/airports` (airports, terminals, pickup zones), `GET /passenger/airports/resolve?lat=&lng=`, trip requests / quotes accept `airportPickupZoneId`, `airportTerminalCode`, `flightNumber` (optional, stored only; `422` unless `^[A-Z]{2}\d{1,4}[A-Z]?$` after upper-casing / stripping spaces), `GET /driver/airport-queue`, `POST /driver/airport-queue/join { lat?, lng? }` (`422 not_in_airport_waiting_area`), `POST /driver/airport-queue/leave` |
+| Admin scheduling (`scheduling.manage`) | `GET/POST /admin/scheduled-ride-rules`, `PUT/DELETE /admin/scheduled-ride-rules/{id}` (audited `scheduled_ride_rule.*`; delete deactivates), `GET /admin/scheduled-trips?from=&to=&reservation=none\|reserved\|confirmed\|assigned&cityId=&rideCategoryId=&zoneId=&atRisk=&page=&pageSize=` (≤ 200), `POST /admin/scheduled-trips/{tripId}/assign { driverId }`, `POST /admin/scheduled-trips/{tripId}/release-reservation { reason }` (both idempotent-safe), `GET /admin/scheduling/stats?from=&to=`; the admin trip detail carries `scheduling { reservations[], reminders[] }` and `airport` |
+| Admin airports (`airport.manage`) | `GET/POST /admin/airports`, `GET/PUT/DELETE /admin/airports/{id}`, `GET/POST /admin/airports/{id}/zones`, `PUT/DELETE /admin/airports/{id}/zones/{zoneId}`, `GET /admin/airports/{id}/queue`, `DELETE /admin/airports/{id}/queue/{entryId}` (`{ reason }` body; audited `airport.*`) |
 | Admin favourites (`favorites.manage`) | `GET/POST /admin/favorite-discount-rules`, `GET/PUT/DELETE /admin/favorite-discount-rules/{id}` (audited `favorite_discount_rule.create\|update\|delete`; `discountPercent` 1–50 with ≤ 2 decimals, `maxDiscountAmount` > 0, `priority` ≥ 0; delete deactivates a rule pinned by trips), `GET /admin/favorites/stats?from=&to=&cityId=` |
 | Admin ratings (`ratings.manage`) | `GET /admin/ratings?raterRole=&stars=&flagged=&userId=&tag=&status=visible\|hidden\|flagged&search=&from=&to=`, `POST /admin/ratings/{id}/hide { reason }` / `unhide` (recompute the average), `GET /admin/rating-flags?status=&type=`, `POST /admin/rating-flags/{id}/review { action: dismiss\|warn\|suspension_review, note }` (`409` when already reviewed; `suspension_review` adds `driver.suspension_review` to the driver's history, never suspends). Audited `rating.hide\|unhide`, `rating_flag.review` |
 | Admin promotions (`promotions.manage`) | `GET /admin/promotions?status=active\|scheduled\|expired\|inactive&search=`, `POST /admin/promotions` (`409 conflict` for a taken code), `GET/PUT /admin/promotions/{id}` (`code`/`type` locked after the first reservation → `409`), `POST /admin/promotions/{id}/deactivate\|activate`, `GET /admin/promotions/{id}/redemptions?status=`, `GET /admin/promotions/{id}/stats`, `GET /admin/promotion-redemptions?promotionId=&status=&from=&to=`. Audited `promotion.create\|update\|activate\|deactivate` |
@@ -222,7 +238,7 @@ dotnet test
 Roles: `passenger`, `driver`, `admin`, `operations` (JWT `roles` claim). F11/F13 admin endpoints also check the JWT `perm` claim
 (`payments.view`, `payments.refund`, `payments.refund_approve`, `payouts.approve`, `settlements.manage`, `wallets.adjust`, `notifications.view`,
 `notifications.manage`, `notifications.sms_broadcast`, `safety.manage`, and since F12/F14 `support.manage`, `trips.view`, `trips.cancel`, `cancellation.manage`,
-`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`, and since F16 `favorites.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
+`cancellation.review`, `reliability.manage`, `reports.view`, and since F15 `ratings.manage`, `promotions.manage`, `incentives.manage`, and since F16 `favorites.manage`, and since F17 `scheduling.manage`, `airport.manage`; `*` grants all — the seeded admin has `*`). Admin actions are recorded in `audit_logs`
 and driver status changes create a notification row for the driver. Approving a driver requires every required
 document type to be `verified`.
 
@@ -238,7 +254,7 @@ document type to be `verified`.
   duration at 30 km/h; `fare = base_fare + per_km × km + per_minute × min + booking_fee`, never below `min_fare`, from the
   `ride_categories` columns) remains the route estimator and the fare fallback when no pricing rule matches.
   `pricingMode=offer` uses `offeredPrice` as the fare. `/complete` uses the estimated distance/duration unless the client sends
-  `finalDistanceMeters`/`finalDurationSeconds`. Scheduled trips start matching `Trips:ScheduledLeadMinutes` before `scheduledAt`.
+  `finalDistanceMeters`/`finalDurationSeconds`. Scheduled trips are `scheduled` until the F17 search window (see "Scheduled rides and airport (F17)").
 - Payment on completion (one transaction with the state change; see "Payments (F11)" for cards):
   - `wallet`: passenger wallet debit (`trip_payment`) and driver wallet credit (`trip_earning`), both against `trip_revenue`.
     If the balance is insufficient the trip still completes: `payment_method` becomes `cash` and a `payment_fallback_cash`
@@ -473,6 +489,37 @@ Journal types: `trip_card_capture`, `trip_discount`, `trip_corporate_charge`, `c
   `rejected` + `expired`), `favoriteBookingRate` (0..1 = favoriteRequests / all trips requested), `discountUsageCount` / `discountTotal` (from the `discount_favorite_driver` postings of completed
   trips), `topDrivers` (most saved drivers with their completed favourite trips).
 - Tests: `FavoriteDriverTests`, `FavoriteMatchingTests`, `FavoriteDiscountTests`, `FavoriteStatsTests` (`FavoritesFlow` helpers), `FavoriteUnitTests`.
+
+## Scheduled rides and airport (F17)
+
+- **Booking**: `bookingType = scheduled` creates a trip in the new `scheduled` status (not an "active" trip: the rider can book while another trip runs; the card in use and open-trip counts include it).
+  The window is measured from the booking time: `scheduledAt ≤ now + max_days_ahead × 24 h` and `≥ now + min_lead_minutes` (also enforced by `/pricing/quote` and the estimate alias);
+  at most `max_open_per_passenger` open scheduled trips. Rule choice: city + category → city → category → global (active rows), else the in-code defaults. The fare is locked with a **normal**
+  demand level (`lock_demand_normal`) and stored in the quote. A card trip only validates the card at booking; the authorization happens when the search starts / at the final
+  confirmation and falls back to cash (`payment_fallback_cash`, `payment.failed`) when declined. Rider reminders are created at booking (offsets before `scheduled_at`, only future ones).
+- **Marketplace and reservation**: `GET /driver/scheduled/marketplace` lists open trips the driver could serve (city, `marketplace_radius_km`, category / upgrade via matching settings, female
+  preference, restrictions, cash debt, favourite exclusive window `min(requested + favorite_exclusive_minutes, search start)`, `marketplace_enabled`), with the pickup rounded to 3 decimals.
+  `reserve` is an atomic claim on `trips.reserved_driver_id` (one winner; `409 reservation_taken`), limited by `max_reservations_per_driver` (not for admins) and a time-overlap check
+  `[T, T + duration + reservation_gap_minutes]`. Timeline (`ScheduledRideWorker`): T−60 first confirmation requested (`confirm`, or `confirmed` at once when reserved later), +10 min without
+  it → `confirmation_missed` (points, back to the market); T−15 final confirmation requested, +5 min → `final_confirmation_missed` (points, trip → `searching`, `scheduled.rematched` to the rider);
+  the final confirmation moves the trip to `driver_assigned`; T−10 without a confirmed driver → normal search (`scheduled → searching`, favourite exclusive round first); T + grace without arrival →
+  reservation `no_show`, the trip is reassigned. A driver cancelling an assigned scheduled trip also rematches it (F14 points, 0 for an excusable reason). Faulty reservations count for the reliability profile.
+  Release: free until `driver_free_release_minutes_before`, then `is_late_release` and points. Reminders (`ScheduledReminderJob`) run after `send_at`; rows late by more than 10 min are `skipped`, rows of a trip that ended `cancelled`.
+- **Cancellation**: stage `scheduled` — free while `minutesBefore ≥ free_cancel_minutes_before`, otherwise `late_cancel_fee_*` (fixed / percent / pricing rule; at fault: passenger, counts toward the rate);
+  the reserved driver receives `late_cancel_driver_compensation_percent` of the fee; the reservation becomes `cancelled` (`trip_cancelled`). The preview's `freeUntil` is always `T − free_cancel`.
+- **Airport**: a pickup / dropoff inside an active airport geofence is an airport trip (`trips.airport_id`, `airport_direction`); an airport pickup needs `airportPickupZoneId` (its coordinates replace the
+  pickup, `422 airport_pickup_zone_required`), `airportTerminalCode` is checked against the terminals, `flightNumber` is stored only. Waiting policy (free minutes / per minute) for airport
+  pickups = pickup zone → airport default → pricing rule, used for the PIN check, the free-waiting stage of cancellations, the no-show wait and the fare; the trip and offer payloads carry `airport { … }`.
+  The `airport` ride category is hidden from non-airport quotes (`422 airport_category_not_applicable` if requested explicitly).
+- **Airport queue** (`airport_queue_entries`): an online, free driver inside a `driver_waiting_area` polygon joins automatically on `PUT /driver/location` (or with `join`, which validates the position); leaving is
+  `left`. `AirportQueueJob` removes stale entries (`exited_area` / `offline`) and marks drivers who took a trip `trip_assigned`. Position = waiting entries ahead in the same airport and ride category + 1;
+  the estimate is position × the average gap between dispatches in the last 2 hours (needs ≥ 2). `MatchingMode.AirportQueue` offers an airport pickup to the queue head, one driver at a time in FIFO order
+  (up to `Airport:QueueMaxOffers`), before the normal rounds; reject / expiry moves the driver to the back or removes him (`Airport:RejectAction`). SignalR `AirportQueueUpdated` pushes the driver's position.
+- **Admin**: rules CRUD, the scheduled-trips board (`reservationStatus` is `none` without an active reservation; `atRisk` = pickup within 90 min and no confirmation), assign / release (idempotent), KPIs
+  (`booked`, `completed`, `cancelled`, `cancellationRate`, `driverCommitmentRate`, `driverNoShows`, `driverNoShowRate`, all rates 0..1), airports / zones CRUD (validated polygons and codes), queue view / removal with audit.
+- Migration `AddScheduledRidesAndAirport`; tests: `ScheduleWindowTests`, `ScheduledBookingTests`, `ScheduledTimelineTests`, `ScheduledMarketplaceTests`, `ScheduledCancellationTests`, `ScheduledPaymentTests`,
+  `ScheduledFavoriteTests`, `ScheduledAdminTests`, `AirportTripTests`, `AirportWaitingPolicyTests`, the `Airport*Queue*` classes, `AirportAdminTests`, `SchedulingUnitTests` (`SchedulingFlow` helpers).
+  The jobs are driven with `RunScheduledWorkerAsync` / `RunScheduledRemindersAsync` / `RunAirportQueueJobAsync` and `FakeClock.Set`.
 
 ## Migrations
 

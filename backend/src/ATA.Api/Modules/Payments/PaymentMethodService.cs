@@ -124,7 +124,7 @@ public sealed class PaymentMethodService(AtaDbContext db, IPaymentGatewayResolve
         var userId = currentUser.UserId;
         var card = await db.PaymentMethods.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId && m.Status != SavedCardStatus.Removed, ct)
                    ?? throw new DomainException(ErrorCodes.NotFound);
-        var inUse = await db.Trips.AnyAsync(t => t.PaymentMethodId == id && Trip.ActiveStatuses.Contains(t.Status), ct);
+        var inUse = await db.Trips.AnyAsync(t => t.PaymentMethodId == id && Trip.OpenStatuses.Contains(t.Status), ct);
         if (inUse)
         {
             throw new DomainException(ErrorCodes.PaymentMethodInUse);

@@ -42,7 +42,8 @@ public sealed record CancellationQuote(
     decimal FeeToCharge,
     int PointsToApply,
     int? SecondsSinceAccept,
-    int? SecondsSinceArrival);
+    int? SecondsSinceArrival,
+    decimal? ScheduledCompensationPercent = null);
 
 /// <summary>
 /// The F14 cancellation engine (doc 09 §F14.3): stage and rule resolution, fault attribution, fee collection through the F11 ledger
@@ -65,6 +66,8 @@ public sealed class CancellationEngine(
     TripShareService shares,
     ReliabilityService reliability,
     IOptions<PaymentsOptions> paymentOptions,
+    Scheduling.IScheduledCancellationPolicy scheduledPolicy,
+    Scheduling.ScheduledRideEngine scheduledEngine,
     ILogger<CancellationEngine> logger)
 {
     public const string ReferenceType = "cancellation";
@@ -96,7 +99,19 @@ public sealed class CancellationEngine(
         };
         var anchor = CancellationMath.AnchorOf(trip, stage);
         FeeOutcome outcome;
-        if (ruleActor is { } forActor)
+        decimal? scheduledCompensation = null;
+        if (stage == CancellationStage.Scheduled)
+        {
+            // F17: a `scheduled` trip is evaluated by the scheduled-ride rule (free until T − free_cancel_minutes_before, then its late-cancellation fee), not by cancellation_rules.
+            var scheduledRule = await scheduledPolicy.RuleAsync(trip, ct);
+            var pricingFee = scheduledRule.LateCancelFeeType == CancellationFeeType.PricingRule
+                ? await PricingRuleFeeAsync(trip, (await zones.ResolveAsync(trip.PickupLat, trip.PickupLng, trip.RequestedAt, ct))?.Id, ct)
+                : 0m;
+            var scheduled = scheduledPolicy.Evaluate(scheduledRule, trip, now, pricingFee);
+            outcome = new FeeOutcome(null, scheduled.Fee, 0, scheduled.WithinFreeWindow, scheduled.FreeUntil);
+            scheduledCompensation = scheduled.DriverCompensationPercent;
+        }
+        else if (ruleActor is { } forActor)
         {
             var zone = await zones.ResolveAsync(trip.PickupLat, trip.PickupLng, trip.RequestedAt, ct);
             var rules = await db.CancellationRules.AsNoTracking().Where(r => r.IsActive && r.Actor == forActor && r.Stage == stage).ToListAsync(ct);
@@ -149,7 +164,45 @@ public sealed class CancellationEngine(
 
         int? sinceAccept = trip.AssignedAt is { } assigned ? (int)Math.Max(0, (now - assigned).TotalSeconds) : null;
         int? sinceArrival = trip.ArrivedAt is { } arrived ? (int)Math.Max(0, (now - arrived).TotalSeconds) : null;
-        return new CancellationQuote(stage, reason, outcome, atFault, counts, requiresReview, fee, points, sinceAccept, sinceArrival);
+        return new CancellationQuote(stage, reason, outcome, atFault, counts, requiresReview, fee, points, sinceAccept, sinceArrival, scheduledCompensation);
+    }
+
+    /// <summary>F17: a driver's cancellation of a scheduled trip that already has its driver re-matches the trip instead of cancelling it (doc 11 §F17.1).</summary>
+    public bool RematchesInsteadOfCancelling(Trip trip, CancelCommand command) =>
+        command is { Actor: TripActor.Driver, NoShow: false } && trip.IsScheduledBooking && trip.Status is TripStatus.DriverAssigned or TripStatus.DriverEnRoute;
+
+    /// <summary>
+    /// The re-match of <see cref="RematchesInsteadOfCancelling"/>: the reason and the <c>expectedPenaltyPoints</c> guard are validated like a cancellation, the driver gets the
+    /// points of the F14 <c>cancellation_rules</c> row of the stage (none while an excusable reason awaits review), a safety-concern reason opens a safety case, and the trip
+    /// goes back to <c>searching</c> (no <c>cancellation_events</c> row).
+    /// </summary>
+    public async Task RematchAsync(Trip trip, CancelCommand command, CancellationToken ct)
+    {
+        var quote = await QuoteAsync(trip, command.Actor, command.ReasonCode, command.NoShow, command.AdminAtFault, command.AdminChargeFee, ct);
+        if (quote.Reason is { RequiresNote: true } && string.IsNullOrWhiteSpace(command.Note))
+        {
+            throw new DomainException(ErrorCodes.ValidationFailed, new Dictionary<string, string> { ["note"] = "required" });
+        }
+
+        if (command.ExpectedPenaltyPoints is { } expectedPoints && quote.PointsToApply > expectedPoints)
+        {
+            throw new DomainException(ErrorCodes.CancellationFeeChanged, new { fee = quote.FeeToCharge, penaltyPoints = quote.PointsToApply });
+        }
+
+        var driverUserId = command.UserId ?? throw new DomainException(ErrorCodes.Forbidden);
+        if (quote.Reason is { IsEmergency: true })
+        {
+            var participants = await reads.ParticipantsAsync(trip, ct);
+            await safetyCases.AddAsync(new SafetyCase
+            {
+                CaseNumber = string.Empty, Type = SafetyCaseType.SafetyReport, Source = SafetyCaseSource.Report, Priority = SafetyPriority.Medium, TripId = trip.Id,
+                ReporterUserId = driverUserId, ReporterRole = SafetyReporterRole.Driver, SubjectUserId = participants.PassengerUserId,
+                Description = string.IsNullOrWhiteSpace(command.Note) ? "Trip cancelled for a safety concern" : command.Note.Trim(),
+            }, $"Trip {trip.TripNumber} cancelled with reason {command.ReasonCode}", notifyOps: false, null, ct);
+        }
+
+        await scheduledEngine.RematchOnDriverCancelAsync(trip, driverUserId, quote.RequiresReview ? 0 : quote.PointsToApply, command.ReasonCode, command.Note, ct);
+        await safetyCases.PublishAsync(ct);
     }
 
     /// <summary>Validates the reason, applies the quote and cancels the trip. Returns the event; the trip is published by the caller.</summary>
@@ -170,6 +223,13 @@ public sealed class CancellationEngine(
         var now = clock.UtcNow;
         var participants = await reads.ParticipantsAsync(trip, ct);
         var hadDriver = trip.HasDriver;
+        if (trip.Status == TripStatus.Scheduled && trip.ReservedDriverId is { } reservedDriverId)
+        {
+            // F17: the driver holding a reservation is told (trip.cancelled) and receives the late-cancellation compensation.
+            participants = participants with { DriverUserId = await db.Drivers.AsNoTracking().Where(d => d.Id == reservedDriverId).Select(d => (Guid?)d.UserId).FirstOrDefaultAsync(ct) };
+            hadDriver = participants.DriverUserId is not null;
+        }
+
         var passengerFee = quote.AtFault == AtFault.Passenger ? quote.FeeToCharge : 0m;
         var driverFee = quote.AtFault == AtFault.Driver ? quote.FeeToCharge : 0m;
         var cancellation = new CancellationEvent
@@ -210,6 +270,8 @@ public sealed class CancellationEngine(
             // F15: a reserved promo code is released with the cancellation.
             await Promotions.PromotionService.ReleaseAsync(db, trip.Id, Domain.Promotions.RedemptionReleaseReason.TripCancelled, now, ct);
             await reads.ReleaseDriverAsync(trip, now, ct);
+            // F17: the reservation ends without points and the pending reminders are cancelled.
+            await scheduledEngine.OnTripEndedAsync(trip, completed: false, now, ct);
             if (command.NoShow)
             {
                 events.Add(trip.Id, TripEventTypes.PassengerNoShow, TripActor.Driver, command.UserId, data: new { waitedSeconds = quote.SecondsSinceArrival });
@@ -223,7 +285,7 @@ public sealed class CancellationEngine(
 
             if (passengerFee > 0)
             {
-                await ChargePassengerAsync(cancellation, trip, participants, passengerFee, cardCaptured, quote.Outcome.Rule, ct);
+                await ChargePassengerAsync(cancellation, trip, participants, passengerFee, cardCaptured, quote.ScheduledCompensationPercent ?? quote.Outcome.Rule?.DriverCompensationPercent ?? 0m, ct);
             }
             else if (driverFee > 0 && participants.DriverUserId is { } driverUserId)
             {
@@ -265,7 +327,7 @@ public sealed class CancellationEngine(
         if (fee > 0 && cancellation.AtFault == AtFault.Passenger)
         {
             // The authorization was released at cancellation time: the fee now goes to the passenger wallet.
-            await ChargePassengerAsync(cancellation, trip, participants, fee, false, rule, ct);
+            await ChargePassengerAsync(cancellation, trip, participants, fee, false, rule?.DriverCompensationPercent ?? 0m, ct);
         }
         else if (fee > 0 && cancellation.AtFault == AtFault.Driver && participants.DriverUserId is { } driverUserId)
         {
@@ -306,7 +368,7 @@ public sealed class CancellationEngine(
         return elapsed < rule.FreeWindowSeconds ? 0 : rule.PenaltyPoints;
     }
 
-    private async Task ChargePassengerAsync(CancellationEvent cancellation, Trip trip, TripParticipants participants, decimal fee, bool cardCaptured, CancellationRule? rule, CancellationToken ct)
+    private async Task ChargePassengerAsync(CancellationEvent cancellation, Trip trip, TripParticipants participants, decimal fee, bool cardCaptured, decimal compensationPercent, CancellationToken ct)
     {
         try
         {
@@ -338,7 +400,7 @@ public sealed class CancellationEngine(
             NotificationPlaceholders.Of(("tripNumber", trip.TripNumber)).Money("fee", fee), "trip", trip.Id,
             new Dictionary<string, object?> { ["tripNumber"] = trip.TripNumber, ["cancellationId"] = cancellation.Id }), ct);
 
-        var compensation = participants.DriverUserId is not null && trip.DriverId is not null ? CancellationMath.Compensation(fee, rule) : 0m;
+        var compensation = participants.DriverUserId is not null ? CancellationMath.Compensation(fee, compensationPercent) : 0m;
         if (compensation > 0 && participants.DriverUserId is { } driverUserId)
         {
             var driverWallet = await ledger.GetOrCreateWalletAsync(driverUserId, WalletKind.Driver, ct);
@@ -439,6 +501,12 @@ public sealed class CancellationEngine(
 
     private async Task<int> FreeWaitingSecondsAsync(Trip trip, CancellationToken ct)
     {
+        // F17: an airport pickup's waiting policy (zone / airport) takes precedence over the pricing rule.
+        if (WaitingPolicy.Parse(trip.WaitingPolicy) is { } policy)
+        {
+            return policy.FreeMinutes * 60;
+        }
+
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
         return await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct) * 60;
     }

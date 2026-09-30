@@ -42,6 +42,8 @@ public sealed class DriverTripService(
     Incentives.TierRuleProvider tierRules,
     Incentives.IncentiveService incentives,
     Favorites.FavoriteDiscountService favoriteDiscounts,
+    Airports.AirportQueueService airportQueue,
+    Scheduling.ScheduledRideEngine scheduledEngine,
     ILogger<DriverTripService> logger)
 {
     private readonly TripOptions _options = options.Value;
@@ -91,7 +93,14 @@ public sealed class DriverTripService(
             }
         }
 
+        // F17: an online free driver inside an airport waiting area joins the queue; a queued one stays "seen".
+        var joined = await airportQueue.TrackLocationAsync(driver, location.Lat, location.Lng, ct);
         await db.SaveChangesAsync(ct);
+        if (joined is not null)
+        {
+            await airportQueue.PublishAsync(joined, ct);
+        }
+
         if (broadcast is not null && passengerUserId is { } userId)
         {
             await notifier.DriverLocationAsync(userId, broadcast, ct);
@@ -141,6 +150,8 @@ public sealed class DriverTripService(
 
         await matching.RecordResponseAsync(trip.Id, driver.Id, CandidateResponse.Accepted, ct);
         await matching.CloseOpenAttemptAsync(trip.Id, MatchingOutcome.Assigned, now, ct);
+        // F17: a queued airport driver who accepted the offer leaves the queue as dispatched.
+        await airportQueue.DispatchedAsync(driver.Id, trip.Id, ct);
         events.Add(trip.Id, TripEventTypes.OfferAccepted, TripActor.Driver, driver.UserId, data: new { offerId = offer.Id });
         // F16: the requested favourite took the trip (also when it was matched normally after being unavailable) → the discount rule is pinned; after a rejected /
         // expired exclusive round the passenger is told a replacement is on the way.
@@ -215,12 +226,14 @@ public sealed class DriverTripService(
             }
         }
 
+        // F17: an airport pickup's waiting policy (zone / airport) replaces the default free waiting time.
+        var freeWaitingMinutes = WaitingPolicy.Parse(trip.WaitingPolicy)?.FreeMinutes ?? _options.FreeWaitingMinutes;
         events.Add(trip.Id, TripEventTypes.DriverArrived, TripActor.Driver, driver.UserId, location?.Lat, location?.Lng);
-        events.Add(trip.Id, TripEventTypes.WaitingStarted, TripActor.System, data: new { freeWaitingMinutes = _options.FreeWaitingMinutes });
+        events.Add(trip.Id, TripEventTypes.WaitingStarted, TripActor.System, data: new { freeWaitingMinutes });
         var participants = await reads.ParticipantsAsync(trip, ct);
         var arrivedDriver = await db.Users.AsNoTracking().Where(u => u.Id == driver.UserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
         var plate = trip.VehicleId is { } vehicleId ? await db.Vehicles.AsNoTracking().Where(v => v.Id == vehicleId).Select(v => v.PlateNumber).FirstOrDefaultAsync(ct) : null;
-        await notifications.DispatchAsync(TripNotifications.DriverArrived(trip, participants.PassengerUserId, arrivedDriver, plate, _options.FreeWaitingMinutes), ct);
+        await notifications.DispatchAsync(TripNotifications.DriverArrived(trip, participants.PassengerUserId, arrivedDriver, plate, freeWaitingMinutes), ct);
         await db.SaveChangesAsync(ct);
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
@@ -235,7 +248,8 @@ public sealed class DriverTripService(
         var (trip, driver) = await LoadOwnAsync(tripId, ct);
         var now = clock.UtcNow;
         var category = await db.RideCategories.AsNoTracking().FirstAsync(c => c.Id == trip.RideCategoryId, ct);
-        var freeWaitingMinutes = await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct);
+        var freeWaitingMinutes = WaitingPolicy.Parse(trip.WaitingPolicy)?.FreeMinutes
+                                 ?? await pricing.FreeWaitingMinutesAsync(category, new GeoPoint(trip.PickupLat, trip.PickupLng), trip.RequestedAt, ct);
         try
         {
             trip.VerifyPin(pins.Matches(trip, request.Pin!), _options.PinMaxAttempts, freeWaitingMinutes * 60, now);
@@ -287,7 +301,7 @@ public sealed class DriverTripService(
         var quote = await db.FareQuotes.AsNoTracking().FirstOrDefaultAsync(q => q.UsedTripId == trip.Id, ct);
         var pickupAt = trip.ScheduledAt ?? trip.RequestedAt;
         var calculation = await pricing.CalculateAsync(new FareRequest(category, new GeoPoint(trip.PickupLat, trip.PickupLng), new GeoPoint(trip.DropoffLat, trip.DropoffLng),
-            distance, duration, pickupAt, trip.WaitingSeconds, quote is null ? null : QuoteService.LockedDemandOf(quote)), ct);
+            distance, duration, pickupAt, trip.WaitingSeconds, quote is null ? null : QuoteService.LockedDemandOf(quote), WaitingPolicy.Parse(trip.WaitingPolicy)?.PerMinute), ct);
         // F15: the tier's commission discount raises the driver share; promo discounts are borne by the platform (the driver share is computed before them).
         var tierDiscount = await tierRules.CommissionDiscountPercentAsync(driver.Tier, ct);
         var promo = await promotions.ForCompletionAsync(trip, calculation, ct);
@@ -345,6 +359,7 @@ public sealed class DriverTripService(
 
             driver.CurrentTripId = null;
             await reads.ReleaseDriverAsync(trip, now, ct);
+            await scheduledEngine.OnTripEndedAsync(trip, completed: true, now, ct);
             events.Add(trip.Id, TripEventTypes.Completed, TripActor.Driver, driver.UserId, request?.FinalLat, request?.FinalLng,
                 new
                 {
@@ -379,8 +394,17 @@ public sealed class DriverTripService(
             .ThrowIfInvalid();
 
         var (trip, driver) = await LoadOwnAsync(tripId, ct);
-        await cancellations.CancelAsync(trip, new Cancellation.CancelCommand(TripActor.Driver, driver.UserId, request.ReasonCode!.Trim(), request.Note,
-            ExpectedPenaltyPoints: request.ExpectedPenaltyPoints), ct);
+        var command = new Cancellation.CancelCommand(TripActor.Driver, driver.UserId, request.ReasonCode!.Trim(), request.Note, ExpectedPenaltyPoints: request.ExpectedPenaltyPoints);
+        if (cancellations.RematchesInsteadOfCancelling(trip, command))
+        {
+            // F17: a scheduled trip whose driver cancels goes back to matching (the rider's trip is not cancelled); the driver still gets the F14 penalty points.
+            await cancellations.RematchAsync(trip, command, ct);
+        }
+        else
+        {
+            await cancellations.CancelAsync(trip, command, ct);
+        }
+
         return await reads.PublishAsync(trip, TripViewer.Driver, lang, ct);
     }
 

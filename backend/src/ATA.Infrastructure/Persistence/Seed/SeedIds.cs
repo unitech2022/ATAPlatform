@@ -38,6 +38,9 @@ public static class SeedIds
         public static readonly Guid Airport = Guid.Parse("019985f0-0000-7000-8000-000000000706");
     }
 
+    public static readonly Guid ScheduledRideRuleDefault = Guid.Parse("019985f0-0000-7000-8000-000000000801");
+    public static readonly Guid AirportRuh = Guid.Parse("019985f0-0000-7000-8000-000000000901");
+
     public static class DocumentTypes
     {
         public static readonly Guid NationalId = Guid.Parse("019985f0-0000-7000-8000-000000000201");

@@ -27,6 +27,8 @@ public static class Permissions
     public const string PromotionsManage = "promotions.manage";
     public const string IncentivesManage = "incentives.manage";
     public const string FavoritesManage = "favorites.manage";
+    public const string SchedulingManage = "scheduling.manage";
+    public const string AirportManage = "airport.manage";
 
     /// <summary>Whether a stored permission list (JSON array of <c>admin_accounts.permissions</c>) grants <paramref name="permission"/>.</summary>
     public static bool Grants(string? permissionsJson, string permission)
