@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:ata_app/core/utils/countdown.dart';
 import 'package:ata_app/features/trip/domain/entities/driver_location.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/domain/usecases/cancel_trip.dart';
 import 'package:ata_app/features/trip/domain/usecases/get_trip.dart';
@@ -57,7 +58,11 @@ class ActiveTripCubit extends Cubit<ActiveTripState> {
   }
 
   /// Shows a trip created by the home sheet before the feed delivers it.
-  void adopt(Trip trip) => _apply(trip);
+  ///
+  /// A scheduled booking is not an active trip (F17) and is ignored.
+  void adopt(Trip trip) {
+    if (trip.status != TripStage.scheduled) _apply(trip);
+  }
 
   Future<void> cancel(String reasonCode, {String? note}) async {
     final Trip? trip = state.trip;
@@ -90,7 +95,11 @@ class ActiveTripCubit extends Cubit<ActiveTripState> {
     }
   }
 
-  Future<void> _onTrip(Trip? trip) async {
+  Future<void> _onTrip(Trip? incoming) async {
+    // Scheduled bookings never take over the trip screen (F17).
+    final Trip? trip = incoming?.status == TripStage.scheduled
+        ? null
+        : incoming;
     final Trip? current = state.trip;
     if (trip != null) {
       _apply(trip);

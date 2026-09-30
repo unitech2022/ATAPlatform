@@ -97,9 +97,12 @@ abstract final class QuoteRequestMapper {
     'stops': request.stops.map(_point).toList(growable: false),
     'rideCategoryId': ?request.rideCategoryId,
     'bookingType': request.bookingType,
-    'scheduledAt': ?request.scheduledAt?.toIso8601String(),
+    'scheduledAt': ?request.scheduledAt?.toUtc().toIso8601String(),
     'promoCode': ?request.promoCode,
     'favoriteDriverId': ?request.favoriteDriverId,
+    'airportPickupZoneId': ?request.airportPickupZoneId,
+    'airportTerminalCode': ?request.airportTerminalCode,
+    'flightNumber': ?request.flightNumber,
   };
 
   static Map<String, dynamic> _point(GeoPoint point) => <String, dynamic>{

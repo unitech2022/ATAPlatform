@@ -9,6 +9,7 @@ import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_button.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
+import 'package:ata_app/features/airport/presentation/widgets/trip_airport_info.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -133,6 +134,10 @@ class _StageBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         body,
+        if (trip.airport != null && !stage.isTerminal) ...<Widget>[
+          const SizedBox(height: AtaSpacing.md),
+          TripAirportInfo(airport: trip.airport!),
+        ],
         if (state.failure != null) ...<Widget>[
           const SizedBox(height: AtaSpacing.md),
           InlineError(message: failureText(state.failure!, l10n)),

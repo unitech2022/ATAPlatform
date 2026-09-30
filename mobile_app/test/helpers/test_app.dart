@@ -6,6 +6,7 @@ import 'package:ata_app/core/storage/preferences_storage.dart';
 import 'package:ata_app/design/theme/ata_theme.dart';
 import 'package:ata_app/features/account/domain/repositories/account_repository.dart';
 import 'package:ata_app/features/account/presentation/cubit/locale_cubit.dart';
+import 'package:ata_app/features/airport/domain/repositories/airport_repository.dart';
 import 'package:ata_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ata_app/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:ata_app/features/driver_rewards/domain/repositories/driver_rewards_repository.dart';
@@ -17,6 +18,7 @@ import 'package:ata_app/features/promotions/domain/repositories/promotions_repos
 import 'package:ata_app/features/rating/domain/repositories/rating_repository.dart';
 import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart';
 import 'package:ata_app/features/safety/domain/repositories/safety_repository.dart';
+import 'package:ata_app/features/scheduled_rides/domain/repositories/scheduled_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/cancellation_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/location_repository.dart';
 import 'package:ata_app/features/trip/domain/repositories/trip_repository.dart';
@@ -31,6 +33,7 @@ import 'favorites_fakes.dart';
 import 'pricing_fakes.dart';
 import 'rewards_fakes.dart';
 import 'safety_fakes.dart';
+import 'scheduling_fakes.dart';
 import 'trip_fakes.dart';
 
 /// Registers in-memory storage and fake repositories, then the real use cases.
@@ -61,7 +64,9 @@ Future<void> registerTestDependencies({FakeAuthRepository? auth}) async {
     ..registerSingleton<FavoriteDriversRepository>(
       FakeFavoriteDriversRepository(),
     )
-    ..registerSingleton<DriverRewardsRepository>(FakeDriverRewardsRepository());
+    ..registerSingleton<DriverRewardsRepository>(FakeDriverRewardsRepository())
+    ..registerSingleton<ScheduledRepository>(FakeScheduledRepository())
+    ..registerSingleton<AirportRepository>(FakeAirportRepository());
   registerUseCases();
 }
 

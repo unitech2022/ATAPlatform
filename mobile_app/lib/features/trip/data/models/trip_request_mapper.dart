@@ -11,7 +11,7 @@ abstract final class TripRequestMapper {
     'stops': request.stops.map(TripStopModel.toJsonOf).toList(growable: false),
     'rideCategoryId': request.rideCategoryId,
     'bookingType': request.bookingType,
-    'scheduledAt': ?request.scheduledAt?.toIso8601String(),
+    'scheduledAt': ?request.scheduledAt?.toUtc().toIso8601String(),
   };
 
   static Map<String, dynamic> requestBody(TripRequest request) =>
@@ -25,5 +25,8 @@ abstract final class TripRequestMapper {
         'riderNote': ?request.riderNote,
         'promoCode': ?request.promoCode,
         'favoriteDriverId': ?request.favoriteDriverId,
+        'airportPickupZoneId': ?request.airportPickupZoneId,
+        'airportTerminalCode': ?request.airportTerminalCode,
+        'flightNumber': ?request.flightNumber,
       };
 }

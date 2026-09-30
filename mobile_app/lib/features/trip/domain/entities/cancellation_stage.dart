@@ -33,9 +33,10 @@ enum CancellationStage {
     Duration freeWaiting = defaultFreeWaiting,
   }) {
     final TripStage status = trip.status;
-    if (status.isSearching) {
-      return trip.bookingType == 'scheduled' ? scheduled : beforeAccept;
-    }
+    // A booking waiting for its time follows the scheduled-ride rules; once
+    // the search starts the normal stages apply (`docs/11` §F17.3).
+    if (status == TripStage.scheduled) return scheduled;
+    if (status.isSearching) return beforeAccept;
     if (status == TripStage.driverAssigned) return afterAccept;
     if (status == TripStage.driverEnRoute) return enRoute;
     final DateTime? arrivedAt = trip.timeline.arrivedAt;

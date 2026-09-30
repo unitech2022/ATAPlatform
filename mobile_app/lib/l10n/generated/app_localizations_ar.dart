@@ -402,9 +402,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get timeSchedule => 'جدولة';
 
   @override
-  String get scheduleComingSoon => 'الجدولة متاحة قريباً (حتى 7 أيام مسبقاً)';
-
-  @override
   String get femaleDriverTitle => 'أفضّل سائقة';
 
   @override
@@ -3121,4 +3118,531 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get offerFavoriteExclusive => 'عرض حصري لك';
+
+  @override
+  String get airportCategoryNotApplicableError =>
+      'فئة المطار متاحة لرحلات المطار فقط';
+
+  @override
+  String get airportChoose => 'اختر المطار واتجاه رحلتك';
+
+  @override
+  String get airportChooseTerminal => 'الصالة (اختياري)';
+
+  @override
+  String get airportChooseZone => 'اختر منطقة الالتقاط';
+
+  @override
+  String get airportDirectionDropoff => 'إلى المطار';
+
+  @override
+  String get airportDirectionPickup => 'من المطار';
+
+  @override
+  String get airportDone => 'تم';
+
+  @override
+  String get airportFlightHint => 'مثال: SV1020';
+
+  @override
+  String get airportFlightInvalid => 'رقم الرحلة غير صحيح، مثال: SV1020';
+
+  @override
+  String get airportFlightLabel => 'رقم الرحلة الجوية (اختياري)';
+
+  @override
+  String airportFlightLine(String flight) {
+    return 'رحلة $flight';
+  }
+
+  @override
+  String get airportNoAirports => 'لا توجد مطارات متاحة حالياً';
+
+  @override
+  String get airportNoDetails => 'لم تحدد الصالة بعد';
+
+  @override
+  String get airportPickupZoneRequiredError => 'اختر منطقة الالتقاط في المطار';
+
+  @override
+  String get airportQueueCopy =>
+      'تُوزَّع رحلات المطار على الكباتن بترتيب الوصول: الأول فالأول.';
+
+  @override
+  String airportQueueEligible(String airport) {
+    return 'أنت داخل منطقة انتظار $airport';
+  }
+
+  @override
+  String get airportQueueExitNote =>
+      'إذا غادرت منطقة الانتظار أو انقطع اتصالك لفترة تخرج من الطابور تلقائياً.';
+
+  @override
+  String get airportQueueEyebrow => 'المطار';
+
+  @override
+  String get airportQueueJoin => 'انضم للطابور';
+
+  @override
+  String get airportQueueJoinHint => 'انضم لاستلام رحلات المطار بالترتيب';
+
+  @override
+  String get airportQueueLeave => 'غادر الطابور';
+
+  @override
+  String get airportQueueNotNearby => 'أنت لست في منطقة انتظار مطار حالياً';
+
+  @override
+  String airportQueuePosition(int position, int total) {
+    return 'ترتيبك $position من $total';
+  }
+
+  @override
+  String get airportQueueTitle => 'طابور المطار';
+
+  @override
+  String airportQueueWait(int minutes) {
+    return 'الانتظار المتوقع نحو $minutes دقيقة';
+  }
+
+  @override
+  String get airportRemove => 'إزالة';
+
+  @override
+  String get airportRowCopy => 'اختر المطار والصالة ورقم الرحلة';
+
+  @override
+  String get airportRowTitle => 'رحلة من أو إلى مطار؟';
+
+  @override
+  String get airportSheetTitle => 'المطار';
+
+  @override
+  String airportTerminalLabel(String code) {
+    return 'صالة $code';
+  }
+
+  @override
+  String airportWaitingFree(int minutes) {
+    return 'انتظار مجاني $minutes د';
+  }
+
+  @override
+  String airportWaitingPolicyCopy(int minutes) {
+    return 'تحصل على $minutes دقيقة انتظار مجاناً عند الالتقاط، وبعدها تُحتسب رسوم الانتظار.';
+  }
+
+  @override
+  String get airportWaitingPolicyTitle => 'سياسة الانتظار';
+
+  @override
+  String countdownDaysHours(int days, int hours) {
+    return '$days يوم و$hours ساعة';
+  }
+
+  @override
+  String countdownHoursMinutes(int hours, int minutes) {
+    return '$hours ساعة و$minutes دقيقة';
+  }
+
+  @override
+  String get driverScheduledCopy =>
+      'طلبات مجدولة قادمة في منطقتك. احجز ما يناسبك وأكّد قبل الموعد.';
+
+  @override
+  String get driverScheduledEyebrow => 'الحجوزات';
+
+  @override
+  String get driverScheduledLinkCopy => 'السوق وحجوزاتك القادمة';
+
+  @override
+  String driverScheduledNext(String time) {
+    return 'أقرب حجز: $time';
+  }
+
+  @override
+  String get driverScheduledTabMarket => 'السوق';
+
+  @override
+  String get driverScheduledTabMine => 'حجوزاتي';
+
+  @override
+  String get driverScheduledTitle => 'رحلاتي المجدولة';
+
+  @override
+  String get marketAirportBadge => 'مطار';
+
+  @override
+  String get marketApproxPickup => 'موقع الالتقاط تقريبي حتى الحجز';
+
+  @override
+  String get marketDayAll => 'الكل';
+
+  @override
+  String marketDistanceToPickup(String km) {
+    return '$km كم عنك';
+  }
+
+  @override
+  String get marketEmptyCopy => 'نحدّث القائمة تلقائياً كل دقيقة';
+
+  @override
+  String get marketEmptyTitle => 'لا توجد طلبات مجدولة الآن';
+
+  @override
+  String marketExclusiveUntil(String time) {
+    return 'حصرية لك حتى $time';
+  }
+
+  @override
+  String marketFare(String price) {
+    return 'الأجرة $price';
+  }
+
+  @override
+  String get marketLoadMore => 'عرض المزيد';
+
+  @override
+  String get marketNetEarnings => 'صافي أرباحك';
+
+  @override
+  String get marketReserve => 'احجز الرحلة';
+
+  @override
+  String get marketReserved => 'تم حجز الرحلة، ستجدها في حجوزاتي';
+
+  @override
+  String get notInAirportWaitingAreaError =>
+      'يجب أن تكون داخل منطقة انتظار المطار';
+
+  @override
+  String get reservationConfirmAction => 'تأكيد';
+
+  @override
+  String reservationConfirmCopy(String time) {
+    return 'رحلة مجدولة $time. أكّد قبل انتهاء المهلة وإلا سيُحرَّر الحجز.';
+  }
+
+  @override
+  String get reservationConfirmFinalTitle => 'التأكيد النهائي: استعد للانطلاق';
+
+  @override
+  String get reservationConfirmFirstTitle => 'أكّد حجزك';
+
+  @override
+  String reservationConfirmLeft(String time) {
+    return 'المتبقي $time';
+  }
+
+  @override
+  String get reservationConfirmed => 'تم تأكيد الحجز';
+
+  @override
+  String get reservationConflictError => 'يتعارض الموعد مع رحلة محجوزة لديك';
+
+  @override
+  String get reservationDetailEyebrow => 'حجز مجدول';
+
+  @override
+  String get reservationFare => 'الأجرة التقديرية';
+
+  @override
+  String get reservationFinalConfirmed =>
+      'تم التأكيد النهائي، ستبدأ الرحلة في موعدها';
+
+  @override
+  String get reservationFreeReleaseLabel => 'تحرير مجاني حتى';
+
+  @override
+  String get reservationLimitReachedError => 'وصلت للحد الأقصى من الحجوزات';
+
+  @override
+  String get reservationNotConfirmableError => 'لا يمكن التأكيد الآن';
+
+  @override
+  String get reservationNotConfirmableOfflineError =>
+      'فعّل حالة «متصل» لتأكيد الحجز';
+
+  @override
+  String get reservationNotConfirmableOnTripError =>
+      'لديك رحلة جارية، أنهِها أولاً لتأكيد الحجز';
+
+  @override
+  String get reservationNotFound => 'لم يتم العثور على هذا الحجز';
+
+  @override
+  String get reservationPassenger => 'الراكب';
+
+  @override
+  String get reservationReleaseAction => 'تحرير الحجز';
+
+  @override
+  String get reservationReleaseConfirm => 'نعم، حرّر';
+
+  @override
+  String reservationReleaseFreeCopy(String time) {
+    return 'التحرير مجاني حتى $time.';
+  }
+
+  @override
+  String get reservationReleaseLateCopy =>
+      'انتهت مدة التحرير المجاني؛ سيتم خصم نقاط من موثوقيتك، وقد يؤثر ذلك على أولوية الطلبات والحوافز.';
+
+  @override
+  String get reservationReleaseTitle => 'تحرير الحجز؟';
+
+  @override
+  String get reservationReleased => 'تم تحرير الحجز';
+
+  @override
+  String reservationReleasedPoints(int points) {
+    return 'تم تحرير الحجز وخُصمت $points نقاط من موثوقيتك';
+  }
+
+  @override
+  String get reservationStatusAssigned => 'مسندة إليك';
+
+  @override
+  String get reservationStatusCancelled => 'ملغاة';
+
+  @override
+  String get reservationStatusCompleted => 'مكتملة';
+
+  @override
+  String get reservationStatusConfirmed => 'مؤكدة';
+
+  @override
+  String get reservationStatusNoShow => 'عدم حضور';
+
+  @override
+  String get reservationStatusReleased => 'مُحرَّرة';
+
+  @override
+  String get reservationStatusReserved => 'محجوزة';
+
+  @override
+  String get reservationTakenError => 'تم حجز هذه الرحلة من كابتن آخر';
+
+  @override
+  String get reservationsActive => 'القادمة';
+
+  @override
+  String get reservationsEmpty => 'لا توجد حجوزات هنا';
+
+  @override
+  String get reservationsHistory => 'السابقة';
+
+  @override
+  String get scheduleBooked => 'تم حجز رحلتك المجدولة';
+
+  @override
+  String get scheduleConfirm => 'تأكيد الموعد';
+
+  @override
+  String get scheduleConfirmedExpired =>
+      'لم يعد الموعد ضمن المدة المتاحة، اختر موعداً جديداً';
+
+  @override
+  String get scheduleConfirmedLabel => 'موعد الرحلة';
+
+  @override
+  String get scheduleDayHeading => 'اليوم';
+
+  @override
+  String get scheduleEdit => 'تعديل';
+
+  @override
+  String scheduleFavoritePriority(String name) {
+    return 'الكابتن المفضل $name يحصل على أولوية حجز رحلتك قبل بقية الكباتن';
+  }
+
+  @override
+  String get scheduleFixedPrice => 'سعر ثابت للموعد · بدون رسوم ذروة';
+
+  @override
+  String get scheduleHourHeading => 'الساعة';
+
+  @override
+  String get scheduleLeadTooShortError =>
+      'يجب أن يكون الموعد بعد 30 دقيقة على الأقل';
+
+  @override
+  String scheduleLeadTooShortUntilError(String time) {
+    return 'أقرب موعد متاح $time';
+  }
+
+  @override
+  String get scheduleMinuteHeading => 'الدقيقة';
+
+  @override
+  String get scheduleNothingPicked => 'اختر اليوم والوقت';
+
+  @override
+  String schedulePickerCopy(String lead, String window) {
+    return 'احجز بعد $lead على الأقل وحتى $window من الآن';
+  }
+
+  @override
+  String get schedulePickerTitle => 'متى تريد رحلتك؟';
+
+  @override
+  String scheduleRide(String name, String price) {
+    return 'احجز $name · $price';
+  }
+
+  @override
+  String get scheduleRulesFallback =>
+      'تعذر تحميل شروط الجدولة، نستخدم القيم الافتراضية.';
+
+  @override
+  String get scheduleSelectedLabel => 'الموعد المختار';
+
+  @override
+  String scheduleTooFar(String time) {
+    return 'أبعد موعد متاح $time';
+  }
+
+  @override
+  String scheduleTooSoon(String time) {
+    return 'أقرب موعد متاح $time';
+  }
+
+  @override
+  String scheduleWindowDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days يوماً',
+      few: '$days أيام',
+      two: 'يومين',
+      one: 'يوم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scheduleWindowExceededError =>
+      'لا يمكن الجدولة لأكثر من 7 أيام من الآن';
+
+  @override
+  String scheduleWindowExceededUntilError(String time) {
+    return 'لا يمكن الجدولة بعد $time';
+  }
+
+  @override
+  String get scheduledBookNew => 'احجز رحلة';
+
+  @override
+  String get scheduledCancelButton => 'إلغاء الحجز';
+
+  @override
+  String get scheduledCancelledTitle => 'تم إلغاء الحجز';
+
+  @override
+  String get scheduledCountdownLabel => 'يبدأ بعد';
+
+  @override
+  String get scheduledDetailEyebrow => 'رحلة مجدولة';
+
+  @override
+  String get scheduledDriverConfirmedBadge => 'مؤكد';
+
+  @override
+  String get scheduledDriverReservedBadge => 'محجوز';
+
+  @override
+  String get scheduledDriverTitle => 'الكابتن المحجوز';
+
+  @override
+  String get scheduledEmptyCopy => 'احجز رحلتك من الرئيسية واختر «جدولة»';
+
+  @override
+  String get scheduledEmptyTitle => 'لا توجد رحلات مجدولة';
+
+  @override
+  String get scheduledFareLabel => 'الأجرة التقديرية';
+
+  @override
+  String get scheduledLateCancelNote =>
+      'انتهت مدة الإلغاء المجاني، وقد تُطبَّق رسوم عند الإلغاء (ستراها قبل التأكيد).';
+
+  @override
+  String get scheduledLimitReachedError =>
+      'وصلت للحد الأقصى من الرحلات المجدولة';
+
+  @override
+  String scheduledLimitReachedMaxError(int max) {
+    return 'وصلت للحد الأقصى من الرحلات المجدولة ($max)';
+  }
+
+  @override
+  String get scheduledLinkCopy => 'حجوزاتك القادمة وحالتها';
+
+  @override
+  String get scheduledNoDriverYet =>
+      'لم يحجز أي كابتن رحلتك بعد، وسنبدأ البحث تلقائياً قبل الموعد.';
+
+  @override
+  String get scheduledPhaseConfirmed => 'الكابتن مؤكد';
+
+  @override
+  String get scheduledPhaseEnded => 'انتهت';
+
+  @override
+  String get scheduledPhaseInProgress => 'الرحلة جارية';
+
+  @override
+  String get scheduledPhaseReserved => 'تم حجزها من كابتن';
+
+  @override
+  String get scheduledPhaseSearching => 'جارٍ البحث عن كابتن';
+
+  @override
+  String get scheduledPhaseWaiting => 'بانتظار كابتن';
+
+  @override
+  String get scheduledSearchStartedCopy =>
+      'بدأ البحث عن كابتن لرحلتك، تابعها من شاشة الرحلة.';
+
+  @override
+  String scheduledSearchStartsAt(String time) {
+    return 'إن لم يحجزها كابتن سنبدأ البحث $time';
+  }
+
+  @override
+  String get scheduledTrackTrip => 'تتبع الرحلة';
+
+  @override
+  String get scheduledTripTitle => 'رحلة مجدولة';
+
+  @override
+  String get scheduledTripsCopy => 'رحلاتك القادمة مرتبة حسب الموعد';
+
+  @override
+  String get scheduledTripsEyebrow => 'الحجوزات';
+
+  @override
+  String get scheduledTripsTitle => 'رحلاتي المجدولة';
+
+  @override
+  String tripAirportDropoff(String code) {
+    return 'توصيل إلى مطار $code';
+  }
+
+  @override
+  String tripAirportPickup(String code) {
+    return 'استلام من مطار $code';
+  }
+
+  @override
+  String get tripStatusScheduled => 'مجدولة';
+
+  @override
+  String get reservationOpenMarket => 'افتح السوق';
+
+  @override
+  String get reservationNotConfirmableNotDueError => 'لم يحن وقت التأكيد بعد';
+
+  @override
+  String get reservationNotConfirmableExpiredError => 'انتهت مهلة التأكيد';
 }

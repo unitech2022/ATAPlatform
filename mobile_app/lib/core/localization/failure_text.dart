@@ -2,6 +2,7 @@ import 'package:ata_app/core/errors/failures.dart';
 import 'package:ata_app/core/localization/favorites_failure_text.dart';
 import 'package:ata_app/core/localization/rewards_failure_text.dart';
 import 'package:ata_app/core/localization/safety_failure_text.dart';
+import 'package:ata_app/core/localization/scheduling_failure_text.dart';
 import 'package:ata_app/core/utils/money.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 
@@ -54,6 +55,21 @@ abstract final class ErrorCodes {
   static const String favoritesLimit = 'favorites_limit';
   static const String favoriteDriverId = 'favoriteDriverId';
   static const String notFavorite = 'not_favorite';
+  static const String scheduleWindowExceeded = 'schedule_window_exceeded';
+  static const String scheduleLeadTooShort = 'schedule_lead_too_short';
+  static const String scheduledLimitReached = 'scheduled_limit_reached';
+  static const String reservationTaken = 'reservation_taken';
+  static const String reservationConflict = 'reservation_conflict';
+  static const String reservationLimitReached = 'reservation_limit_reached';
+  static const String reservationNotConfirmable = 'reservation_not_confirmable';
+  static const String airportPickupZoneRequired =
+      'airport_pickup_zone_required';
+  static const String airportCategoryNotApplicable =
+      'airport_category_not_applicable';
+  static const String notInAirportWaitingArea = 'not_in_airport_waiting_area';
+  static const String maxScheduledAt = 'maxScheduledAt';
+  static const String minScheduledAt = 'minScheduledAt';
+  static const String max = 'max';
   static const String reason = 'reason';
   static const String scope = 'scope';
   static const String conflict = 'conflict';
@@ -119,6 +135,7 @@ String _serverText(ServerFailure failure, AppLocalizations l10n) {
       safetyFailureText(failure, l10n) ??
       rewardsFailureText(failure, l10n) ??
       favoritesFailureText(failure, l10n) ??
+      schedulingFailureText(failure, l10n) ??
       (failure.message.isEmpty ? l10n.errorUnexpected : failure.message);
 }
 

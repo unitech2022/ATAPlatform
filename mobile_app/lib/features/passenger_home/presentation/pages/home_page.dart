@@ -1,6 +1,7 @@
 import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
+import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_cubit.dart';
 import 'package:ata_app/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
@@ -12,6 +13,7 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/trip_reques
 import 'package:ata_app/features/pricing/presentation/cubit/demand_cubit.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/schedule_time_cubit.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
@@ -58,6 +60,17 @@ class HomePage extends StatelessWidget {
           create: (_) =>
               AvailableFavoritesCubit(getAvailable: getIt())
                 ..watch(TripPlaces.currentLocation),
+        ),
+        BlocProvider<ScheduleTimeCubit>(
+          create: (_) => ScheduleTimeCubit(getRules: getIt()),
+        ),
+        BlocProvider<AirportPickupCubit>(
+          create: (_) =>
+              AirportPickupCubit(getAirports: getIt(), resolve: getIt())
+                ..detect(
+                  TripPlaces.currentLocation,
+                  dropoff: TripPlaces.defaultDestination,
+                ),
         ),
         BlocProvider<TripRequestCubit>(
           create: (_) => TripRequestCubit(

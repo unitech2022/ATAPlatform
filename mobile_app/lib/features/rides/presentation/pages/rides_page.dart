@@ -6,10 +6,13 @@ import 'package:ata_app/design/tokens/ata_colors.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_card.dart';
+import 'package:ata_app/design/widgets/ata_icon_data.dart';
+import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/page_wrap.dart';
 import 'package:ata_app/design/widgets/pill.dart';
 import 'package:ata_app/design/widgets/screen_title.dart';
+import 'package:ata_app/design/widgets/setting_row.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/widgets/add_favorite_button.dart';
 import 'package:ata_app/features/rating/domain/entities/rating_subject.dart';
 import 'package:ata_app/features/rating/presentation/cubit/pending_rating_cubit.dart';
@@ -43,10 +46,36 @@ class RidesPage extends StatelessWidget {
             copy: l10n.ridesCopy,
           ),
           const SizedBox(height: AtaSpacing.xxl),
+          const _ScheduledLink(),
+          const SizedBox(height: AtaSpacing.md),
           const _TripsCard(),
           const SizedBox(height: AtaSpacing.xl),
           const PromoCard(),
         ],
+      ),
+    );
+  }
+}
+
+/// Link to "رحلاتي المجدولة" (F17).
+class _ScheduledLink extends StatelessWidget {
+  const _ScheduledLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    return AtaCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AtaSpacing.md,
+        vertical: AtaSpacing.xs,
+      ),
+      child: SettingRow(
+        key: const ValueKey<String>('scheduled-link'),
+        leading: const IconBox.cloud(icon: AtaIcons.clock),
+        title: l10n.scheduledTripsTitle,
+        subtitle: l10n.scheduledLinkCopy,
+        last: true,
+        onTap: () => context.push(AppRoutes.scheduled),
       ),
     );
   }

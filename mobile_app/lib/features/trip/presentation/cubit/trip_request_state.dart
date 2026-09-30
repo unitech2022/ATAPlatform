@@ -7,7 +7,16 @@ import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
 import 'package:equatable/equatable.dart';
 
 /// Progress of a ride request from the home sheet.
-enum TripRequestStatus { idle, requesting, searching, cancelling, failure }
+enum TripRequestStatus {
+  idle,
+  requesting,
+  searching,
+
+  /// A scheduled booking was created (F17); it is not an active trip.
+  scheduled,
+  cancelling,
+  failure,
+}
 
 /// State of [TripRequestCubit].
 class TripRequestState extends Equatable {
@@ -29,6 +38,7 @@ class TripRequestState extends Equatable {
       status == TripRequestStatus.requesting ||
       status == TripRequestStatus.cancelling;
   bool get isSearching => status == TripRequestStatus.searching;
+  bool get isScheduled => status == TripRequestStatus.scheduled;
 
   /// `422 quote_expired`: the quote must be refreshed and confirmed again.
   bool get isQuoteExpired => failure?.code == ErrorCodes.quoteExpired;
@@ -37,6 +47,12 @@ class TripRequestState extends Equatable {
   /// up before requesting (`Payments:BlockOnOutstandingBalance`).
   bool get isOutstandingBalance =>
       failure?.code == ErrorCodes.outstandingBalance;
+
+  /// `422 schedule_lead_too_short` / `schedule_window_exceeded` (F17): the
+  /// booking time is no longer inside the window.
+  bool get isScheduleRejected =>
+      failure?.code == ErrorCodes.scheduleLeadTooShort ||
+      failure?.code == ErrorCodes.scheduleWindowExceeded;
 
   /// `403 account_restricted`: reliability restriction (F14); the failure
   /// text includes `details.restrictedUntil`.

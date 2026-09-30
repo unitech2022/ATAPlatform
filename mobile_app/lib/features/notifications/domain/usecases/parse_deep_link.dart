@@ -72,8 +72,11 @@ class ParseDeepLink {
         return '/rides/$id/receipt';
       case 'rate' when n == 2:
         return p.isDriver ? '$_driver/rate/$id' : '/rate/$id';
+      case 'scheduled' when n == 1:
+        return p.isDriver ? '$_driver/scheduled' : '/scheduled';
       case 'scheduled' when n == 2:
-        return '/$head/$id';
+        // `scheduled.reminder` / `reservation_released` reach both roles.
+        return p.isDriver ? '$_driver/scheduled/$id' : '/scheduled/$id';
       case 'wallet' when n == 1:
         return '/wallet';
       case 'wallet' when n == 2 && id == 'transactions':
@@ -108,6 +111,7 @@ class ParseDeepLink {
     'incentives',
     'ratings',
     'scheduled',
+    'airport-queue',
   };
   static const Set<String> _driverWithId = <String>{
     'settlements',

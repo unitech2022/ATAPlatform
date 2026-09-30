@@ -1,3 +1,4 @@
+import 'package:ata_app/features/trip/domain/entities/trip_airport.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stop.dart';
 import 'package:equatable/equatable.dart';
 
@@ -21,6 +22,8 @@ class Offer extends Equatable {
     this.round = 1,
     this.isFavoriteRequest = false,
     this.exclusive = false,
+    this.scheduledAt,
+    this.airport,
   });
 
   final String id;
@@ -49,6 +52,12 @@ class Offer extends Equatable {
   /// Only this driver receives the offer (exclusive round).
   final bool exclusive;
 
+  /// Set when the offer is for a scheduled trip that entered matching.
+  final DateTime? scheduledAt;
+
+  /// Airport pickup / dropoff (F17, without the flight number).
+  final TripAirport? airport;
+
   int get etaMinutes => (etaSeconds / 60).ceil();
 
   @override
@@ -70,5 +79,7 @@ class Offer extends Equatable {
     round,
     isFavoriteRequest,
     exclusive,
+    scheduledAt,
+    airport,
   ];
 }

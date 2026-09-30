@@ -8,10 +8,13 @@ import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/schedule_time_cubit.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/widgets/schedule_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// "Now" / "Schedule" segmented pills.
+/// "Now" / "Schedule" segmented pills; "Schedule" opens the date / time
+/// picker of F17.
 class TimePills extends StatelessWidget {
   const TimePills({super.key});
 
@@ -27,7 +30,10 @@ class TimePills extends StatelessWidget {
               child: _Pill(
                 label: context.l10n.timeNow,
                 active: selected == RideTime.now,
-                onTap: () => cubit.selectRideTime(RideTime.now),
+                onTap: () {
+                  cubit.selectRideTime(RideTime.now);
+                  context.read<ScheduleTimeCubit>().clear();
+                },
               ),
             ),
             const SizedBox(width: AtaSpacing.xs),
@@ -35,14 +41,12 @@ class TimePills extends StatelessWidget {
               child: _Pill(
                 label: context.l10n.timeSchedule,
                 active: selected == RideTime.scheduled,
-                onTap: () {
-                  cubit.selectRideTime(RideTime.scheduled);
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(content: Text(context.l10n.scheduleComingSoon)),
-                    );
-                },
+                // Opens the date / time picker; the time is applied to the
+                // sheet once confirmed (HomeSync).
+                onTap: () => SchedulePickerSheet.show(
+                  context,
+                  rideCategoryId: cubit.state.selectedCategory?.id,
+                ),
               ),
             ),
           ],

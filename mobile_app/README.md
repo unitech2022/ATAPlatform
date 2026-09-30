@@ -14,7 +14,9 @@ safety reports) and F14 the cancellation engine (reasons from the API, fee
 preview, no-show) and reliability (rates, points, restrictions). F15 adds
 trip ratings, promo codes, the driver tier and driver incentives (quests);
 F16 adds favourite drivers (add after a trip, request them first with the
-favourite discount).
+favourite discount). F17 adds scheduled rides (book up to 7 days ahead, the
+driver marketplace, reservations and confirmations) and airport trips
+(pickup zone, terminal, flight number, the driver airport queue).
 Google Maps arrives with the Maps integration (the map is still the painted canvas).
 
 ## Run
@@ -370,11 +372,116 @@ true. Build with `--dart-define=SHOW_DEV_OTP=false` for release.
   when the assigned driver is a favourite (`favorite.status = accepted` for
   that driver, or the optional `driver.isFavorite` flag).
 - Driver offers carry `isFavoriteRequest` / `exclusive`: the offer page shows
-  "من راكب يفضّلك" / "عرض حصري لك". (`GET /driver/favorites/count` and the
-  scheduled favourite priority of F17 are not part of this step.)
+  "من راكب يفضّلك" / "عرض حصري لك". The scheduled favourite priority is part
+  of F17 (marketplace badge + `exclusiveUntil`; `GET /driver/favorites/count`
+  is still not used).
 - Assumptions beyond the spec: the driver photo (`photoUrl`) needs auth and
   is shown as a placeholder; `promotion.reason` may be `not_stacked`;
   `Trip.driver.isFavorite` is optional.
+
+### Scheduled rides and airport (F17)
+
+`docs/11` §F17 (rider + driver), `docs/08` §F13.2 / §F13.7 (`scheduled.*`
+events and links) and `docs/09` (cancellation fee preview). Support (F18) is
+a separate step.
+
+- New `TripStage.scheduled`: a booking waiting for its time. It never counts
+  as the rider's active trip: `ActiveTripCubit` ignores scheduled trips (feed
+  and `adopt`), so the router does not pin `/trip`; when the search starts
+  (`scheduled → searching`) the trip becomes active as usual. `Trip` carries
+  `scheduling { freeCancelUntil, searchStartsAt, reservation }` and
+  `airport { code, direction, zoneName, terminalCode, flightNumber,
+  freeWaitingMinutes }`; `Offer` carries `airport` and `scheduledAt`.
+- `scheduled_rides` feature. Rider: `ScheduleTimeCubit` (injectable clock)
+  is the date / time picker behind the "جدولة" pill. Rules come from `GET
+  /passenger/scheduling/rules?rideCategoryId=` (seeded defaults 7 days /
+  30 min until they load); the time must be `now + minLeadMinutes ≤ t ≤ now
+  + maxDaysAhead × 24 h`, both ends included and measured from the booking
+  moment. `SchedulePickerSheet` offers the bookable days (chips), hours and
+  5-minute steps (options outside the window are disabled, picking a day
+  snaps to the nearest slot) and spells out the time that will be booked with
+  the free-cancel deadline before "تأكيد الموعد". `HomeSync` applies the
+  confirmed time to `HomeCubit.applyScheduledAt`, which re-quotes with
+  `bookingType: scheduled` + `scheduledAt` (UTC ISO) — the sheet hides the
+  demand badge and shows "سعر ثابت للموعد · بدون رسوم ذروة" in
+  `ScheduledSummaryCard`; promo code and favourite driver travel unchanged
+  (the summary notes the favourite's booking priority). Before booking the
+  time is re-checked against the clock (`recheck`) and `schedule_*` errors
+  reopen the picker. A created booking (`TripRequestStatus.scheduled`) opens
+  `/scheduled/:tripId` instead of `/trip`.
+- `/scheduled` ("رحلاتي المجدولة", `ScheduledTripsCubit`, refreshed every
+  minute; linked from the rides page): date, status (waiting for a driver /
+  reserved / driver confirmed / searching / in progress) and fare.
+  `/scheduled/:tripId` (`ScheduledDetailCubit`, 1 s clock, re-read every 30
+  s): countdown, route, fixed-price fare, the reserved driver (first name,
+  rating, vehicle) or when the search starts, airport details, "الإلغاء
+  مجاني حتى …" (or a late-cancel note) and the cancel button, which opens the
+  existing `CancelReasonSheet` (stage `scheduled` while the trip is
+  `scheduled`, the normal stages afterwards; the API preview shows the fee and
+  `freeUntil`).
+- Driver: `/driver/scheduled` (tabs "السوق" / "حجوزاتي"). `MarketplaceCubit`
+  reads `GET /driver/scheduled/marketplace?lat&lng&from&to&page` around the
+  last GPS position (Riyadh centre without one), day filter (today + 6),
+  60 s refresh, "عرض المزيد" paging and `POST …/reserve` (`reservation_taken`
+  removes the trip; `reservation_conflict` / `reservation_limit_reached` are
+  explained). Tiles show time, categories, airport / favourite badges,
+  approximate pickup area → dropoff area, distances and the net earnings.
+  `ReservationsCubit` (`GET /driver/scheduled?status=active|history`) ticks
+  every second and reloads every minute and on each foreground `scheduled.*`
+  push: a reservation with `confirmDeadline` (status `reserved`, T-60) or
+  `finalConfirmDeadline` (status `confirmed`, T-15) shows `ConfirmPromptCard`
+  with the time left and a prominent "تأكيد" button (driver overview,
+  reservations tab and `/driver/scheduled/:tripId`, the target of
+  `scheduled.confirm_request`). The final confirmation returns the trip,
+  which is adopted by `DriverTripCubit` so the router switches to the normal
+  `/driver/trip` flow; `reservation_not_confirmable {reason}` says to go
+  online / finish the current trip. Releasing (`POST …/release`) asks for
+  confirmation: free before `freeReleaseUntil`, afterwards a warning about
+  reliability points (the API returns `penaltyPoints`, shown after the
+  release).
+- `airport` feature. `AirportPickupCubit` loads `GET /catalog/airports`,
+  detects an airport around the pickup / dropoff through `GET
+  /passenger/airports/resolve` (never overriding a rider's choice) and lets
+  the rider choose the airport and its end of the trip in `AirportZoneSheet`
+  (row "رحلة من أو إلى مطار؟" under the route): pickup zones grouped by
+  terminal with their instructions (a zone is required when
+  `requiresPickupZone`), or an optional terminal for a dropoff, the waiting
+  policy (the zone's `freeWaitingMinutes`, 15 min by default) and an optional
+  flight number (uppercased, spaces removed, `^[A-Z0-9]{2}[0-9]{1,4}[A-Z]?$`).
+  The airport (zone) point replaces the pickup / dropoff of the route,
+  `airportPickupZoneId` / `airportTerminalCode` / `flightNumber` go to the
+  quote and the request, and an incomplete pickup or an invalid flight number
+  blocks the button. Trip pages (rider sheet, driver trip, driver offer,
+  booking detail) show `TripAirportInfo`.
+- Driver airport queue: `AirportQueueCubit` (`GET /driver/airport-queue`,
+  `POST …/join {lat,lng}`, `POST …/leave`, hub `AirportQueueUpdated`, 30 s
+  poll). `AirportQueueCard` on the overview appears when the driver is queued
+  or standing in a waiting area; `/driver/airport-queue` shows the position,
+  the estimated wait and join / leave (`not_in_airport_waiting_area`).
+- Deep links: `ata://scheduled/{tripId}` → `/scheduled/{id}` (rider) or
+  `/driver/scheduled/{id}` (driver, for `scheduled.reminder` /
+  `reservation_released`), `ata://scheduled` → the list, `ata://driver/scheduled`
+  (+ `/{tripId}`) and the extra `ata://driver/airport-queue` (not in the
+  table of `docs/08`). Inbox rows without `data.deepLink` derive the link from
+  the `scheduled.*` code (`confirm_request` / `favorite_request` open the
+  reservation).
+- Errors (`core/localization/scheduling_failure_text.dart`):
+  `schedule_window_exceeded {maxScheduledAt}`, `schedule_lead_too_short
+  {minScheduledAt}`, `scheduled_limit_reached {max}`, `reservation_taken`,
+  `reservation_conflict`, `reservation_limit_reached`,
+  `reservation_not_confirmable {reason: offline|on_trip|not_due|expired}`,
+  `airport_pickup_zone_required`,
+  `airport_category_not_applicable`, `not_in_airport_waiting_area`.
+- Assumptions beyond the spec: list endpoints may answer a bare array or a
+  `{ items, page, pageSize, total }` page; `POST …/confirm` answers the
+  reservation with `trip` set by the final confirmation (a nested
+  `{ reservation, trip }` is accepted too); `GET /passenger/airports/resolve`
+  answers `null` / an empty body outside an airport; the confirmation prompt
+  is "due" while the matching `confirmDeadline` / `finalConfirmDeadline` is set
+  and in the future; `requiresPickupZone` (catalog) defaults to `true`; the
+  rider's favourite chips still come from the "available now" lookup (it has
+  no time parameter); the exact release penalty is not exposed before
+  releasing, so the dialog warns without a number.
 
 ### Fonts and assets
 
@@ -409,7 +516,7 @@ lib/
 Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 `safety`, `account`, `notifications`, `driver_dashboard`, `catalog`, `trip`,
 `pricing`, `payments`, `driver_wallet`, `trip_chat`, `rating`, `promotions`,
-`driver_rewards`, `favorite_drivers`.
+`driver_rewards`, `favorite_drivers`, `scheduled_rides`, `airport`.
 
 ### Rules
 
@@ -425,8 +532,9 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
   repositories, never through widget state.
 - Dependency injection: `core/di/injector.dart` registers infrastructure,
   `data_module.dart` registers repositories, `use_case_module.dart` registers
-  use cases (with `payments_module.dart`, `safety_module.dart` and
-  `rewards_module.dart` for F11/F13, F12/F14 and F15/F16). Tests register fake
+  use cases (with `payments_module.dart`, `safety_module.dart`,
+  `rewards_module.dart` and `scheduling_module.dart` for F11/F13, F12/F14,
+  F15/F16 and F17). Tests register fake
   repositories and reuse the real use cases.
 - The router (`go_router`) redirects from `SessionCubit` state: unknown →
   splash, signed-out → `/auth/*`, new rider → terms, driver not approved →
@@ -506,6 +614,14 @@ Features: `auth`, `driver_onboarding`, `passenger_home`, `rides`, `wallet`,
 | `FavoriteDriversCubit`   | favorite_drivers   | my favourite drivers, removal                     |
 | `AvailableFavoritesCubit`| favorite_drivers   | favourites available now around the pickup (debounce + 30 s refresh) |
 | `AddFavoriteCubit`       | favorite_drivers   | add the driver of a completed trip (`tripId`), already-a-favourite |
+| `ScheduleTimeCubit`      | scheduled_rides    | booking window from the rules, day / hour / minute picker, confirmed time, `recheck` (injectable clock) |
+| `ScheduledTripsCubit`    | scheduled_rides    | rider's open bookings, 60 s refresh               |
+| `ScheduledDetailCubit`   | scheduled_rides    | one booking, countdown, 30 s re-read              |
+| `MarketplaceCubit`       | scheduled_rides    | driver marketplace: day filter, paging, 60 s refresh, reserve |
+| `ReservationsCubit`      | scheduled_rides    | driver reservations, T-60 / T-15 confirmation countdowns, confirm, release, push reload |
+| `ScheduledTabCubit`      | scheduled_rides    | market / mine tab                                 |
+| `AirportPickupCubit`     | airport            | airports catalog, resolve, airport / direction / zone / terminal / flight number |
+| `AirportQueueCubit`      | airport            | driver queue status, join / leave, hub + 30 s poll |
 
 ## API
 
@@ -514,7 +630,8 @@ endpoints of `docs/06-feature-f8-trip-lifecycle.md` and the F10 pricing
 endpoints of `docs/07-feature-f9-f10-matching-pricing.md` and the passenger /
 driver endpoints of `docs/08-feature-f11-f13-payments-notifications.md` and
 `docs/09-feature-f12-f14-safety-cancellation.md` and the F15 / F16 endpoints of
-`docs/10-feature-f15-f16-ratings-promotions-favorites.md` live in each feature's
+`docs/10-feature-f15-f16-ratings-promotions-favorites.md` and the F17 endpoints of
+`docs/11-feature-f17-f18-scheduled-airport-support.md` live in each feature's
 `data/datasources`. `core/network/api_client.dart` adds
 `Accept-Language`, `X-Device-Id` and the Bearer token, refreshes the token
 once on 401 through `/auth/refresh`, and maps the error envelope

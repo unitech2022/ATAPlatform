@@ -1,4 +1,5 @@
 import 'package:ata_app/core/usecases/use_case.dart';
+import 'package:ata_app/features/airport/domain/entities/airport_selection.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/catalog/domain/usecases/get_ride_categories.dart';
 import 'package:ata_app/features/favorite_drivers/domain/entities/available_favorite.dart';
@@ -69,7 +70,24 @@ class HomeCubit extends Cubit<HomeState> {
     _emitWithEstimate(state.copyWith(stops: stops));
   }
 
-  void selectRideTime(RideTime time) => emit(state.copyWith(rideTime: time));
+  void selectRideTime(RideTime time) => emit(
+    state.copyWith(rideTime: time, clearScheduledAt: time == RideTime.now),
+  );
+
+  /// Applies the time confirmed in `ScheduleTimeCubit` (F17): a time books
+  /// a scheduled ride, `null` goes back to "now". Re-pricing follows.
+  void applyScheduledAt(DateTime? at) => emit(
+    at == null
+        ? state.copyWith(rideTime: RideTime.now, clearScheduledAt: true)
+        : state.copyWith(rideTime: RideTime.scheduled, scheduledAt: at),
+  );
+
+  /// Applies the airport chosen in `AirportPickupCubit` (F17), or drops it.
+  void applyAirport(AirportSelection? selection) => emit(
+    selection == null
+        ? state.copyWith(clearAirport: true)
+        : state.copyWith(airport: selection),
+  );
 
   void selectPayment(PaymentOption option) =>
       emit(state.copyWith(payment: option));

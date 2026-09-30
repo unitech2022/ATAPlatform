@@ -5,6 +5,9 @@ import 'package:equatable/equatable.dart';
 enum TripStatus {
   completed('completed'),
   cancelled('cancelled'),
+
+  /// A booking waiting for its time (F17).
+  scheduled('scheduled'),
   active('active');
 
   const TripStatus(this.apiValue);
@@ -15,6 +18,7 @@ enum TripStatus {
   /// `searching`, `in_trip`, ...) to a list bucket.
   static TripStatus parse(String? value) => switch (value) {
     'completed' => completed,
+    'scheduled' => scheduled,
     'cancelled' || 'no_drivers' => cancelled,
     _ => active,
   };

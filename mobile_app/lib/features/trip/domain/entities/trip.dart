@@ -1,6 +1,8 @@
+import 'package:ata_app/features/trip/domain/entities/trip_airport.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_cancellation.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_rewards.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_scheduling.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_stop.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_timeline.dart';
@@ -58,6 +60,8 @@ class Trip extends Equatable {
     this.rating = const TripRatingInfo(),
     this.promotion,
     this.favorite,
+    this.scheduling,
+    this.airport,
   });
 
   /// Trip event recorded when a card capture failed and the fare moved to
@@ -108,6 +112,12 @@ class Trip extends Equatable {
 
   /// Favourite driver requested for this trip and how it went (F16).
   final TripFavorite? favorite;
+
+  /// Scheduled booking details (F17); `null` for immediate trips.
+  final TripScheduling? scheduling;
+
+  /// Airport pickup / dropoff details (F17); `null` otherwise.
+  final TripAirport? airport;
 
   bool get isScheduled => bookingType == 'scheduled';
 
@@ -164,6 +174,8 @@ class Trip extends Equatable {
     rating: rating,
     promotion: promotion,
     favorite: favorite,
+    scheduling: scheduling,
+    airport: airport,
   );
 
   @override
@@ -201,5 +213,7 @@ class Trip extends Equatable {
     rating,
     promotion,
     favorite,
+    scheduling,
+    airport,
   ];
 }

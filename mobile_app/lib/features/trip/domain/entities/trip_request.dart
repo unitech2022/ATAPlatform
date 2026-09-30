@@ -28,6 +28,9 @@ class TripRequest extends Equatable {
     this.riderNote,
     this.promoCode,
     this.favoriteDriverId,
+    this.airportPickupZoneId,
+    this.airportTerminalCode,
+    this.flightNumber,
   });
 
   final TripStop pickup;
@@ -53,6 +56,15 @@ class TripRequest extends Equatable {
   /// Not offered with `pricingMode: offer`.
   final String? favoriteDriverId;
 
+  /// Airport pickup zone (`422 airport_pickup_zone_required` without it, F17).
+  final String? airportPickupZoneId;
+
+  /// Optional terminal of an airport dropoff.
+  final String? airportTerminalCode;
+
+  /// Optional, normalized flight number (`^[A-Z0-9]{2}[0-9]{1,4}[A-Z]?$`).
+  final String? flightNumber;
+
   TripRequest copyWith({
     PricingMode? pricingMode,
     double? offeredPrice,
@@ -75,6 +87,9 @@ class TripRequest extends Equatable {
     riderNote: riderNote,
     promoCode: clearPromoCode ? null : promoCode,
     favoriteDriverId: clearFavoriteDriver ? null : favoriteDriverId,
+    airportPickupZoneId: airportPickupZoneId,
+    airportTerminalCode: airportTerminalCode,
+    flightNumber: flightNumber,
   );
 
   @override
@@ -93,5 +108,8 @@ class TripRequest extends Equatable {
     riderNote,
     promoCode,
     favoriteDriverId,
+    airportPickupZoneId,
+    airportTerminalCode,
+    flightNumber,
   ];
 }

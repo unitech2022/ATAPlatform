@@ -1,4 +1,7 @@
+import 'package:ata_app/app/router/app_routes.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
+import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_cubit.dart';
+import 'package:ata_app/features/airport/presentation/cubit/airport_pickup_state.dart';
 import 'package:ata_app/features/favorite_drivers/presentation/cubit/available_favorites_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
@@ -9,12 +12,15 @@ import 'package:ata_app/features/pricing/presentation/cubit/quote_cubit.dart';
 import 'package:ata_app/features/pricing/presentation/cubit/quote_state.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_cubit.dart';
 import 'package:ata_app/features/promotions/presentation/cubit/promo_code_state.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/schedule_time_cubit.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/schedule_time_state.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:ata_app/features/trip/presentation/cubit/active_trip_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// Cubit-to-cubit wiring of the rider home (listeners only, no state):
 ///
@@ -26,6 +32,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// * promo code (F15): applied code → [HomeCubit] (re-quote with
 ///   `promoCode`); a quote or request refusing it → [PromoCodeCubit] error;
 ///   a pre-filled code is validated once the first quote arrives;
+/// * scheduling (F17): the time confirmed in [ScheduleTimeCubit] and the
+///   airport chosen in [AirportPickupCubit] go to [HomeCubit] (re-quote); a
+///   booked scheduled ride opens its detail page;
 /// * favourite driver (F16): the selection is sent with the quote; a category
 ///   change re-reads the available favourites; `not_favorite` on the request
 ///   clears the selection. A `not_stacked` promo stays applied (only
@@ -43,11 +52,25 @@ class HomeSync extends StatelessWidget {
           listenWhen: (HomeState p, HomeState c) =>
               p.stops != c.stops ||
               p.rideTime != c.rideTime ||
+              p.scheduledAt != c.scheduledAt ||
+              p.airport != c.airport ||
               p.effectivePromoCode != c.effectivePromoCode ||
               p.effectiveFavoriteDriverId != c.effectiveFavoriteDriverId,
           listener: (BuildContext context, HomeState state) => context
               .read<QuoteCubit>()
               .update(buildQuoteRequest(state, context.l10n)),
+        ),
+        BlocListener<ScheduleTimeCubit, ScheduleTimeState>(
+          listenWhen: (ScheduleTimeState p, ScheduleTimeState c) =>
+              p.confirmed != c.confirmed,
+          listener: (BuildContext context, ScheduleTimeState state) =>
+              context.read<HomeCubit>().applyScheduledAt(state.confirmed),
+        ),
+        BlocListener<AirportPickupCubit, AirportPickupState>(
+          listenWhen: (AirportPickupState p, AirportPickupState c) =>
+              p.selection != c.selection,
+          listener: (BuildContext context, AirportPickupState state) =>
+              context.read<HomeCubit>().applyAirport(state.selection),
         ),
         BlocListener<HomeCubit, HomeState>(
           listenWhen: (HomeState p, HomeState c) =>
@@ -103,6 +126,26 @@ class HomeSync extends StatelessWidget {
               context.read<HomeCubit>().clampOfferedPrice(bounds);
             }
             if (state.isQuoteExpired) context.read<QuoteCubit>().refresh();
+            if (state.isScheduleRejected) {
+              context.read<ScheduleTimeCubit>().recheck();
+            }
+          },
+        ),
+        BlocListener<TripRequestCubit, TripRequestState>(
+          listenWhen: (TripRequestState p, TripRequestState c) =>
+              !p.isScheduled && c.isScheduled && c.trip != null,
+          // A scheduled booking is not an active trip: back to "now" and
+          // on to the booking's detail page.
+          listener: (BuildContext context, TripRequestState state) {
+            final String tripId = state.trip!.id;
+            context.read<TripRequestCubit>().reset();
+            context.read<ScheduleTimeCubit>().clear();
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(context.l10n.scheduleBooked)),
+              );
+            context.go(AppRoutes.scheduledTrip(tripId));
           },
         ),
         BlocListener<TripRequestCubit, TripRequestState>(

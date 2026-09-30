@@ -818,12 +818,6 @@ abstract class AppLocalizations {
   /// **'جدولة'**
   String get timeSchedule;
 
-  /// No description provided for @scheduleComingSoon.
-  ///
-  /// In ar, this message translates to:
-  /// **'الجدولة متاحة قريباً (حتى 7 أيام مسبقاً)'**
-  String get scheduleComingSoon;
-
   /// No description provided for @femaleDriverTitle.
   ///
   /// In ar, this message translates to:
@@ -5616,6 +5610,894 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'عرض حصري لك'**
   String get offerFavoriteExclusive;
+
+  /// No description provided for @airportCategoryNotApplicableError.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة المطار متاحة لرحلات المطار فقط'**
+  String get airportCategoryNotApplicableError;
+
+  /// No description provided for @airportChoose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المطار واتجاه رحلتك'**
+  String get airportChoose;
+
+  /// No description provided for @airportChooseTerminal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصالة (اختياري)'**
+  String get airportChooseTerminal;
+
+  /// No description provided for @airportChooseZone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر منطقة الالتقاط'**
+  String get airportChooseZone;
+
+  /// No description provided for @airportDirectionDropoff.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى المطار'**
+  String get airportDirectionDropoff;
+
+  /// No description provided for @airportDirectionPickup.
+  ///
+  /// In ar, this message translates to:
+  /// **'من المطار'**
+  String get airportDirectionPickup;
+
+  /// No description provided for @airportDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get airportDone;
+
+  /// No description provided for @airportFlightHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: SV1020'**
+  String get airportFlightHint;
+
+  /// No description provided for @airportFlightInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الرحلة غير صحيح، مثال: SV1020'**
+  String get airportFlightInvalid;
+
+  /// No description provided for @airportFlightLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الرحلة الجوية (اختياري)'**
+  String get airportFlightLabel;
+
+  /// No description provided for @airportFlightLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة {flight}'**
+  String airportFlightLine(String flight);
+
+  /// No description provided for @airportNoAirports.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مطارات متاحة حالياً'**
+  String get airportNoAirports;
+
+  /// No description provided for @airportNoDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحدد الصالة بعد'**
+  String get airportNoDetails;
+
+  /// No description provided for @airportPickupZoneRequiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر منطقة الالتقاط في المطار'**
+  String get airportPickupZoneRequiredError;
+
+  /// No description provided for @airportQueueCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُوزَّع رحلات المطار على الكباتن بترتيب الوصول: الأول فالأول.'**
+  String get airportQueueCopy;
+
+  /// No description provided for @airportQueueEligible.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت داخل منطقة انتظار {airport}'**
+  String airportQueueEligible(String airport);
+
+  /// No description provided for @airportQueueExitNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا غادرت منطقة الانتظار أو انقطع اتصالك لفترة تخرج من الطابور تلقائياً.'**
+  String get airportQueueExitNote;
+
+  /// No description provided for @airportQueueEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'المطار'**
+  String get airportQueueEyebrow;
+
+  /// No description provided for @airportQueueJoin.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم للطابور'**
+  String get airportQueueJoin;
+
+  /// No description provided for @airportQueueJoinHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'انضم لاستلام رحلات المطار بالترتيب'**
+  String get airportQueueJoinHint;
+
+  /// No description provided for @airportQueueLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'غادر الطابور'**
+  String get airportQueueLeave;
+
+  /// No description provided for @airportQueueNotNearby.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت لست في منطقة انتظار مطار حالياً'**
+  String get airportQueueNotNearby;
+
+  /// No description provided for @airportQueuePosition.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترتيبك {position} من {total}'**
+  String airportQueuePosition(int position, int total);
+
+  /// No description provided for @airportQueueTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طابور المطار'**
+  String get airportQueueTitle;
+
+  /// No description provided for @airportQueueWait.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانتظار المتوقع نحو {minutes} دقيقة'**
+  String airportQueueWait(int minutes);
+
+  /// No description provided for @airportRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة'**
+  String get airportRemove;
+
+  /// No description provided for @airportRowCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المطار والصالة ورقم الرحلة'**
+  String get airportRowCopy;
+
+  /// No description provided for @airportRowTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة من أو إلى مطار؟'**
+  String get airportRowTitle;
+
+  /// No description provided for @airportSheetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المطار'**
+  String get airportSheetTitle;
+
+  /// No description provided for @airportTerminalLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'صالة {code}'**
+  String airportTerminalLabel(String code);
+
+  /// No description provided for @airportWaitingFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتظار مجاني {minutes} د'**
+  String airportWaitingFree(int minutes);
+
+  /// No description provided for @airportWaitingPolicyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحصل على {minutes} دقيقة انتظار مجاناً عند الالتقاط، وبعدها تُحتسب رسوم الانتظار.'**
+  String airportWaitingPolicyCopy(int minutes);
+
+  /// No description provided for @airportWaitingPolicyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الانتظار'**
+  String get airportWaitingPolicyTitle;
+
+  /// No description provided for @countdownDaysHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} يوم و{hours} ساعة'**
+  String countdownDaysHours(int days, int hours);
+
+  /// No description provided for @countdownHoursMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{hours} ساعة و{minutes} دقيقة'**
+  String countdownHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @driverScheduledCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات مجدولة قادمة في منطقتك. احجز ما يناسبك وأكّد قبل الموعد.'**
+  String get driverScheduledCopy;
+
+  /// No description provided for @driverScheduledEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجوزات'**
+  String get driverScheduledEyebrow;
+
+  /// No description provided for @driverScheduledLinkCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'السوق وحجوزاتك القادمة'**
+  String get driverScheduledLinkCopy;
+
+  /// No description provided for @driverScheduledNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرب حجز: {time}'**
+  String driverScheduledNext(String time);
+
+  /// No description provided for @driverScheduledTabMarket.
+  ///
+  /// In ar, this message translates to:
+  /// **'السوق'**
+  String get driverScheduledTabMarket;
+
+  /// No description provided for @driverScheduledTabMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجوزاتي'**
+  String get driverScheduledTabMine;
+
+  /// No description provided for @driverScheduledTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلاتي المجدولة'**
+  String get driverScheduledTitle;
+
+  /// No description provided for @marketAirportBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطار'**
+  String get marketAirportBadge;
+
+  /// No description provided for @marketApproxPickup.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقع الالتقاط تقريبي حتى الحجز'**
+  String get marketApproxPickup;
+
+  /// No description provided for @marketDayAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get marketDayAll;
+
+  /// No description provided for @marketDistanceToPickup.
+  ///
+  /// In ar, this message translates to:
+  /// **'{km} كم عنك'**
+  String marketDistanceToPickup(String km);
+
+  /// No description provided for @marketEmptyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحدّث القائمة تلقائياً كل دقيقة'**
+  String get marketEmptyCopy;
+
+  /// No description provided for @marketEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات مجدولة الآن'**
+  String get marketEmptyTitle;
+
+  /// No description provided for @marketExclusiveUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصرية لك حتى {time}'**
+  String marketExclusiveUntil(String time);
+
+  /// No description provided for @marketFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجرة {price}'**
+  String marketFare(String price);
+
+  /// No description provided for @marketLoadMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض المزيد'**
+  String get marketLoadMore;
+
+  /// No description provided for @marketNetEarnings.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي أرباحك'**
+  String get marketNetEarnings;
+
+  /// No description provided for @marketReserve.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز الرحلة'**
+  String get marketReserve;
+
+  /// No description provided for @marketReserved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حجز الرحلة، ستجدها في حجوزاتي'**
+  String get marketReserved;
+
+  /// No description provided for @notInAirportWaitingAreaError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن تكون داخل منطقة انتظار المطار'**
+  String get notInAirportWaitingAreaError;
+
+  /// No description provided for @reservationConfirmAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get reservationConfirmAction;
+
+  /// No description provided for @reservationConfirmCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة مجدولة {time}. أكّد قبل انتهاء المهلة وإلا سيُحرَّر الحجز.'**
+  String reservationConfirmCopy(String time);
+
+  /// No description provided for @reservationConfirmFinalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التأكيد النهائي: استعد للانطلاق'**
+  String get reservationConfirmFinalTitle;
+
+  /// No description provided for @reservationConfirmFirstTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكّد حجزك'**
+  String get reservationConfirmFirstTitle;
+
+  /// No description provided for @reservationConfirmLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي {time}'**
+  String reservationConfirmLeft(String time);
+
+  /// No description provided for @reservationConfirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تأكيد الحجز'**
+  String get reservationConfirmed;
+
+  /// No description provided for @reservationConflictError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتعارض الموعد مع رحلة محجوزة لديك'**
+  String get reservationConflictError;
+
+  /// No description provided for @reservationDetailEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجز مجدول'**
+  String get reservationDetailEyebrow;
+
+  /// No description provided for @reservationFare.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجرة التقديرية'**
+  String get reservationFare;
+
+  /// No description provided for @reservationFinalConfirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التأكيد النهائي، ستبدأ الرحلة في موعدها'**
+  String get reservationFinalConfirmed;
+
+  /// No description provided for @reservationFreeReleaseLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحرير مجاني حتى'**
+  String get reservationFreeReleaseLabel;
+
+  /// No description provided for @reservationLimitReachedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد الأقصى من الحجوزات'**
+  String get reservationLimitReachedError;
+
+  /// No description provided for @reservationNotConfirmableError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن التأكيد الآن'**
+  String get reservationNotConfirmableError;
+
+  /// No description provided for @reservationNotConfirmableOfflineError.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل حالة «متصل» لتأكيد الحجز'**
+  String get reservationNotConfirmableOfflineError;
+
+  /// No description provided for @reservationNotConfirmableOnTripError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديك رحلة جارية، أنهِها أولاً لتأكيد الحجز'**
+  String get reservationNotConfirmableOnTripError;
+
+  /// No description provided for @reservationNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم العثور على هذا الحجز'**
+  String get reservationNotFound;
+
+  /// No description provided for @reservationPassenger.
+  ///
+  /// In ar, this message translates to:
+  /// **'الراكب'**
+  String get reservationPassenger;
+
+  /// No description provided for @reservationReleaseAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحرير الحجز'**
+  String get reservationReleaseAction;
+
+  /// No description provided for @reservationReleaseConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'نعم، حرّر'**
+  String get reservationReleaseConfirm;
+
+  /// No description provided for @reservationReleaseFreeCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحرير مجاني حتى {time}.'**
+  String reservationReleaseFreeCopy(String time);
+
+  /// No description provided for @reservationReleaseLateCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة التحرير المجاني؛ سيتم خصم نقاط من موثوقيتك، وقد يؤثر ذلك على أولوية الطلبات والحوافز.'**
+  String get reservationReleaseLateCopy;
+
+  /// No description provided for @reservationReleaseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحرير الحجز؟'**
+  String get reservationReleaseTitle;
+
+  /// No description provided for @reservationReleased.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحرير الحجز'**
+  String get reservationReleased;
+
+  /// No description provided for @reservationReleasedPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحرير الحجز وخُصمت {points} نقاط من موثوقيتك'**
+  String reservationReleasedPoints(int points);
+
+  /// No description provided for @reservationStatusAssigned.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسندة إليك'**
+  String get reservationStatusAssigned;
+
+  /// No description provided for @reservationStatusCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get reservationStatusCancelled;
+
+  /// No description provided for @reservationStatusCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get reservationStatusCompleted;
+
+  /// No description provided for @reservationStatusConfirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤكدة'**
+  String get reservationStatusConfirmed;
+
+  /// No description provided for @reservationStatusNoShow.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدم حضور'**
+  String get reservationStatusNoShow;
+
+  /// No description provided for @reservationStatusReleased.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُحرَّرة'**
+  String get reservationStatusReleased;
+
+  /// No description provided for @reservationStatusReserved.
+  ///
+  /// In ar, this message translates to:
+  /// **'محجوزة'**
+  String get reservationStatusReserved;
+
+  /// No description provided for @reservationTakenError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حجز هذه الرحلة من كابتن آخر'**
+  String get reservationTakenError;
+
+  /// No description provided for @reservationsActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'القادمة'**
+  String get reservationsActive;
+
+  /// No description provided for @reservationsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حجوزات هنا'**
+  String get reservationsEmpty;
+
+  /// No description provided for @reservationsHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابقة'**
+  String get reservationsHistory;
+
+  /// No description provided for @scheduleBooked.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حجز رحلتك المجدولة'**
+  String get scheduleBooked;
+
+  /// No description provided for @scheduleConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الموعد'**
+  String get scheduleConfirm;
+
+  /// No description provided for @scheduleConfirmedExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يعد الموعد ضمن المدة المتاحة، اختر موعداً جديداً'**
+  String get scheduleConfirmedExpired;
+
+  /// No description provided for @scheduleConfirmedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'موعد الرحلة'**
+  String get scheduleConfirmedLabel;
+
+  /// No description provided for @scheduleDayHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get scheduleDayHeading;
+
+  /// No description provided for @scheduleEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get scheduleEdit;
+
+  /// No description provided for @scheduleFavoritePriority.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن المفضل {name} يحصل على أولوية حجز رحلتك قبل بقية الكباتن'**
+  String scheduleFavoritePriority(String name);
+
+  /// No description provided for @scheduleFixedPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر ثابت للموعد · بدون رسوم ذروة'**
+  String get scheduleFixedPrice;
+
+  /// No description provided for @scheduleHourHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الساعة'**
+  String get scheduleHourHeading;
+
+  /// No description provided for @scheduleLeadTooShortError.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب أن يكون الموعد بعد 30 دقيقة على الأقل'**
+  String get scheduleLeadTooShortError;
+
+  /// No description provided for @scheduleLeadTooShortUntilError.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرب موعد متاح {time}'**
+  String scheduleLeadTooShortUntilError(String time);
+
+  /// No description provided for @scheduleMinuteHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدقيقة'**
+  String get scheduleMinuteHeading;
+
+  /// No description provided for @scheduleNothingPicked.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر اليوم والوقت'**
+  String get scheduleNothingPicked;
+
+  /// No description provided for @schedulePickerCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز بعد {lead} على الأقل وحتى {window} من الآن'**
+  String schedulePickerCopy(String lead, String window);
+
+  /// No description provided for @schedulePickerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'متى تريد رحلتك؟'**
+  String get schedulePickerTitle;
+
+  /// No description provided for @scheduleRide.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز {name} · {price}'**
+  String scheduleRide(String name, String price);
+
+  /// No description provided for @scheduleRulesFallback.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل شروط الجدولة، نستخدم القيم الافتراضية.'**
+  String get scheduleRulesFallback;
+
+  /// No description provided for @scheduleSelectedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموعد المختار'**
+  String get scheduleSelectedLabel;
+
+  /// No description provided for @scheduleTooFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبعد موعد متاح {time}'**
+  String scheduleTooFar(String time);
+
+  /// No description provided for @scheduleTooSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقرب موعد متاح {time}'**
+  String scheduleTooSoon(String time);
+
+  /// No description provided for @scheduleWindowDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days, plural, =1{يوم واحد} =2{يومين} few{{days} أيام} other{{days} يوماً}}'**
+  String scheduleWindowDays(int days);
+
+  /// No description provided for @scheduleWindowExceededError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن الجدولة لأكثر من 7 أيام من الآن'**
+  String get scheduleWindowExceededError;
+
+  /// No description provided for @scheduleWindowExceededUntilError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن الجدولة بعد {time}'**
+  String scheduleWindowExceededUntilError(String time);
+
+  /// No description provided for @scheduledBookNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز رحلة'**
+  String get scheduledBookNew;
+
+  /// No description provided for @scheduledCancelButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الحجز'**
+  String get scheduledCancelButton;
+
+  /// No description provided for @scheduledCancelledTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الحجز'**
+  String get scheduledCancelledTitle;
+
+  /// No description provided for @scheduledCountdownLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'يبدأ بعد'**
+  String get scheduledCountdownLabel;
+
+  /// No description provided for @scheduledDetailEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة مجدولة'**
+  String get scheduledDetailEyebrow;
+
+  /// No description provided for @scheduledDriverConfirmedBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤكد'**
+  String get scheduledDriverConfirmedBadge;
+
+  /// No description provided for @scheduledDriverReservedBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'محجوز'**
+  String get scheduledDriverReservedBadge;
+
+  /// No description provided for @scheduledDriverTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن المحجوز'**
+  String get scheduledDriverTitle;
+
+  /// No description provided for @scheduledEmptyCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'احجز رحلتك من الرئيسية واختر «جدولة»'**
+  String get scheduledEmptyCopy;
+
+  /// No description provided for @scheduledEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد رحلات مجدولة'**
+  String get scheduledEmptyTitle;
+
+  /// No description provided for @scheduledFareLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجرة التقديرية'**
+  String get scheduledFareLabel;
+
+  /// No description provided for @scheduledLateCancelNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مدة الإلغاء المجاني، وقد تُطبَّق رسوم عند الإلغاء (ستراها قبل التأكيد).'**
+  String get scheduledLateCancelNote;
+
+  /// No description provided for @scheduledLimitReachedError.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد الأقصى من الرحلات المجدولة'**
+  String get scheduledLimitReachedError;
+
+  /// No description provided for @scheduledLimitReachedMaxError.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد الأقصى من الرحلات المجدولة ({max})'**
+  String scheduledLimitReachedMaxError(int max);
+
+  /// No description provided for @scheduledLinkCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجوزاتك القادمة وحالتها'**
+  String get scheduledLinkCopy;
+
+  /// No description provided for @scheduledNoDriverYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يحجز أي كابتن رحلتك بعد، وسنبدأ البحث تلقائياً قبل الموعد.'**
+  String get scheduledNoDriverYet;
+
+  /// No description provided for @scheduledPhaseConfirmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكابتن مؤكد'**
+  String get scheduledPhaseConfirmed;
+
+  /// No description provided for @scheduledPhaseEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت'**
+  String get scheduledPhaseEnded;
+
+  /// No description provided for @scheduledPhaseInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرحلة جارية'**
+  String get scheduledPhaseInProgress;
+
+  /// No description provided for @scheduledPhaseReserved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حجزها من كابتن'**
+  String get scheduledPhaseReserved;
+
+  /// No description provided for @scheduledPhaseSearching.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ البحث عن كابتن'**
+  String get scheduledPhaseSearching;
+
+  /// No description provided for @scheduledPhaseWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار كابتن'**
+  String get scheduledPhaseWaiting;
+
+  /// No description provided for @scheduledSearchStartedCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأ البحث عن كابتن لرحلتك، تابعها من شاشة الرحلة.'**
+  String get scheduledSearchStartedCopy;
+
+  /// No description provided for @scheduledSearchStartsAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إن لم يحجزها كابتن سنبدأ البحث {time}'**
+  String scheduledSearchStartsAt(String time);
+
+  /// No description provided for @scheduledTrackTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تتبع الرحلة'**
+  String get scheduledTrackTrip;
+
+  /// No description provided for @scheduledTripTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة مجدولة'**
+  String get scheduledTripTitle;
+
+  /// No description provided for @scheduledTripsCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلاتك القادمة مرتبة حسب الموعد'**
+  String get scheduledTripsCopy;
+
+  /// No description provided for @scheduledTripsEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجوزات'**
+  String get scheduledTripsEyebrow;
+
+  /// No description provided for @scheduledTripsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلاتي المجدولة'**
+  String get scheduledTripsTitle;
+
+  /// No description provided for @tripAirportDropoff.
+  ///
+  /// In ar, this message translates to:
+  /// **'توصيل إلى مطار {code}'**
+  String tripAirportDropoff(String code);
+
+  /// No description provided for @tripAirportPickup.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلام من مطار {code}'**
+  String tripAirportPickup(String code);
+
+  /// No description provided for @tripStatusScheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجدولة'**
+  String get tripStatusScheduled;
+
+  /// No description provided for @reservationOpenMarket.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح السوق'**
+  String get reservationOpenMarket;
+
+  /// No description provided for @reservationNotConfirmableNotDueError.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يحن وقت التأكيد بعد'**
+  String get reservationNotConfirmableNotDueError;
+
+  /// No description provided for @reservationNotConfirmableExpiredError.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت مهلة التأكيد'**
+  String get reservationNotConfirmableExpiredError;
 }
 
 class _AppLocalizationsDelegate

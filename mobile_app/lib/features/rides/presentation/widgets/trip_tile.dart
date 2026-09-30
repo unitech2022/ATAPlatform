@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
     switch (status) {
       TripStatus.completed => (l10n.tripStatusCompleted, AtaColors.brand),
       TripStatus.cancelled => (l10n.tripStatusCancelled, AtaColors.muted),
+      TripStatus.scheduled => (l10n.tripStatusScheduled, AtaColors.warning),
       TripStatus.active => (l10n.tripStatusActive, AtaColors.ink),
     };
 

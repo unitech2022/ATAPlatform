@@ -1,4 +1,5 @@
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
+import 'package:ata_app/features/trip/data/models/trip_scheduling_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_stop_model.dart';
 import 'package:ata_app/features/trip/domain/entities/offer.dart';
 
@@ -22,6 +23,8 @@ class OfferModel extends Offer {
     super.round,
     super.isFavoriteRequest,
     super.exclusive,
+    super.scheduledAt,
+    super.airport,
   });
 
   static const String offerPricingMode = 'offer';
@@ -58,6 +61,8 @@ class OfferModel extends Offer {
       round: JsonReaders.optionalInteger(json, 'round') ?? 1,
       isFavoriteRequest: json['isFavoriteRequest'] == true,
       exclusive: json['exclusive'] == true,
+      scheduledAt: JsonReaders.date(json, 'scheduledAt'),
+      airport: TripSchedulingModel.airport(json),
     );
   }
 
@@ -77,6 +82,8 @@ class OfferModel extends Offer {
     'round': round,
     'isFavoriteRequest': isFavoriteRequest,
     'exclusive': exclusive,
+    'scheduledAt': scheduledAt?.toIso8601String(),
+    'airport': TripSchedulingModel.airportJson(airport),
     'passenger': <String, dynamic>{
       'firstName': passengerFirstName,
       'ratingAvg': passengerRating,

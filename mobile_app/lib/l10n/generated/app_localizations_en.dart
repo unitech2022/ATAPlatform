@@ -407,10 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timeSchedule => 'Schedule';
 
   @override
-  String get scheduleComingSoon =>
-      'Scheduling is coming soon (up to 7 days ahead)';
-
-  @override
   String get femaleDriverTitle => 'I prefer a female driver';
 
   @override
@@ -3164,4 +3160,542 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offerFavoriteExclusive => 'Exclusive to you';
+
+  @override
+  String get airportCategoryNotApplicableError =>
+      'The airport category is only for airport trips';
+
+  @override
+  String get airportChoose =>
+      'Choose the airport and the direction of your trip';
+
+  @override
+  String get airportChooseTerminal => 'Terminal (optional)';
+
+  @override
+  String get airportChooseZone => 'Choose a pickup zone';
+
+  @override
+  String get airportDirectionDropoff => 'To the airport';
+
+  @override
+  String get airportDirectionPickup => 'From the airport';
+
+  @override
+  String get airportDone => 'Done';
+
+  @override
+  String get airportFlightHint => 'e.g. SV1020';
+
+  @override
+  String get airportFlightInvalid => 'Invalid flight number, e.g. SV1020';
+
+  @override
+  String get airportFlightLabel => 'Flight number (optional)';
+
+  @override
+  String airportFlightLine(String flight) {
+    return 'Flight $flight';
+  }
+
+  @override
+  String get airportNoAirports => 'No airports available right now';
+
+  @override
+  String get airportNoDetails => 'No terminal selected yet';
+
+  @override
+  String get airportPickupZoneRequiredError =>
+      'Choose a pickup zone at the airport';
+
+  @override
+  String get airportQueueCopy =>
+      'Airport trips go to drivers in arrival order: first come, first served.';
+
+  @override
+  String airportQueueEligible(String airport) {
+    return 'You are in the $airport waiting area';
+  }
+
+  @override
+  String get airportQueueExitNote =>
+      'If you leave the waiting area or go offline for a while you are removed from the queue automatically.';
+
+  @override
+  String get airportQueueEyebrow => 'Airport';
+
+  @override
+  String get airportQueueJoin => 'Join the queue';
+
+  @override
+  String get airportQueueJoinHint => 'Join to receive airport trips in order';
+
+  @override
+  String get airportQueueLeave => 'Leave the queue';
+
+  @override
+  String get airportQueueNotNearby =>
+      'You are not in an airport waiting area right now';
+
+  @override
+  String airportQueuePosition(int position, int total) {
+    return 'You are $position of $total';
+  }
+
+  @override
+  String get airportQueueTitle => 'Airport queue';
+
+  @override
+  String airportQueueWait(int minutes) {
+    return 'Estimated wait about $minutes min';
+  }
+
+  @override
+  String get airportRemove => 'Remove';
+
+  @override
+  String get airportRowCopy => 'Choose the airport, terminal and flight number';
+
+  @override
+  String get airportRowTitle => 'Trip to or from an airport?';
+
+  @override
+  String get airportSheetTitle => 'Airport';
+
+  @override
+  String airportTerminalLabel(String code) {
+    return 'Terminal $code';
+  }
+
+  @override
+  String airportWaitingFree(int minutes) {
+    return '$minutes min free waiting';
+  }
+
+  @override
+  String airportWaitingPolicyCopy(int minutes) {
+    return 'You get $minutes minutes of free waiting at pickup; waiting fees apply after that.';
+  }
+
+  @override
+  String get airportWaitingPolicyTitle => 'Waiting policy';
+
+  @override
+  String countdownDaysHours(int days, int hours) {
+    return '$days d $hours h';
+  }
+
+  @override
+  String countdownHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get driverScheduledCopy =>
+      'Upcoming scheduled requests in your area. Reserve what suits you and confirm before the time.';
+
+  @override
+  String get driverScheduledEyebrow => 'Reservations';
+
+  @override
+  String get driverScheduledLinkCopy =>
+      'Marketplace and your upcoming reservations';
+
+  @override
+  String driverScheduledNext(String time) {
+    return 'Next reservation: $time';
+  }
+
+  @override
+  String get driverScheduledTabMarket => 'Marketplace';
+
+  @override
+  String get driverScheduledTabMine => 'My reservations';
+
+  @override
+  String get driverScheduledTitle => 'My scheduled rides';
+
+  @override
+  String get marketAirportBadge => 'Airport';
+
+  @override
+  String get marketApproxPickup =>
+      'Pickup location is approximate until you reserve';
+
+  @override
+  String get marketDayAll => 'All';
+
+  @override
+  String marketDistanceToPickup(String km) {
+    return '$km km away';
+  }
+
+  @override
+  String get marketEmptyCopy => 'The list refreshes every minute';
+
+  @override
+  String get marketEmptyTitle => 'No scheduled requests right now';
+
+  @override
+  String marketExclusiveUntil(String time) {
+    return 'Exclusive to you until $time';
+  }
+
+  @override
+  String marketFare(String price) {
+    return 'Fare $price';
+  }
+
+  @override
+  String get marketLoadMore => 'Show more';
+
+  @override
+  String get marketNetEarnings => 'Your net earnings';
+
+  @override
+  String get marketReserve => 'Reserve this ride';
+
+  @override
+  String get marketReserved =>
+      'Ride reserved. You will find it in My reservations';
+
+  @override
+  String get notInAirportWaitingAreaError =>
+      'You must be inside the airport waiting area';
+
+  @override
+  String get reservationConfirmAction => 'Confirm';
+
+  @override
+  String reservationConfirmCopy(String time) {
+    return 'Scheduled ride at $time. Confirm before the time runs out or the reservation is released.';
+  }
+
+  @override
+  String get reservationConfirmFinalTitle =>
+      'Final confirmation: get ready to go';
+
+  @override
+  String get reservationConfirmFirstTitle => 'Confirm your reservation';
+
+  @override
+  String reservationConfirmLeft(String time) {
+    return 'Time left $time';
+  }
+
+  @override
+  String get reservationConfirmed => 'Reservation confirmed';
+
+  @override
+  String get reservationConflictError =>
+      'This time conflicts with a ride you already reserved';
+
+  @override
+  String get reservationDetailEyebrow => 'Scheduled reservation';
+
+  @override
+  String get reservationFare => 'Estimated fare';
+
+  @override
+  String get reservationFinalConfirmed =>
+      'Final confirmation done. The ride starts at its time';
+
+  @override
+  String get reservationFreeReleaseLabel => 'Free release until';
+
+  @override
+  String get reservationLimitReachedError =>
+      'You reached the maximum number of reservations';
+
+  @override
+  String get reservationNotConfirmableError => 'Cannot confirm right now';
+
+  @override
+  String get reservationNotConfirmableOfflineError =>
+      'Go online to confirm the reservation';
+
+  @override
+  String get reservationNotConfirmableOnTripError =>
+      'You have a trip in progress. Finish it first to confirm';
+
+  @override
+  String get reservationNotFound => 'Reservation not found';
+
+  @override
+  String get reservationPassenger => 'Passenger';
+
+  @override
+  String get reservationReleaseAction => 'Release reservation';
+
+  @override
+  String get reservationReleaseConfirm => 'Yes, release';
+
+  @override
+  String reservationReleaseFreeCopy(String time) {
+    return 'Releasing is free until $time.';
+  }
+
+  @override
+  String get reservationReleaseLateCopy =>
+      'The free release window is over. Reliability points will be deducted, which can affect matching priority and incentives.';
+
+  @override
+  String get reservationReleaseTitle => 'Release this reservation?';
+
+  @override
+  String get reservationReleased => 'Reservation released';
+
+  @override
+  String reservationReleasedPoints(int points) {
+    return 'Reservation released; $points reliability points deducted';
+  }
+
+  @override
+  String get reservationStatusAssigned => 'Assigned to you';
+
+  @override
+  String get reservationStatusCancelled => 'Cancelled';
+
+  @override
+  String get reservationStatusCompleted => 'Completed';
+
+  @override
+  String get reservationStatusConfirmed => 'Confirmed';
+
+  @override
+  String get reservationStatusNoShow => 'No-show';
+
+  @override
+  String get reservationStatusReleased => 'Released';
+
+  @override
+  String get reservationStatusReserved => 'Reserved';
+
+  @override
+  String get reservationTakenError =>
+      'Another driver already reserved this ride';
+
+  @override
+  String get reservationsActive => 'Upcoming';
+
+  @override
+  String get reservationsEmpty => 'No reservations here';
+
+  @override
+  String get reservationsHistory => 'Past';
+
+  @override
+  String get scheduleBooked => 'Your scheduled ride is booked';
+
+  @override
+  String get scheduleConfirm => 'Confirm time';
+
+  @override
+  String get scheduleConfirmedExpired =>
+      'This time is no longer inside the bookable window. Pick a new time';
+
+  @override
+  String get scheduleConfirmedLabel => 'Ride time';
+
+  @override
+  String get scheduleDayHeading => 'Day';
+
+  @override
+  String get scheduleEdit => 'Edit';
+
+  @override
+  String scheduleFavoritePriority(String name) {
+    return 'Your favourite driver $name gets first pick of this booking';
+  }
+
+  @override
+  String get scheduleFixedPrice => 'Fixed price for that time · no surge';
+
+  @override
+  String get scheduleHourHeading => 'Hour';
+
+  @override
+  String get scheduleLeadTooShortError =>
+      'The time must be at least 30 minutes from now';
+
+  @override
+  String scheduleLeadTooShortUntilError(String time) {
+    return 'The earliest available time is $time';
+  }
+
+  @override
+  String get scheduleMinuteHeading => 'Minute';
+
+  @override
+  String get scheduleNothingPicked => 'Pick a day and a time';
+
+  @override
+  String schedulePickerCopy(String lead, String window) {
+    return 'Book at least $lead ahead and up to $window from now';
+  }
+
+  @override
+  String get schedulePickerTitle => 'When do you need your ride?';
+
+  @override
+  String scheduleRide(String name, String price) {
+    return 'Book $name · $price';
+  }
+
+  @override
+  String get scheduleRulesFallback =>
+      'Could not load the scheduling rules; using the defaults.';
+
+  @override
+  String get scheduleSelectedLabel => 'Selected time';
+
+  @override
+  String scheduleTooFar(String time) {
+    return 'The latest available time is $time';
+  }
+
+  @override
+  String scheduleTooSoon(String time) {
+    return 'The earliest available time is $time';
+  }
+
+  @override
+  String scheduleWindowDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get scheduleWindowExceededError =>
+      'You cannot schedule more than 7 days ahead';
+
+  @override
+  String scheduleWindowExceededUntilError(String time) {
+    return 'You cannot schedule after $time';
+  }
+
+  @override
+  String get scheduledBookNew => 'Book a ride';
+
+  @override
+  String get scheduledCancelButton => 'Cancel booking';
+
+  @override
+  String get scheduledCancelledTitle => 'Booking cancelled';
+
+  @override
+  String get scheduledCountdownLabel => 'Starts in';
+
+  @override
+  String get scheduledDetailEyebrow => 'Scheduled ride';
+
+  @override
+  String get scheduledDriverConfirmedBadge => 'Confirmed';
+
+  @override
+  String get scheduledDriverReservedBadge => 'Reserved';
+
+  @override
+  String get scheduledDriverTitle => 'Reserved driver';
+
+  @override
+  String get scheduledEmptyCopy =>
+      'Book from the home screen and choose \"Schedule\"';
+
+  @override
+  String get scheduledEmptyTitle => 'No scheduled rides';
+
+  @override
+  String get scheduledFareLabel => 'Estimated fare';
+
+  @override
+  String get scheduledLateCancelNote =>
+      'The free cancellation window is over; a fee may apply (you will see it before confirming).';
+
+  @override
+  String get scheduledLimitReachedError =>
+      'You reached the maximum number of scheduled rides';
+
+  @override
+  String scheduledLimitReachedMaxError(int max) {
+    return 'You reached the maximum number of scheduled rides ($max)';
+  }
+
+  @override
+  String get scheduledLinkCopy => 'Your upcoming bookings and their status';
+
+  @override
+  String get scheduledNoDriverYet =>
+      'No driver has reserved your ride yet. We will start searching automatically before the time.';
+
+  @override
+  String get scheduledPhaseConfirmed => 'Driver confirmed';
+
+  @override
+  String get scheduledPhaseEnded => 'Ended';
+
+  @override
+  String get scheduledPhaseInProgress => 'Ride in progress';
+
+  @override
+  String get scheduledPhaseReserved => 'Reserved by a driver';
+
+  @override
+  String get scheduledPhaseSearching => 'Searching for a driver';
+
+  @override
+  String get scheduledPhaseWaiting => 'Waiting for a driver';
+
+  @override
+  String get scheduledSearchStartedCopy =>
+      'The search for your driver started. Follow it on the trip screen.';
+
+  @override
+  String scheduledSearchStartsAt(String time) {
+    return 'If no driver reserves it, the search starts $time';
+  }
+
+  @override
+  String get scheduledTrackTrip => 'Track the ride';
+
+  @override
+  String get scheduledTripTitle => 'Scheduled ride';
+
+  @override
+  String get scheduledTripsCopy => 'Your upcoming rides, soonest first';
+
+  @override
+  String get scheduledTripsEyebrow => 'Bookings';
+
+  @override
+  String get scheduledTripsTitle => 'My scheduled rides';
+
+  @override
+  String tripAirportDropoff(String code) {
+    return 'Drop-off at $code airport';
+  }
+
+  @override
+  String tripAirportPickup(String code) {
+    return 'Pickup from $code airport';
+  }
+
+  @override
+  String get tripStatusScheduled => 'Scheduled';
+
+  @override
+  String get reservationOpenMarket => 'Open the marketplace';
+
+  @override
+  String get reservationNotConfirmableNotDueError =>
+      'It is not time to confirm yet';
+
+  @override
+  String get reservationNotConfirmableExpiredError =>
+      'The confirmation window has ended';
 }

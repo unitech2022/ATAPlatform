@@ -14,6 +14,7 @@ abstract final class TripText {
   static String passengerTitle(AppLocalizations l10n, TripStage stage) =>
       switch (stage) {
         TripStage.requested || TripStage.searching => l10n.searchingTitle,
+        TripStage.scheduled => l10n.scheduledTripTitle,
         TripStage.driverAssigned => l10n.driverAssignedTitle,
         TripStage.driverEnRoute => l10n.driverEnRouteTitle,
         TripStage.driverArrived || TripStage.waiting => l10n.driverArrivedTitle,

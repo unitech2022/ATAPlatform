@@ -1,6 +1,7 @@
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_estimate.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_request.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_stage.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/domain/usecases/cancel_trip.dart';
 import 'package:ata_app/features/trip/domain/usecases/estimate_trip.dart';
@@ -26,7 +27,7 @@ class TripRequestCubit extends Cubit<TripRequestState> {
   /// F16); otherwise the category price is `fixed`. Without a
   /// [TripRequest.quoteId] (F10) the legacy estimate runs first.
   Future<void> request(TripRequest draft) async {
-    if (state.isBusy || state.isSearching) return;
+    if (state.isBusy || state.isSearching || state.isScheduled) return;
     emit(
       state.copyWith(
         status: TripRequestStatus.requesting,
@@ -61,7 +62,9 @@ class TripRequestCubit extends Cubit<TripRequestState> {
           failure: failure,
         ),
         (Trip trip) => state.copyWith(
-          status: TripRequestStatus.searching,
+          status: trip.status == TripStage.scheduled
+              ? TripRequestStatus.scheduled
+              : TripRequestStatus.searching,
           estimate: estimate,
           trip: trip,
         ),

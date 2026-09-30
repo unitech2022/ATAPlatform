@@ -8,6 +8,7 @@ import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,7 +30,9 @@ class RouteFields extends StatelessWidget {
     ];
     return BlocBuilder<HomeCubit, HomeState>(
       buildWhen: (HomeState p, HomeState c) =>
-          p.stops != c.stops || p.maxStops != c.maxStops,
+          p.stops != c.stops ||
+          p.maxStops != c.maxStops ||
+          p.airport != c.airport,
       builder: (BuildContext context, HomeState state) {
         final HomeCubit cubit = context.read<HomeCubit>();
         final String? nextStop = options
@@ -51,7 +54,7 @@ class RouteFields extends StatelessWidget {
                 ),
               ),
               label: l10n.pickupLabel,
-              value: l10n.pickupCurrent,
+              value: pickupName(state, l10n),
               trailing: const AtaIcon(
                 AtaIcons.location,
                 color: AtaColors.brand,
@@ -113,7 +116,7 @@ class RouteFields extends StatelessWidget {
                 ),
               ),
               label: l10n.destinationLabel,
-              value: l10n.destinationDefault,
+              value: dropoffName(state, l10n),
               trailing: const AtaIcon(AtaIcons.search, color: AtaColors.muted),
             ),
             const SizedBox(height: AtaSpacing.sm),

@@ -2,6 +2,9 @@
 enum TripStage {
   requested('requested'),
   searching('searching'),
+
+  /// A scheduled booking waiting for its time (F17); never an active trip.
+  scheduled('scheduled'),
   driverAssigned('driver_assigned'),
   driverEnRoute('driver_en_route'),
   driverArrived('driver_arrived'),
@@ -32,7 +35,8 @@ enum TripStage {
   bool get isSearching => this == requested || this == searching;
 
   /// A driver is assigned and the trip has not ended.
-  bool get hasDriver => !isTerminal && !isSearching && this != unknown;
+  bool get hasDriver =>
+      !isTerminal && !isSearching && this != unknown && this != scheduled;
 
   /// The driver is at the pickup point.
   bool get isWaiting => this == driverArrived || this == waiting;

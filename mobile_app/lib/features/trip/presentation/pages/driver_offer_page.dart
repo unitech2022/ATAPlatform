@@ -11,6 +11,7 @@ import 'package:ata_app/design/widgets/decorative_background.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/pill.dart';
+import 'package:ata_app/features/airport/presentation/widgets/trip_airport_info.dart';
 import 'package:ata_app/features/trip/domain/entities/offer.dart';
 import 'package:ata_app/features/trip/presentation/cubit/driver_offer_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/driver_offer_state.dart';
@@ -107,6 +108,10 @@ class _OfferBody extends StatelessWidget {
           ),
           const SizedBox(height: AtaSpacing.md),
           OfferEarnings(offer: offer),
+          if (offer.airport != null) ...<Widget>[
+            const SizedBox(height: AtaSpacing.sm),
+            TripAirportInfo(airport: offer.airport!),
+          ],
           if (offer.passengerOffered ||
               offer.round > 1 ||
               offer.isFavoriteRequest) ...<Widget>[

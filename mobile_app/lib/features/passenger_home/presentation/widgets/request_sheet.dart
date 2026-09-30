@@ -12,6 +12,7 @@ import 'package:ata_app/design/widgets/ata_icon.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/inline_error.dart';
 import 'package:ata_app/design/widgets/sheet_handle.dart';
+import 'package:ata_app/features/airport/presentation/widgets/airport_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_cubit.dart';
 import 'package:ata_app/features/passenger_home/presentation/cubit/home_state.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/fare_details_link.dart';
@@ -22,10 +23,13 @@ import 'package:ata_app/features/passenger_home/presentation/widgets/payment_row
 import 'package:ata_app/features/passenger_home/presentation/widgets/promo_code_row.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/ride_category_list.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/route_fields.dart';
+import 'package:ata_app/features/passenger_home/presentation/widgets/scheduled_summary_card.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/time_pills.dart';
 import 'package:ata_app/features/passenger_home/presentation/widgets/trip_request_builder.dart';
 import 'package:ata_app/features/pricing/presentation/widgets/demand_badge.dart';
 import 'package:ata_app/features/rating/presentation/widgets/pending_rating_card.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/schedule_time_cubit.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/widgets/schedule_picker_sheet.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/trip_request_state.dart';
 import 'package:ata_app/features/wallet/presentation/widgets/outstanding_balance_banner.dart';
@@ -79,12 +83,20 @@ class _RequestForm extends StatelessWidget {
         const SizedBox(height: AtaSpacing.xxs),
         Text(l10n.homeTitle, style: AtaText.title),
         const SizedBox(height: AtaSpacing.xs),
-        const DemandBadge(),
+        BlocSelector<HomeCubit, HomeState, bool>(
+          selector: (HomeState state) => state.isScheduled,
+          // Scheduled rides are priced without surge (F17).
+          builder: (BuildContext context, bool scheduled) =>
+              scheduled ? const SizedBox.shrink() : const DemandBadge(),
+        ),
         const SizedBox(height: AtaSpacing.md),
         const PendingRatingCard(),
         const RouteFields(),
+        const SizedBox(height: AtaSpacing.sm),
+        const AirportRow(),
         const SizedBox(height: AtaSpacing.xl),
         const TimePills(),
+        const ScheduledSummaryCard(),
         const SizedBox(height: AtaSpacing.xl),
         const FemaleDriverOption(),
         const SizedBox(height: AtaSpacing.xl),
@@ -145,7 +157,6 @@ class _RequestButton extends StatelessWidget {
         );
         return BlocBuilder<TripRequestCubit, TripRequestState>(
           builder: (BuildContext context, TripRequestState request) {
-            final TripRequestCubit cubit = context.read<TripRequestCubit>();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
@@ -163,14 +174,16 @@ class _RequestButton extends StatelessWidget {
                   const SizedBox(height: AtaSpacing.sm),
                 ],
                 AtaButton(
-                  label: l10n.requestRide(name, price),
+                  label: state.isScheduled
+                      ? l10n.scheduleRide(name, price)
+                      : l10n.requestRide(name, price),
                   trailingIcon: AtaIcons.arrow,
                   loading: request.isBusy || request.isSearching,
                   onPressed:
                       state.canRequest &&
                           !request.isBusy &&
                           !request.isOutstandingBalance
-                      ? () => cubit.request(buildTripRequest(state, l10n))
+                      ? () => _submit(context, state)
                       : null,
                 ),
               ],
@@ -178,6 +191,24 @@ class _RequestButton extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  /// Books the ride; a scheduled time is re-checked against the clock first
+  /// (the window moves), and the picker reopens when it no longer fits.
+  void _submit(BuildContext context, HomeState state) {
+    if (state.isScheduled) {
+      final ScheduleTimeCubit schedule = context.read<ScheduleTimeCubit>();
+      if (!schedule.recheck()) {
+        SchedulePickerSheet.show(
+          context,
+          rideCategoryId: state.selectedCategory?.id,
+        );
+        return;
+      }
+    }
+    context.read<TripRequestCubit>().request(
+      buildTripRequest(state, context.l10n),
     );
   }
 

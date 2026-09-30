@@ -1,4 +1,5 @@
 import 'package:ata_app/core/errors/failures.dart';
+import 'package:ata_app/features/airport/domain/entities/airport_selection.dart';
 import 'package:ata_app/features/catalog/domain/entities/ride_category.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/fare_estimate.dart';
 import 'package:ata_app/features/passenger_home/domain/entities/favorite_selection.dart';
@@ -6,6 +7,8 @@ import 'package:ata_app/features/passenger_home/domain/entities/ride_time.dart';
 import 'package:ata_app/features/pricing/domain/entities/fare_breakdown.dart';
 import 'package:ata_app/features/pricing/domain/entities/fare_quote.dart';
 import 'package:ata_app/features/pricing/domain/entities/quote_category.dart';
+import 'package:ata_app/features/trip/domain/entities/geo_point.dart';
+import 'package:ata_app/features/trip/domain/entities/trip_places.dart';
 import 'package:equatable/equatable.dart';
 
 /// State of the rider home sheet.
@@ -24,6 +27,8 @@ class HomeState extends Equatable {
     this.quote,
     this.promoCode,
     this.favorite,
+    this.scheduledAt,
+    this.airport,
   });
 
   /// Lowest price a rider may ever offer, and the fallback offer range used
@@ -55,6 +60,24 @@ class HomeState extends Equatable {
 
   /// Favourite driver picked for this request (F16).
   final FavoriteSelection? favorite;
+
+  /// The confirmed booking time when [rideTime] is scheduled (F17).
+  final DateTime? scheduledAt;
+
+  /// Airport pickup / dropoff chosen for this request (F17).
+  final AirportSelection? airport;
+
+  bool get isScheduled => rideTime == RideTime.scheduled;
+
+  /// Pickup coordinates: the airport (zone) when it is the pickup.
+  GeoPoint get pickupPoint => airport != null && airport!.isPickup
+      ? airport!.point
+      : TripPlaces.currentLocation;
+
+  /// Dropoff coordinates: the airport when it is the destination.
+  GeoPoint get dropoffPoint => airport != null && !airport!.isPickup
+      ? airport!.point
+      : TripPlaces.defaultDestination;
 
   RideCategory? get selectedCategory {
     for (final RideCategory category in categories) {
@@ -91,7 +114,10 @@ class HomeState extends Equatable {
 
   int get maxStops => selectedCategory?.maxStops ?? 0;
   bool get canAddStop => stops.length < maxStops;
-  bool get canRequest => selectedCategory != null;
+  bool get canRequest =>
+      selectedCategory != null &&
+      (!isScheduled || scheduledAt != null) &&
+      (airport?.isComplete ?? true);
   bool get hasOfferedPrice => offeredPrice != null;
   bool get hasQuote => quote != null;
 
@@ -149,11 +175,15 @@ class HomeState extends Equatable {
     FareQuote? quote,
     String? promoCode,
     FavoriteSelection? favorite,
+    DateTime? scheduledAt,
+    AirportSelection? airport,
     bool clearFailure = false,
     bool clearOfferedPrice = false,
     bool clearQuote = false,
     bool clearPromoCode = false,
     bool clearFavorite = false,
+    bool clearScheduledAt = false,
+    bool clearAirport = false,
   }) => HomeState(
     categories: categories ?? this.categories,
     loadingCategories: loadingCategories ?? this.loadingCategories,
@@ -170,6 +200,8 @@ class HomeState extends Equatable {
     quote: clearQuote ? null : quote ?? this.quote,
     promoCode: clearPromoCode ? null : promoCode ?? this.promoCode,
     favorite: clearFavorite ? null : favorite ?? this.favorite,
+    scheduledAt: clearScheduledAt ? null : scheduledAt ?? this.scheduledAt,
+    airport: clearAirport ? null : airport ?? this.airport,
   );
 
   @override
@@ -187,5 +219,7 @@ class HomeState extends Equatable {
     quote,
     promoCode,
     favorite,
+    scheduledAt,
+    airport,
   ];
 }

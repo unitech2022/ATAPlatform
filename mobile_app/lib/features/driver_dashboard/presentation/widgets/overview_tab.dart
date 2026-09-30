@@ -5,6 +5,7 @@ import 'package:ata_app/core/widgets/failure_view.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/stat_card.dart';
+import 'package:ata_app/features/airport/presentation/widgets/airport_queue_card.dart';
 import 'package:ata_app/features/driver_dashboard/domain/entities/earnings_summary.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_overview_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_overview_state.dart';
@@ -14,14 +15,16 @@ import 'package:ata_app/features/driver_dashboard/presentation/widgets/recent_tr
 import 'package:ata_app/features/driver_rewards/presentation/widgets/nearest_incentive_card.dart';
 import 'package:ata_app/features/driver_rewards/presentation/widgets/tier_card.dart';
 import 'package:ata_app/features/rating/presentation/widgets/pending_rating_card.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/widgets/scheduled_overview_card.dart';
 import 'package:ata_app/features/trip/presentation/widgets/reliability_card.dart';
 import 'package:ata_app/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-/// Pending rating prompt, stat cards, tier and nearest quest (F15),
-/// reliability, recent trips and the weekly earnings card.
+/// Pending rating prompt, stat cards, scheduled reservations with their
+/// confirmation prompts and the airport queue (F17), tier and nearest quest
+/// (F15), reliability, recent trips and the weekly earnings card.
 class OverviewTab extends StatelessWidget {
   const OverviewTab({super.key});
 
@@ -87,6 +90,9 @@ class OverviewTab extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AtaSpacing.xl),
+            const ScheduledOverviewCard(),
+            const SizedBox(height: AtaSpacing.xl),
+            const AirportQueueCard(),
             const TierCard(),
             const SizedBox(height: AtaSpacing.xl),
             const NearestIncentiveCard(),

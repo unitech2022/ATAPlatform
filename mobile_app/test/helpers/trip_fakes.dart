@@ -118,13 +118,23 @@ class FakeTripRepository implements TripRepository {
   Trip? active;
   Offer? activeOffer;
 
+  /// Requests received by [requestTrip] and the trip / failure it answers.
+  final List<TripRequest> requests = <TripRequest>[];
+  Trip requestResult = testTrip;
+  Failure? requestFailure;
+
   @override
   Future<Either<Failure, TripEstimate>> estimate(TripRequest request) async =>
       const Right<Failure, TripEstimate>(testEstimate);
 
   @override
-  Future<Either<Failure, Trip>> requestTrip(TripRequest request) async =>
-      const Right<Failure, Trip>(testTrip);
+  Future<Either<Failure, Trip>> requestTrip(TripRequest request) async {
+    requests.add(request);
+    final Failure? failure = requestFailure;
+    return failure == null
+        ? Right<Failure, Trip>(requestResult)
+        : Left<Failure, Trip>(failure);
+  }
 
   @override
   Future<Either<Failure, Trip?>> getActiveTrip(TripActor actor) async =>

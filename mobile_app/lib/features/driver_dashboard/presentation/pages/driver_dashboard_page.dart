@@ -2,6 +2,7 @@ import 'package:ata_app/core/di/injector.dart';
 import 'package:ata_app/core/localization/l10n_extension.dart';
 import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/widgets/decorative_background.dart';
+import 'package:ata_app/features/airport/presentation/cubit/airport_queue_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_documents_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_overview_cubit.dart';
 import 'package:ata_app/features/driver_dashboard/presentation/cubit/driver_tabs_cubit.dart';
@@ -16,6 +17,7 @@ import 'package:ata_app/features/driver_dashboard/presentation/widgets/settings_
 import 'package:ata_app/features/driver_rewards/presentation/cubit/driver_tier_cubit.dart';
 import 'package:ata_app/features/driver_rewards/presentation/cubit/incentives_cubit.dart';
 import 'package:ata_app/features/driver_wallet/presentation/cubit/payout_summary_cubit.dart';
+import 'package:ata_app/features/scheduled_rides/presentation/cubit/reservations_cubit.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
 import 'package:ata_app/features/trip/presentation/cubit/driver_offer_cubit.dart';
 import 'package:ata_app/features/trip/presentation/cubit/location_stream_cubit.dart';
@@ -62,6 +64,22 @@ class DriverDashboardPage extends StatelessWidget {
           create: (_) =>
               IncentivesCubit(getIncentives: getIt(), getReliability: getIt())
                 ..load(),
+        ),
+        BlocProvider<ReservationsCubit>(
+          create: (_) => ReservationsCubit(
+            getReservations: getIt(),
+            confirm: getIt(),
+            release: getIt(),
+            watchIncoming: getIt(),
+          )..load(),
+        ),
+        BlocProvider<AirportQueueCubit>(
+          create: (_) => AirportQueueCubit(
+            getQueue: getIt(),
+            join: getIt(),
+            leave: getIt(),
+            watch: getIt(),
+          )..start(),
         ),
         BlocProvider<DriverDocumentsCubit>(
           create: (_) => DriverDocumentsCubit(getApplication: getIt())..load(),

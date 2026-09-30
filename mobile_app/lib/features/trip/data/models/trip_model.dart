@@ -2,6 +2,7 @@ import 'package:ata_app/features/trip/data/models/cancellation_models.dart';
 import 'package:ata_app/features/trip/data/models/json_readers.dart';
 import 'package:ata_app/features/trip/data/models/trip_parties_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_rewards_model.dart';
+import 'package:ata_app/features/trip/data/models/trip_scheduling_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_stop_model.dart';
 import 'package:ata_app/features/trip/data/models/trip_timeline_model.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
@@ -43,6 +44,8 @@ class TripModel extends Trip {
     super.rating,
     super.promotion,
     super.favorite,
+    super.scheduling,
+    super.airport,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
@@ -124,6 +127,8 @@ class TripModel extends Trip {
       rating: TripRewardsModel.rating(json),
       promotion: TripRewardsModel.promotion(json),
       favorite: TripRewardsModel.favorite(json),
+      scheduling: TripSchedulingModel.scheduling(json),
+      airport: TripSchedulingModel.airport(json),
     );
   }
 
@@ -208,5 +213,7 @@ class TripModel extends Trip {
         : TripCancellationModel.toJson(cancellation!),
     ...TripRewardsModel.toJson(rating, promotion),
     'favorite': TripRewardsModel.favoriteJson(favorite),
+    'scheduling': TripSchedulingModel.schedulingJson(scheduling),
+    'airport': TripSchedulingModel.airportJson(airport),
   };
 }

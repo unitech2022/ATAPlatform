@@ -26,6 +26,8 @@ abstract final class AppRoutes {
   static const String driverIncentives = '/driver/incentives';
   static const String driverRatings = '/driver/ratings';
   static const String driverRate = '/driver/rate';
+  static const String driverScheduled = '/driver/scheduled';
+  static const String driverAirportQueue = '/driver/airport-queue';
 
   /// Query parameter selecting the dashboard tab (`/driver?tab=documents`).
   static const String tabParam = 'tab';
@@ -51,6 +53,7 @@ abstract final class AppRoutes {
   static const String trip = '/trip';
   static const String rate = '/rate';
   static const String promotions = '/promotions';
+  static const String scheduled = '/scheduled';
   static const String tripChat = '/trip/chat';
   static const String rides = '/rides';
   static const String wallet = '/wallet';
@@ -88,6 +91,13 @@ abstract final class AppRoutes {
 
   /// `/driver/rate/{tripId}` (driver side of `ata://rate/{tripId}`).
   static String driverRateTrip(String tripId) => '$driverRate/$tripId';
+
+  /// `/scheduled/{tripId}` (F17, `ata://scheduled/{tripId}`).
+  static String scheduledTrip(String tripId) => '$scheduled/$tripId';
+
+  /// `/driver/scheduled/{tripId}` (F17, `ata://driver/scheduled/{tripId}`).
+  static String driverScheduledTrip(String tripId) =>
+      '$driverScheduled/$tripId';
 
   /// `/driver/incentives/{id}`.
   static String driverIncentive(String id) => '$driverIncentives/$id';
@@ -134,6 +144,8 @@ abstract final class AppRoutes {
 
   /// Index of the bottom-nav tab that owns [location], or `null`.
   static int? tabIndexFor(String location) {
+    // Scheduled rides belong to the rides tab.
+    if (location == scheduled || location.startsWith('$scheduled/')) return 1;
     for (int i = 0; i < passengerTabs.length; i++) {
       if (location == passengerTabs[i] ||
           location.startsWith('${passengerTabs[i]}/')) {

@@ -4,6 +4,9 @@ import 'package:ata_app/core/storage/preferences_storage.dart';
 import 'package:ata_app/features/account/data/datasources/account_remote_data_source.dart';
 import 'package:ata_app/features/account/data/repositories/account_repository_impl.dart';
 import 'package:ata_app/features/account/domain/repositories/account_repository.dart';
+import 'package:ata_app/features/airport/data/datasources/airport_remote_data_source.dart';
+import 'package:ata_app/features/airport/data/repositories/airport_repository_impl.dart';
+import 'package:ata_app/features/airport/domain/repositories/airport_repository.dart';
 import 'package:ata_app/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:ata_app/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:ata_app/features/auth/data/repositories/auth_repository_impl.dart';
@@ -52,6 +55,9 @@ import 'package:ata_app/features/rides/domain/repositories/rides_repository.dart
 import 'package:ata_app/features/safety/data/datasources/safety_remote_data_source.dart';
 import 'package:ata_app/features/safety/data/repositories/safety_repository_impl.dart';
 import 'package:ata_app/features/safety/domain/repositories/safety_repository.dart';
+import 'package:ata_app/features/scheduled_rides/data/datasources/scheduled_remote_data_source.dart';
+import 'package:ata_app/features/scheduled_rides/data/repositories/scheduled_repository_impl.dart';
+import 'package:ata_app/features/scheduled_rides/domain/repositories/scheduled_repository.dart';
 import 'package:ata_app/features/trip/data/datasources/cancellation_remote_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/signalr_trip_realtime_data_source.dart';
 import 'package:ata_app/features/trip/data/datasources/trip_realtime_data_source.dart';
@@ -175,6 +181,15 @@ void registerData({
     )
     ..registerLazySingleton<DriverRewardsRepository>(
       () => DriverRewardsRepositoryImpl(DriverRewardsRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<ScheduledRepository>(
+      () => ScheduledRepositoryImpl(ScheduledRemoteDataSource(getIt())),
+    )
+    ..registerLazySingleton<AirportRepository>(
+      () => AirportRepositoryImpl(
+        remote: AirportRemoteDataSource(getIt()),
+        realtime: getIt(),
+      ),
     )
     ..registerLazySingleton<LocationRepository>(
       () => simulateLocation

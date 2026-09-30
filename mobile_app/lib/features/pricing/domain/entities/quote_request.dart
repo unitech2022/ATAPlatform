@@ -13,6 +13,9 @@ class QuoteRequest extends Equatable {
     this.scheduledAt,
     this.promoCode,
     this.favoriteDriverId,
+    this.airportPickupZoneId,
+    this.airportTerminalCode,
+    this.flightNumber,
   });
 
   final GeoPoint pickup;
@@ -28,6 +31,11 @@ class QuoteRequest extends Equatable {
   /// Selected favourite driver (F16): the quote assumes they accept.
   final String? favoriteDriverId;
 
+  /// Airport fields (F17): the pickup point is the zone's point.
+  final String? airportPickupZoneId;
+  final String? airportTerminalCode;
+  final String? flightNumber;
+
   @override
   List<Object?> get props => <Object?>[
     pickup,
@@ -38,5 +46,8 @@ class QuoteRequest extends Equatable {
     scheduledAt,
     promoCode,
     favoriteDriverId,
+    airportPickupZoneId,
+    airportTerminalCode,
+    flightNumber,
   ];
 }

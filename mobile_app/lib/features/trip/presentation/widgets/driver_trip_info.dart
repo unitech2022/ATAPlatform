@@ -3,6 +3,7 @@ import 'package:ata_app/design/tokens/ata_spacing.dart';
 import 'package:ata_app/design/tokens/ata_text.dart';
 import 'package:ata_app/design/widgets/ata_icon_data.dart';
 import 'package:ata_app/design/widgets/icon_box.dart';
+import 'package:ata_app/features/airport/presentation/widgets/trip_airport_info.dart';
 import 'package:ata_app/features/trip/domain/entities/trip.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_parties.dart';
 import 'package:ata_app/features/trip/domain/entities/trip_step.dart';
@@ -59,6 +60,10 @@ class DriverTripInfo extends StatelessWidget {
           dropoff: trip.dropoff,
           stops: trip.stops,
         ),
+        if (trip.airport != null) ...<Widget>[
+          const SizedBox(height: AtaSpacing.sm),
+          TripAirportInfo(airport: trip.airport!),
+        ],
       ],
     );
   }

@@ -13,6 +13,13 @@ abstract final class NotificationTypes {
   static const String incentiveAchieved = 'incentive.achieved';
   static const String tierChanged = 'driver.tier_changed';
 
+  /// F17 scheduled rides (`scheduled.booked`, `.reminder`, `.driver_reserved`,
+  /// `.confirm_request`, `.reservation_released`, `.favorite_request`,
+  /// `.rematched`).
+  static const String scheduledPrefix = 'scheduled.';
+  static const String scheduledConfirmRequest = 'scheduled.confirm_request';
+  static const String scheduledFavoriteRequest = 'scheduled.favorite_request';
+
   static const Map<String, String> _legacy = <String, String>{
     'driver_application_approved': 'driver.application.approved',
     'driver_application_rejected': 'driver.application.rejected',
@@ -64,6 +71,7 @@ abstract final class NotificationTypes {
           : 'ata://driver/incentives/$incentiveId';
     }
     if (code == tierChanged) return 'ata://driver/tier';
+    if (code.startsWith(scheduledPrefix)) return _scheduledLink(code, tripId);
     if (code == tripFavoriteFallback && tripId != null) {
       return 'ata://trip/$tripId';
     }
@@ -75,5 +83,17 @@ abstract final class NotificationTypes {
       return 'ata://wallet';
     }
     return null;
+  }
+
+  /// Driver prompts open the reservation; everything else the booking.
+  static String? _scheduledLink(String code, String? tripId) {
+    if (tripId == null) {
+      return code == 'scheduled.reservation_released'
+          ? 'ata://driver/scheduled'
+          : null;
+    }
+    return code == scheduledConfirmRequest || code == scheduledFavoriteRequest
+        ? 'ata://driver/scheduled/$tripId'
+        : 'ata://scheduled/$tripId';
   }
 }
