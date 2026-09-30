@@ -14,6 +14,7 @@ import { Pagination } from '../components/Pagination'
 import { ReasonModal } from '../components/ReasonModal'
 import { Table, type Column } from '../components/Table'
 import { Tabs } from '../components/Tabs'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -37,6 +38,8 @@ type Pending =
   | null
 
 export function PayoutsPage() {
+  // F20: approving, rejecting, paying and batching payouts needs `payouts.approve`.
+  const canApprove = usePermission('payouts.approve')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -213,7 +216,7 @@ export function PayoutsPage() {
       className: 'text-end',
       render: (row) => (
         <span className="inline-flex gap-2">
-          {row.status === 'requested' && (
+          {canApprove && row.status === 'requested' && (
             <>
               <Button variant="brand" size="sm" icon="check" onClick={() => setPending({ kind: 'approve', payout: row })}>
                 {t('approve')}
@@ -223,7 +226,7 @@ export function PayoutsPage() {
               </Button>
             </>
           )}
-          {row.status === 'approved' && (
+          {canApprove && row.status === 'approved' && (
             <Button variant="secondary" size="sm" icon="check" onClick={() => setPending({ kind: 'paid', payout: row })}>
               {t('markPaid')}
             </Button>
@@ -245,7 +248,7 @@ export function PayoutsPage() {
             <Button variant="secondary" icon="list" onClick={() => navigate('/payout-batches')}>
               {t('navPayoutBatches')}
             </Button>
-            {status === 'approved' && (rows.length > 0) && (
+            {canApprove && status === 'approved' && (rows.length > 0) && (
               <Button icon="layers" onClick={() => setPending({ kind: 'batch-all' })}>
                 {t('batchAllApproved')}
               </Button>
@@ -285,12 +288,12 @@ export function PayoutsPage() {
             {t('selected')}: <span className="ltr-nums">{formatNumber(selectedRows.length)}</span> · <span className="ltr-nums">{formatMoney(selectedTotal)}</span> {t('sar')}
           </p>
           <div className="flex flex-wrap gap-2">
-            {selectedRequested.length > 0 && (
+            {canApprove && selectedRequested.length > 0 && (
               <Button variant="brand" size="sm" icon="check" onClick={() => setPending({ kind: 'bulk-approve', ids: selectedRequested })}>
                 {t('approveSelected')} ({formatNumber(selectedRequested.length)})
               </Button>
             )}
-            {selectedApproved.length > 0 && (
+            {canApprove && selectedApproved.length > 0 && (
               <Button variant="secondary" size="sm" icon="layers" onClick={() => setPending({ kind: 'batch', ids: selectedApproved })}>
                 {t('createBatch')} ({formatNumber(selectedApproved.length)})
               </Button>

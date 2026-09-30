@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router'
 import logo from '../assets/logo.png'
 import { useLang } from '../context/lang'
-import { NAV_GROUPS } from '../nav'
+import { useAuth } from '../context/auth'
+import { visibleNavGroups } from '../nav'
 import { Icon } from './Icon'
 
 export interface SidebarProps {
@@ -13,6 +14,9 @@ export interface SidebarProps {
 export function Sidebar({ open, onClose }: SidebarProps) {
   const { t } = useLang()
   const { pathname, search } = useLocation()
+  const { can } = useAuth()
+  // F20: only the items the admin's permissions allow (`GET /admin/me`); the server still answers 403 for the rest.
+  const groups = visibleNavGroups(can)
 
   return (
     <>
@@ -39,8 +43,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {NAV_GROUPS.map((group, index) => (
+        <nav aria-label={t('appName')} className="flex-1 overflow-y-auto px-3 py-4">
+          {groups.map((group, index) => (
             <div key={group.key ?? `group-${index}`} className={index > 0 ? 'mt-5 border-t border-white/10 pt-4' : ''}>
               {group.key && <p className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wide text-white/40">{t(group.key)}</p>}
               <div className="space-y-1">

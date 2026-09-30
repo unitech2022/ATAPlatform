@@ -1,10 +1,16 @@
 import type { IconName } from './components/Icon'
 import type { TranslationKey } from './i18n'
+import type { PermissionCode } from './lib/rbac'
 
 export interface NavItem {
   key: TranslationKey
   icon: IconName
   to: string
+  /**
+   * F20 — catalogue code (docs/12 §F20.2) needed to see the item; an array means "any of", omitted = every admin.
+   * The same code guards the route in App.tsx (`RequirePermission`).
+   */
+  permission?: PermissionCode | readonly PermissionCode[]
   /** Returns true when this item should be highlighted for the given location. */
   isActive: (pathname: string, search: string) => boolean
 }
@@ -12,64 +18,64 @@ export interface NavItem {
 const statusOf = (search: string) => new URLSearchParams(search).get('status') ?? ''
 
 export const NAV_ITEMS: NavItem[] = [
-  { key: 'navDashboard', icon: 'home', to: '/', isActive: (pathname) => pathname === '/' },
+  { key: 'navDashboard', permission: 'dashboard.view', icon: 'home', to: '/', isActive: (pathname) => pathname === '/' },
   {
-    key: 'navDriverApplications',
+    key: 'navDriverApplications', permission: 'drivers.view',
     icon: 'document',
     to: '/drivers',
     isActive: (pathname, search) => pathname.startsWith('/drivers') && statusOf(search) !== 'approved',
   },
   {
-    key: 'navDrivers',
+    key: 'navDrivers', permission: 'drivers.view',
     icon: 'car',
     to: '/drivers?status=approved',
     isActive: (pathname, search) => pathname === '/drivers' && statusOf(search) === 'approved',
   },
-  { key: 'navPassengers', icon: 'users', to: '/passengers', isActive: (pathname) => pathname.startsWith('/passengers') },
-  { key: 'navTrips', icon: 'route', to: '/trips', isActive: (pathname) => pathname.startsWith('/trips') },
-  { key: 'navLiveMap', icon: 'map', to: '/live', isActive: (pathname) => pathname.startsWith('/live') },
+  { key: 'navPassengers', permission: 'passengers.view', icon: 'users', to: '/passengers', isActive: (pathname) => pathname.startsWith('/passengers') },
+  { key: 'navTrips', permission: 'trips.view', icon: 'route', to: '/trips', isActive: (pathname) => pathname.startsWith('/trips') },
+  { key: 'navLiveMap', permission: 'live.view', icon: 'map', to: '/live', isActive: (pathname) => pathname.startsWith('/live') },
   // F15 — ratings sit with the operational screens.
-  { key: 'navRatings', icon: 'star', to: '/ratings', isActive: (pathname) => pathname === '/ratings' },
-  { key: 'navRatingFlags', icon: 'flag', to: '/ratings/flags', isActive: (pathname) => pathname.startsWith('/ratings/flags') },
+  { key: 'navRatings', permission: 'ratings.manage', icon: 'star', to: '/ratings', isActive: (pathname) => pathname === '/ratings' },
+  { key: 'navRatingFlags', permission: 'ratings.manage', icon: 'flag', to: '/ratings/flags', isActive: (pathname) => pathname.startsWith('/ratings/flags') },
   { key: 'navRideCategories', icon: 'layers', to: '/ride-categories', isActive: (pathname) => pathname.startsWith('/ride-categories') },
-  { key: 'navAuditLogs', icon: 'list', to: '/audit-logs', isActive: (pathname) => pathname.startsWith('/audit-logs') },
+  { key: 'navAuditLogs', permission: 'audit.view', icon: 'list', to: '/audit-logs', isActive: (pathname) => pathname.startsWith('/audit-logs') },
 ]
 
 /** F9/F10 — pricing & operations group, rendered under its own heading in the sidebar. */
 export const PRICING_OPS_ITEMS: NavItem[] = [
-  { key: 'navZones', icon: 'polygon', to: '/zones', isActive: (pathname) => pathname.startsWith('/zones') },
-  { key: 'navPricingRules', icon: 'tag', to: '/pricing-rules', isActive: (pathname) => pathname.startsWith('/pricing-rules') },
-  { key: 'navDemand', icon: 'activity', to: '/demand', isActive: (pathname) => pathname.startsWith('/demand') },
-  { key: 'navMatchingSettings', icon: 'sliders', to: '/matching-settings', isActive: (pathname) => pathname.startsWith('/matching-settings') },
+  { key: 'navZones', permission: 'pricing.view', icon: 'polygon', to: '/zones', isActive: (pathname) => pathname.startsWith('/zones') },
+  { key: 'navPricingRules', permission: 'pricing.view', icon: 'tag', to: '/pricing-rules', isActive: (pathname) => pathname.startsWith('/pricing-rules') },
+  { key: 'navDemand', permission: 'pricing.view', icon: 'activity', to: '/demand', isActive: (pathname) => pathname.startsWith('/demand') },
+  { key: 'navMatchingSettings', permission: 'pricing.view', icon: 'sliders', to: '/matching-settings', isActive: (pathname) => pathname.startsWith('/matching-settings') },
 ]
 
 /** F11 — finance group ("المالية"). */
 export const FINANCE_ITEMS: NavItem[] = [
-  { key: 'navPayments', icon: 'card', to: '/payments', isActive: (pathname) => pathname.startsWith('/payments') },
-  { key: 'navRefunds', icon: 'receipt', to: '/refunds', isActive: (pathname) => pathname.startsWith('/refunds') },
-  { key: 'navPayouts', icon: 'upload', to: '/payouts', isActive: (pathname) => pathname.startsWith('/payouts') },
-  { key: 'navPayoutBatches', icon: 'bank', to: '/payout-batches', isActive: (pathname) => pathname.startsWith('/payout-batches') },
-  { key: 'navSettlements', icon: 'document', to: '/settlements', isActive: (pathname) => pathname.startsWith('/settlements') },
-  { key: 'navWallets', icon: 'wallet', to: '/wallets', isActive: (pathname) => pathname.startsWith('/wallets') },
-  { key: 'navLedger', icon: 'book', to: '/ledger', isActive: (pathname) => pathname.startsWith('/ledger') },
+  { key: 'navPayments', permission: 'payments.view', icon: 'card', to: '/payments', isActive: (pathname) => pathname.startsWith('/payments') },
+  { key: 'navRefunds', permission: 'payments.view', icon: 'receipt', to: '/refunds', isActive: (pathname) => pathname.startsWith('/refunds') },
+  { key: 'navPayouts', permission: 'payments.view', icon: 'upload', to: '/payouts', isActive: (pathname) => pathname.startsWith('/payouts') },
+  { key: 'navPayoutBatches', permission: 'payments.view', icon: 'bank', to: '/payout-batches', isActive: (pathname) => pathname.startsWith('/payout-batches') },
+  { key: 'navSettlements', permission: 'settlements.manage', icon: 'document', to: '/settlements', isActive: (pathname) => pathname.startsWith('/settlements') },
+  { key: 'navWallets', permission: 'payments.view', icon: 'wallet', to: '/wallets', isActive: (pathname) => pathname.startsWith('/wallets') },
+  { key: 'navLedger', permission: 'payments.view', icon: 'book', to: '/ledger', isActive: (pathname) => pathname.startsWith('/ledger') },
 ]
 
 /** F13 — notifications group ("الإشعارات"). */
 export const NOTIFICATION_ITEMS: NavItem[] = [
   {
-    key: 'navTemplates',
+    key: 'navTemplates', permission: 'notifications.view',
     icon: 'edit',
     to: '/notifications/templates',
     isActive: (pathname) => pathname.startsWith('/notifications/templates'),
   },
   {
-    key: 'navCampaigns',
+    key: 'navCampaigns', permission: 'notifications.manage',
     icon: 'send',
     to: '/notifications/campaigns',
     isActive: (pathname) => pathname.startsWith('/notifications/campaigns'),
   },
   {
-    key: 'navDeliveries',
+    key: 'navDeliveries', permission: 'notifications.view',
     icon: 'bell',
     to: '/notifications/deliveries',
     isActive: (pathname) => pathname.startsWith('/notifications/deliveries'),
@@ -81,29 +87,29 @@ const tabOf = (search: string) => new URLSearchParams(search).get('tab') ?? ''
 /** F12 — safety group ("السلامة"). */
 export const SAFETY_ITEMS: NavItem[] = [
   {
-    key: 'navSafetyCases',
+    key: 'navSafetyCases', permission: 'safety.manage',
     icon: 'siren',
     to: '/safety',
     isActive: (pathname) => pathname === '/safety' || pathname.startsWith('/safety/cases'),
   },
-  { key: 'navSafetyAlerts', icon: 'bell', to: '/safety/alerts', isActive: (pathname) => pathname.startsWith('/safety/alerts') },
-  { key: 'navLostItems', icon: 'box', to: '/lost-items', isActive: (pathname) => pathname.startsWith('/lost-items') },
+  { key: 'navSafetyAlerts', permission: 'safety.manage', icon: 'bell', to: '/safety/alerts', isActive: (pathname) => pathname.startsWith('/safety/alerts') },
+  { key: 'navLostItems', permission: 'safety.manage', icon: 'box', to: '/lost-items', isActive: (pathname) => pathname.startsWith('/lost-items') },
 ]
 
 /** F14 — cancellation & reliability group ("الإلغاء والموثوقية"). */
 export const CANCELLATION_ITEMS: NavItem[] = [
-  { key: 'navCancellationEvents', icon: 'activity', to: '/cancellation/events', isActive: (pathname) => pathname.startsWith('/cancellation/events') },
-  { key: 'navExcuses', icon: 'clock', to: '/cancellation/excuses', isActive: (pathname) => pathname.startsWith('/cancellation/excuses') },
-  { key: 'navCancellationReasons', icon: 'list', to: '/cancellation/reasons', isActive: (pathname) => pathname.startsWith('/cancellation/reasons') },
-  { key: 'navCancellationRules', icon: 'sliders', to: '/cancellation/rules', isActive: (pathname) => pathname.startsWith('/cancellation/rules') },
+  { key: 'navCancellationEvents', permission: 'trips.view', icon: 'activity', to: '/cancellation/events', isActive: (pathname) => pathname.startsWith('/cancellation/events') },
+  { key: 'navExcuses', permission: 'cancellation.review', icon: 'clock', to: '/cancellation/excuses', isActive: (pathname) => pathname.startsWith('/cancellation/excuses') },
+  { key: 'navCancellationReasons', permission: 'cancellation.manage', icon: 'list', to: '/cancellation/reasons', isActive: (pathname) => pathname.startsWith('/cancellation/reasons') },
+  { key: 'navCancellationRules', permission: 'cancellation.manage', icon: 'sliders', to: '/cancellation/rules', isActive: (pathname) => pathname.startsWith('/cancellation/rules') },
   {
-    key: 'navReliability',
+    key: 'navReliability', permission: 'reliability.manage',
     icon: 'gauge',
     to: '/reliability',
     isActive: (pathname, search) => pathname.startsWith('/reliability') && tabOf(search) !== 'thresholds',
   },
   {
-    key: 'navReliabilityThresholds',
+    key: 'navReliabilityThresholds', permission: 'cancellation.manage',
     icon: 'layers',
     to: '/reliability?tab=thresholds',
     isActive: (pathname, search) => pathname === '/reliability' && tabOf(search) === 'thresholds',
@@ -112,18 +118,18 @@ export const CANCELLATION_ITEMS: NavItem[] = [
 
 /** F15 — marketing & loyalty group ("التسويق والولاء"). */
 export const MARKETING_ITEMS: NavItem[] = [
-  { key: 'navPromotions', icon: 'gift', to: '/promotions', isActive: (pathname) => pathname.startsWith('/promotions') },
-  { key: 'navIncentives', icon: 'target', to: '/incentives', isActive: (pathname) => pathname.startsWith('/incentives') },
-  { key: 'navDriverTiers', icon: 'trophy', to: '/driver-tiers', isActive: (pathname) => pathname.startsWith('/driver-tiers') },
+  { key: 'navPromotions', permission: 'promotions.manage', icon: 'gift', to: '/promotions', isActive: (pathname) => pathname.startsWith('/promotions') },
+  { key: 'navIncentives', permission: 'incentives.manage', icon: 'target', to: '/incentives', isActive: (pathname) => pathname.startsWith('/incentives') },
+  { key: 'navDriverTiers', permission: 'incentives.manage', icon: 'trophy', to: '/driver-tiers', isActive: (pathname) => pathname.startsWith('/driver-tiers') },
   // F16 — favorite driver discount rules and stats.
-  { key: 'navFavorites', icon: 'heart', to: '/favorites', isActive: (pathname) => pathname.startsWith('/favorites') },
+  { key: 'navFavorites', permission: 'favorites.manage', icon: 'heart', to: '/favorites', isActive: (pathname) => pathname.startsWith('/favorites') },
 ]
 
 /** F17 — scheduled rides & airports group ("الجدولة والمطار"). */
 export const SCHEDULING_ITEMS: NavItem[] = [
-  { key: 'navScheduledTrips', icon: 'calendar', to: '/scheduled', isActive: (pathname) => pathname === '/scheduled' },
-  { key: 'navScheduledRules', icon: 'sliders', to: '/scheduled/rules', isActive: (pathname) => pathname.startsWith('/scheduled/rules') },
-  { key: 'navAirports', icon: 'plane', to: '/airports', isActive: (pathname) => pathname.startsWith('/airports') },
+  { key: 'navScheduledTrips', permission: 'scheduling.manage', icon: 'calendar', to: '/scheduled', isActive: (pathname) => pathname === '/scheduled' },
+  { key: 'navScheduledRules', permission: 'scheduling.manage', icon: 'sliders', to: '/scheduled/rules', isActive: (pathname) => pathname.startsWith('/scheduled/rules') },
+  { key: 'navAirports', permission: 'airport.manage', icon: 'plane', to: '/airports', isActive: (pathname) => pathname.startsWith('/airports') },
 ]
 
 const SUPPORT_SUBPAGES = ['disputes', 'canned-responses', 'sla']
@@ -131,7 +137,7 @@ const SUPPORT_SUBPAGES = ['disputes', 'canned-responses', 'sla']
 /** F18 — support group ("الدعم"). The ticket page lives at `/support/tickets/:id` (also reachable as `/support/:id`). */
 export const SUPPORT_ITEMS: NavItem[] = [
   {
-    key: 'navSupportTickets',
+    key: 'navSupportTickets', permission: 'support.view',
     icon: 'chat',
     to: '/support',
     isActive: (pathname) => {
@@ -140,21 +146,33 @@ export const SUPPORT_ITEMS: NavItem[] = [
       return Boolean(match) && !SUPPORT_SUBPAGES.includes(match?.[1] ?? '')
     },
   },
-  { key: 'navSupportDisputes', icon: 'receipt', to: '/support/disputes', isActive: (pathname) => pathname.startsWith('/support/disputes') },
-  { key: 'navSupportCanned', icon: 'edit', to: '/support/canned-responses', isActive: (pathname) => pathname.startsWith('/support/canned-responses') },
-  { key: 'navSupportSla', icon: 'clock', to: '/support/sla', isActive: (pathname) => pathname.startsWith('/support/sla') },
-  { key: 'navHelpCenter', icon: 'book', to: '/help-center', isActive: (pathname) => pathname.startsWith('/help-center') },
+  { key: 'navSupportDisputes', permission: 'support.view', icon: 'receipt', to: '/support/disputes', isActive: (pathname) => pathname.startsWith('/support/disputes') },
+  { key: 'navSupportCanned', permission: 'support.manage', icon: 'edit', to: '/support/canned-responses', isActive: (pathname) => pathname.startsWith('/support/canned-responses') },
+  { key: 'navSupportSla', permission: 'support.manage', icon: 'clock', to: '/support/sla', isActive: (pathname) => pathname.startsWith('/support/sla') },
+  { key: 'navHelpCenter', permission: 'help.manage', icon: 'book', to: '/help-center', isActive: (pathname) => pathname.startsWith('/help-center') },
 ]
 
 /** F19 — corporate accounts group ("الشركات"). `/corporate/invoices` is a static sibling of `/corporate/:id`. */
 export const CORPORATE_ITEMS: NavItem[] = [
   {
-    key: 'navCorporateAccounts',
+    key: 'navCorporateAccounts', permission: 'corporate.manage',
     icon: 'bank',
     to: '/corporate',
     isActive: (pathname) => pathname.startsWith('/corporate') && !pathname.startsWith('/corporate/invoices'),
   },
-  { key: 'navCorporateInvoices', icon: 'receipt', to: '/corporate/invoices', isActive: (pathname) => pathname.startsWith('/corporate/invoices') },
+  { key: 'navCorporateInvoices', permission: 'corporate.manage', icon: 'receipt', to: '/corporate/invoices', isActive: (pathname) => pathname.startsWith('/corporate/invoices') },
+]
+
+/** F20 — KPI reports and CSV exports ("التقارير"). */
+export const REPORT_ITEMS: NavItem[] = [
+  { key: 'navReports', permission: 'reports.view', icon: 'chart', to: '/reports', isActive: (pathname) => pathname === '/reports' },
+  { key: 'navReportExports', permission: 'reports.export', icon: 'download', to: '/reports/exports', isActive: (pathname) => pathname.startsWith('/reports/exports') },
+]
+
+/** F20 — administration: admin users and roles ("الإدارة والصلاحيات"). */
+export const ADMIN_ITEMS: NavItem[] = [
+  { key: 'navAdminUsers', permission: 'admin.users.manage', icon: 'users', to: '/admin-users', isActive: (pathname) => pathname.startsWith('/admin-users') },
+  { key: 'navRoles', permission: 'admin.roles.manage', icon: 'key', to: '/roles', isActive: (pathname) => pathname.startsWith('/roles') },
 ]
 
 export interface NavGroup {
@@ -174,7 +192,24 @@ export const NAV_GROUPS: NavGroup[] = [
   { key: 'navGroupFinance', items: FINANCE_ITEMS },
   { key: 'navGroupCorporate', items: CORPORATE_ITEMS },
   { key: 'navGroupNotifications', items: NOTIFICATION_ITEMS },
+  { key: 'navGroupReports', items: REPORT_ITEMS },
+  { key: 'navGroupAdmin', items: ADMIN_ITEMS },
 ]
+
+/** Groups with only the items `can` allows; empty groups are dropped (docs/12 §F20.9). */
+export function visibleNavGroups(can: (required: NavItem['permission']) => boolean): NavGroup[] {
+  return NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => can(item.permission)) })).filter((group) => group.items.length > 0)
+}
+
+/** First page the user may open (landing target when `dashboard.view` is missing). */
+export function firstAllowedPath(can: (required: NavItem['permission']) => boolean): string | null {
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      if (item.to !== '/' && can(item.permission)) return item.to
+    }
+  }
+  return null
+}
 
 /** Title shown in the top bar for the current path. */
 export function pageTitleKey(pathname: string): TranslationKey {
@@ -237,5 +272,13 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/corporate/invoices')) return 'coInvoicesTitle'
   if (/^\/corporate\/[^/]+/.test(pathname)) return 'coDetailTitle'
   if (pathname.startsWith('/corporate')) return 'coTitle'
+  if (pathname.startsWith('/reports/exports')) return 'rxTitle'
+  if (pathname.startsWith('/reports')) return 'rpTitle'
+  if (/^\/admin-users\/[^/]+/.test(pathname)) return 'auDetailTitle'
+  if (pathname.startsWith('/admin-users')) return 'auTitle'
+  if (/^\/roles\/[^/]+/.test(pathname)) return 'roDetailTitle'
+  if (pathname.startsWith('/roles')) return 'roTitle'
+  if (pathname.startsWith('/account/security')) return 'asTitle'
+  if (pathname.startsWith('/change-password')) return 'fpTitle'
   return 'appName'
 }

@@ -12,6 +12,7 @@ import { RefundActions } from '../components/RefundActions'
 import { RefundModal } from '../components/RefundModal'
 import { PageSpinner } from '../components/Spinner'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useQuery } from '../hooks/useQuery'
@@ -23,6 +24,8 @@ import { paymentStatusMeta, refundStatusMeta, webhookStatusMeta } from '../lib/s
 import type { LedgerLine, PaymentDetail, PaymentWebhookEvent, Refund, RefundInput } from '../lib/types'
 
 export function PaymentDetailPage() {
+  // F20: creating a refund needs `payments.refund`.
+  const canCreateRefund = usePermission('payments.refund')
   const { id = '' } = useParams()
   const { t, lang } = useLang()
   const toast = useToast()
@@ -44,7 +47,7 @@ export function PaymentDetailPage() {
   // Refunds still in flight count against the refundable amount too.
   const inFlight = refunds.filter((refund) => ['pending_approval', 'approved', 'processing'].includes(refund.status)).reduce((sum, refund) => sum + refund.amount, 0)
   const refundable = Math.max(0, Math.round((captured - payment.refundedAmount - inFlight) * 100) / 100)
-  const canRefund = (payment.status === 'captured' || payment.status === 'partially_refunded') && refundable > 0
+  const canRefund = canCreateRefund && (payment.status === 'captured' || payment.status === 'partially_refunded') && refundable > 0
   const awaiting = refunds.filter((refund) => refund.status === 'pending_approval')
 
   const submitRefund = async (input: RefundInput) => {

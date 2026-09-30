@@ -18,7 +18,9 @@ type Pending = 'approve' | 'reject' | 'retry' | null
  */
 export function RefundActions({ refund, onChanged, size = 'sm' }: { refund: Refund; onChanged: () => void; size?: 'sm' | 'md' }) {
   const { t } = useLang()
-  const { user } = useAuth()
+  const { user, can } = useAuth()
+  // F20: approve / reject / retry need `payments.refund_approve` (docs/12 §F20.2).
+  const allowed = can('payments.refund_approve')
   const toast = useToast()
   const describe = useApiErrorMessage()
   const [pending, setPending] = useState<Pending>(null)
@@ -39,7 +41,7 @@ export function RefundActions({ refund, onChanged, size = 'sm' }: { refund: Refu
     }
   }
 
-  if (refund.status !== 'pending_approval' && refund.status !== 'failed') return null
+  if (!allowed || (refund.status !== 'pending_approval' && refund.status !== 'failed')) return null
 
   return (
     <span className="inline-flex flex-wrap items-center justify-end gap-2" onClick={(event) => event.stopPropagation()}>

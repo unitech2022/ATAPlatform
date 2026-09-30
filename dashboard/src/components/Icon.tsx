@@ -57,6 +57,10 @@ export type IconName =
   | 'siren'
   | 'calendar'
   | 'plane'
+  | 'chart'
+  | 'key'
+  | 'lock'
+  | 'copy'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -330,6 +334,25 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   plane: <path d="M2.5 13.5 21 4l-4 16-5.5-4.5-3 3v-5L16 8l-8.5 6.5z" />,
+  chart: <path d="M4 4v16h16M8 16v-5M12 16V8M16 16v-3" />,
+  key: (
+    <>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m10.8 12.2 8.2-8.2M16 7l2.5 2.5M14 9l2 2" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h8" />
+    </>
+  ),
   heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />,
 }
 

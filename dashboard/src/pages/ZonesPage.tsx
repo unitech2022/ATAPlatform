@@ -10,6 +10,7 @@ import { PageHeader } from '../components/PageHeader'
 import { PolygonEditor, type PolygonContext } from '../components/PolygonEditor'
 import { Table, type Column } from '../components/Table'
 import { ZonesMap } from '../components/ZonesMap'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -122,6 +123,8 @@ function toInput(form: FormState, categories: RideCategory[]): ZoneInput {
 type Editing = { mode: 'create' } | { mode: 'edit'; zone: Zone } | null
 
 export function ZonesPage() {
+  // F20: writing zones needs `pricing.edit`.
+  const canEdit = usePermission('pricing.edit')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -277,9 +280,11 @@ export function ZonesPage() {
         title={t('zonesTitle')}
         description={t('zonesCopy')}
         actions={
-          <Button icon="plus" onClick={openCreate}>
-            {t('addZone')}
-          </Button>
+          canEdit ? (
+            <Button icon="plus" onClick={openCreate}>
+              {t('addZone')}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -289,7 +294,7 @@ export function ZonesPage() {
             <ErrorState error={zonesQuery.error} onRetry={zonesQuery.reload} />
           ) : (
             <Table
-              columns={columns}
+              columns={canEdit ? columns : columns.filter((column) => column.key !== 'actions')}
               rows={sorted}
               rowKey={(row) => row.id}
               loading={zonesQuery.loading}

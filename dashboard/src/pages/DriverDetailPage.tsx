@@ -18,6 +18,7 @@ import { Icon } from '../components/Icon'
 import { PageSpinner } from '../components/Spinner'
 import { ReasonModal } from '../components/ReasonModal'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -47,6 +48,8 @@ const GENDER_KEY: Record<Gender, TranslationKey> = {
 }
 
 export function DriverDetailPage() {
+  // F20: review actions and document verification need `drivers.review`.
+  const canReview = usePermission('drivers.review')
   const { id = '' } = useParams()
   const { t, lang } = useLang()
   const toast = useToast()
@@ -107,7 +110,7 @@ export function DriverDetailPage() {
   }
 
   const driver = query.data
-  const actions = allowedActions(driver.status)
+  const actions = canReview ? allowedActions(driver.status) : []
   const missingRequired = driver.requiredDocuments.filter((doc) => doc.isRequired && !doc.uploaded)
 
   const documentColumns: Column<DriverDocument>[] = [
@@ -148,19 +151,23 @@ export function DriverDetailPage() {
           >
             {t('preview')}
           </Button>
-          <Button
-            variant="brand"
-            size="sm"
-            icon="check"
-            disabled={row.status === 'verified'}
-            loading={busyDocumentId === row.id}
-            onClick={() => reviewDocument(row, 'verified')}
-          >
-            {t('verify')}
-          </Button>
-          <Button variant="danger-outline" size="sm" icon="x" disabled={row.status === 'rejected'} onClick={() => setRejectingDocument(row)}>
-            {t('reject')}
-          </Button>
+          {canReview && (
+            <>
+              <Button
+                variant="brand"
+                size="sm"
+                icon="check"
+                disabled={row.status === 'verified'}
+                loading={busyDocumentId === row.id}
+                onClick={() => reviewDocument(row, 'verified')}
+              >
+                {t('verify')}
+              </Button>
+              <Button variant="danger-outline" size="sm" icon="x" disabled={row.status === 'rejected'} onClick={() => setRejectingDocument(row)}>
+                {t('reject')}
+              </Button>
+            </>
+          )}
         </span>
       ),
     },

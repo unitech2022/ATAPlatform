@@ -10,6 +10,7 @@ import { MarkPaidModal } from '../components/MarkPaidModal'
 import { Money } from '../components/Money'
 import { PageSpinner } from '../components/Spinner'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -21,6 +22,8 @@ import { payoutBatchStatusMeta, payoutStatusMeta } from '../lib/status'
 import type { Payout } from '../lib/types'
 
 export function PayoutBatchDetailPage() {
+  // F20: confirming a batch payment needs `payouts.approve`.
+  const canApprove = usePermission('payouts.approve')
   const { id = '' } = useParams()
   const { t, lang } = useLang()
   const toast = useToast()
@@ -109,7 +112,7 @@ export function PayoutBatchDetailPage() {
             <Button variant="secondary" icon="download" loading={exporting} onClick={exportCsv}>
               {t('exportCsv')}
             </Button>
-            {batch.status !== 'paid' && (
+            {canApprove && batch.status !== 'paid' && (
               <Button variant="brand" icon="check" onClick={() => setPaidOpen(true)}>
                 {t('markBatchPaid')}
               </Button>

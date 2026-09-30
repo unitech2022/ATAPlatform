@@ -1,5 +1,23 @@
 import { api } from './api'
 import type {
+  AdminLoginResponse,
+  AdminMe,
+  AdminSession,
+  AdminUser,
+  AdminUserCreateInput,
+  AdminUserCreateResult,
+  AdminUserUpdateInput,
+  BreakdownGroup,
+  KpiBreakdown,
+  KpiGranularity,
+  KpiReport,
+  KpiSeries,
+  MfaEnrollment,
+  MfaEnrollmentResult,
+  PermissionInfo,
+  ReportDataset,
+  Role,
+  RoleInput,
   CannedResponse,
   CannedResponseInput,
   DisputeResolveInput,
@@ -186,8 +204,14 @@ import type {
 } from './types'
 
 export const auth = {
+  /** F20: answers an `AuthResponse`, an MFA challenge or an enrollment challenge (docs/12 §F20.5). */
   login: (username: string, password: string) =>
-    api.post<AuthResponse>('/auth/admin/login', { username, password }, { anonymous: true }),
+    api.post<AdminLoginResponse>('/auth/admin/login', { username, password }, { anonymous: true }),
+  verifyMfa: (mfaToken: string, proof: { code: string } | { recoveryCode: string }) =>
+    api.post<AuthResponse>('/auth/admin/mfa/verify', { mfaToken, ...proof }, { anonymous: true }),
+  startEnrollment: (mfaToken: string) => api.post<MfaEnrollment>('/auth/admin/mfa/enroll', { mfaToken }, { anonymous: true }),
+  confirmEnrollment: (mfaToken: string, code: string) =>
+    api.post<MfaEnrollmentResult>('/auth/admin/mfa/enroll/confirm', { mfaToken, code }, { anonymous: true }),
   logout: (refreshToken: string) => api.post<void>('/auth/logout', { refreshToken }),
 }
 
@@ -921,4 +945,68 @@ export const corporateInvoices = {
 /** Needs `corporate.manage` and `payments.view` (§F19.4); a bare array per the doc, a page envelope is tolerated. */
 export const corporateReceivables = {
   list: () => api.get<Paginated<CorporateReceivable> | CorporateReceivable[]>('/admin/corporate/receivables').then(unwrapList),
+}
+
+// ---------------------------------------------------------------------------
+// F20 — self-service, admin users, roles & permissions (docs/12 §F20.5)
+// ---------------------------------------------------------------------------
+
+export const me = {
+  get: () => api.get<AdminMe>('/admin/me'),
+  changePassword: (currentPassword: string, newPassword: string) => api.post<void>('/admin/me/password', { currentPassword, newPassword }),
+  regenerateRecoveryCodes: (code: string) => api.post<{ recoveryCodes: string[] }>('/admin/me/mfa/recovery-codes', { code }),
+  // Assumed (not in §F20.5): in-session enrollment for an admin without MFA, mirroring the login-time pair.
+  startEnrollment: () => api.post<MfaEnrollment>('/admin/me/mfa/enroll'),
+  confirmEnrollment: (code: string) => api.post<{ recoveryCodes: string[] }>('/admin/me/mfa/enroll/confirm', { code }),
+  sessions: () => api.get<AdminSession[] | Paginated<AdminSession>>('/admin/me/sessions').then(unwrapList),
+  revokeSession: (id: string) => api.delete<void>(`/admin/me/sessions/${id}`),
+  revokeOtherSessions: () => api.post<void>('/admin/me/sessions/revoke-others'),
+}
+
+export type AdminUserQuery = PageQuery & { search?: string; roleId?: string; isActive?: boolean | '' }
+
+export const adminUsers = {
+  list: (query: AdminUserQuery) => api.get<Paginated<AdminUser> | AdminUser[]>('/admin/admin-users', query).then(asPage),
+  // Assumed (the doc lists PUT/actions on `{id}` but no GET): the list row shape.
+  get: (id: string) => api.get<AdminUser>(`/admin/admin-users/${id}`),
+  create: (input: AdminUserCreateInput) => api.post<AdminUserCreateResult>('/admin/admin-users', input),
+  update: (id: string, input: AdminUserUpdateInput) => api.put<AdminUser>(`/admin/admin-users/${id}`, input),
+  disable: (id: string) => api.post<void>(`/admin/admin-users/${id}/disable`),
+  enable: (id: string) => api.post<void>(`/admin/admin-users/${id}/enable`),
+  resetPassword: (id: string) => api.post<{ temporaryPassword: string }>(`/admin/admin-users/${id}/reset-password`),
+  resetMfa: (id: string) => api.post<void>(`/admin/admin-users/${id}/reset-mfa`),
+  unlock: (id: string) => api.post<void>(`/admin/admin-users/${id}/unlock`),
+  revokeSessions: (id: string) => api.post<void>(`/admin/admin-users/${id}/revoke-sessions`),
+  // Assumed (not in §F20.5): per-session view of another admin; the page falls back to "revoke all" on 404.
+  sessions: (id: string) => api.get<AdminSession[] | Paginated<AdminSession>>(`/admin/admin-users/${id}/sessions`).then(unwrapList),
+  revokeSession: (id: string, sessionId: string) => api.delete<void>(`/admin/admin-users/${id}/sessions/${sessionId}`),
+}
+
+export const permissionsCatalog = {
+  list: () => api.get<PermissionInfo[] | Paginated<PermissionInfo>>('/admin/permissions').then(unwrapList),
+}
+
+export const roles = {
+  list: () => api.get<Role[] | Paginated<Role>>('/admin/roles', ALL).then(unwrapList),
+  get: (id: string) => api.get<Role>(`/admin/roles/${id}`),
+  create: (input: RoleInput) => api.post<Role>('/admin/roles', input),
+  update: (id: string, input: RoleInput) => api.put<Role>(`/admin/roles/${id}`, input),
+  remove: (id: string) => api.delete<void>(`/admin/roles/${id}`),
+}
+
+// ---------------------------------------------------------------------------
+// F20 — reports (docs/12 §F20.7; `reports.view`, exports `reports.export`)
+// ---------------------------------------------------------------------------
+
+export type ReportScope = { cityId?: string; zoneId?: string; rideCategoryId?: string }
+export type ReportRange = { from: string; to: string }
+
+export const reports = {
+  kpis: (query: ReportRange & ReportScope & { compare?: 'previous_period' | ''; metrics?: string }) => api.get<KpiReport>('/admin/reports/kpis', query),
+  series: (code: string, query: ReportRange & ReportScope & { granularity: KpiGranularity }) =>
+    api.get<KpiSeries>(`/admin/reports/kpis/${encodeURIComponent(code)}/series`, query),
+  breakdown: (query: ReportRange & ReportScope & { metric: string; groupBy: BreakdownGroup }) => api.get<KpiBreakdown>('/admin/reports/breakdown', query),
+  /** Authenticated CSV stream (UTF-8 with BOM); the file name comes from `Content-Disposition`. */
+  export: (query: ReportRange & ReportScope & { dataset: ReportDataset }) => api.download('/admin/reports/export', { ...query, format: 'csv' }),
+  rebuildSnapshots: (range: ReportRange) => api.post<void>('/admin/reports/snapshots/rebuild', range),
 }

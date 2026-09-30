@@ -21,6 +21,7 @@ import { TripRewardsCard } from '../components/TripRewardsCard'
 import { TripSafetyCard } from '../components/TripSafetyCard'
 import { TripSchedulingCard } from '../components/TripSchedulingCard'
 import { TripSupportCard } from '../components/TripSupportCard'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -43,6 +44,8 @@ const TIMELINE_STEPS: { key: keyof TripTimeline; label: TranslationKey }[] = [
 ]
 
 export function TripDetailPage() {
+  // F20: the admin cancel needs `trips.cancel`.
+  const canCancelTrips = usePermission('trips.cancel')
   const { id = '' } = useParams()
   const { t, lang } = useLang()
   const toast = useToast()
@@ -73,7 +76,7 @@ export function TripDetailPage() {
   const trip = query.data
   const isScheduledTrip = trip.bookingType === 'scheduled' || Boolean(trip.scheduling)
   // Scheduled trips carry their own cancel action inside the scheduling section.
-  const canCancel = !isTerminalTripStatus(trip.status) && !isScheduledTrip
+  const canCancel = canCancelTrips && !isTerminalTripStatus(trip.status) && !isScheduledTrip
   const isCancelled = trip.status === 'cancelled' || trip.status === 'no_drivers'
   const point = (name: string | null, address: string | null) => [name, address].filter(Boolean).join(' — ') || '—'
 

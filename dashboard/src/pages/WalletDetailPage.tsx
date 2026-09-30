@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { Badge, MetaBadge } from '../components/Badge'
 import { Button } from '../components/Button'
+import { Can } from '../components/Can'
 import { Card, DarkCard } from '../components/Card'
 import { ErrorState } from '../components/ErrorState'
 import { Input, Textarea } from '../components/Field'
@@ -120,14 +121,16 @@ export function WalletDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button icon="edit" onClick={() => setPending('adjust')}>
-                {t('manualAdjustment')}
-              </Button>
-              <Button variant={frozen ? 'brand' : 'danger-outline'} icon={frozen ? 'play' : 'pause'} onClick={() => setPending(frozen ? 'unfreeze' : 'freeze')}>
-                {frozen ? t('unfreeze') : t('freeze')}
-              </Button>
-            </div>
+            <Can permission="wallets.adjust">
+              <div className="flex flex-wrap gap-2">
+                <Button icon="edit" onClick={() => setPending('adjust')}>
+                  {t('manualAdjustment')}
+                </Button>
+                <Button variant={frozen ? 'brand' : 'danger-outline'} icon={frozen ? 'play' : 'pause'} onClick={() => setPending(frozen ? 'unfreeze' : 'freeze')}>
+                  {frozen ? t('unfreeze') : t('freeze')}
+                </Button>
+              </div>
+            </Can>
           </div>
           {frozen && (
             <div className="mt-5 flex items-start gap-3 rounded-2xl bg-danger-soft p-4 text-sm text-danger">

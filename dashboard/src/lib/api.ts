@@ -1,5 +1,5 @@
 import { LANG_STORAGE_KEY } from '../i18n'
-import { session } from './session'
+import { PASSWORD_CHANGE_REQUIRED_EVENT, session } from './session'
 import type { ApiErrorBody, AuthResponse } from './types'
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1').replace(
@@ -124,7 +124,11 @@ async function send(method: string, path: string, options: RequestOptions, retri
     session.expire()
   }
 
-  if (!response.ok) throw await parseError(response)
+  if (!response.ok) {
+    const error = await parseError(response)
+    if (error.status === 403 && error.code === 'password_change_required') window.dispatchEvent(new Event(PASSWORD_CHANGE_REQUIRED_EVENT))
+    throw error
+  }
   return response
 }
 

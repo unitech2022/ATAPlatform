@@ -9,6 +9,7 @@ import { Icon, type IconName } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -85,6 +86,8 @@ function toInput(form: FormState): RideCategoryInput {
 type Editing = { mode: 'create' } | { mode: 'edit'; category: RideCategory } | null
 
 export function RideCategoriesPage() {
+  // F20: any admin reads ride categories; writing needs `catalog.manage`.
+  const canEdit = usePermission('catalog.manage')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -213,9 +216,11 @@ export function RideCategoriesPage() {
         title={t('rideCategoriesTitle')}
         description={t('rideCategoriesCopy')}
         actions={
-          <Button icon="plus" onClick={openCreate}>
-            {t('addCategory')}
-          </Button>
+          canEdit ? (
+            <Button icon="plus" onClick={openCreate}>
+              {t('addCategory')}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -224,7 +229,7 @@ export function RideCategoriesPage() {
           <ErrorState error={query.error} onRetry={query.reload} />
         ) : (
           <Table
-            columns={columns}
+            columns={canEdit ? columns : columns.filter((column) => column.key !== 'actions')}
             rows={sorted}
             rowKey={(row) => row.id}
             loading={query.loading}

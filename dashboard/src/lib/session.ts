@@ -1,11 +1,16 @@
-import type { User } from './types'
+import type { AdminMe, User } from './types'
 
 const ACCESS_KEY = 'ata.accessToken'
 const REFRESH_KEY = 'ata.refreshToken'
 const USER_KEY = 'ata.user'
+/** F20: cached `GET /admin/me` so the sidebar can be filtered on reload before the refetch answers. */
+const ME_KEY = 'ata.adminMe'
 
 /** Fired on window whenever the stored session is cleared because it could not be refreshed. */
 export const SESSION_EXPIRED_EVENT = 'ata:session-expired'
+
+/** Fired on window when any request answers `403 password_change_required` (docs/12 §F20.4). */
+export const PASSWORD_CHANGE_REQUIRED_EVENT = 'ata:password-change-required'
 
 function read(key: string): string | null {
   try {
@@ -41,10 +46,24 @@ export const session = {
     write(REFRESH_KEY, tokens.refreshToken)
     if (tokens.user) write(USER_KEY, JSON.stringify(tokens.user))
   },
+  getMe(): AdminMe | null {
+    const raw = read(ME_KEY)
+    if (!raw) return null
+    try {
+      const value = JSON.parse(raw) as AdminMe
+      return Array.isArray(value?.permissions) ? value : null
+    } catch {
+      return null
+    }
+  },
+  saveMe(me: AdminMe | null) {
+    write(ME_KEY, me ? JSON.stringify(me) : null)
+  },
   clear() {
     write(ACCESS_KEY, null)
     write(REFRESH_KEY, null)
     write(USER_KEY, null)
+    write(ME_KEY, null)
   },
   expire() {
     session.clear()

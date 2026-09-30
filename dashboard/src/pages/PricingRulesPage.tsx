@@ -11,6 +11,7 @@ import { MapView } from '../components/MapView'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -130,6 +131,8 @@ function toInput(form: FormState): PricingRuleInput {
 type Editing = { mode: 'create' } | { mode: 'edit'; rule: PricingRule } | null
 
 export function PricingRulesPage() {
+  // F20: writing rules and the simulator need `pricing.edit`; reading stays on `pricing.view`.
+  const canEdit = usePermission('pricing.edit')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -320,9 +323,11 @@ export function PricingRulesPage() {
         title={t('pricingRulesTitle')}
         description={t('pricingRulesCopy')}
         actions={
-          <Button icon="plus" onClick={openCreate}>
-            {t('addRule')}
-          </Button>
+          canEdit ? (
+            <Button icon="plus" onClick={openCreate}>
+              {t('addRule')}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -355,11 +360,11 @@ export function PricingRulesPage() {
         {rulesQuery.error ? (
           <ErrorState error={rulesQuery.error} onRetry={rulesQuery.reload} />
         ) : (
-          <Table columns={columns} rows={rows} rowKey={(row) => row.id} loading={rulesQuery.loading} emptyTitle={t('noRules')} emptyDescription="" />
+          <Table columns={canEdit ? columns : columns.filter((column) => column.key !== 'actions')} rows={rows} rowKey={(row) => row.id} loading={rulesQuery.loading} emptyTitle={t('noRules')} emptyDescription="" />
         )}
       </Card>
 
-      <Simulator categories={categories} />
+      {canEdit && <Simulator categories={categories} />}
 
       <Modal
         open={editing !== null}

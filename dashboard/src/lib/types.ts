@@ -38,6 +38,9 @@ export interface AuthResponse {
   isNewUser: boolean
   user: User
   permissions?: string[]
+  /** F20 (docs/12 §F20.5): admin logins carry the forced-change flag; MFA verification reports the remaining recovery codes. */
+  mustChangePassword?: boolean
+  recoveryCodesRemaining?: number
 }
 
 export interface DashboardSummary {
@@ -2699,3 +2702,196 @@ export interface TripCorporateInfo {
   guestPhone?: string | null
   policyName?: string | null
 }
+
+// ---------------------------------------------------------------------------
+// F20 — identity, MFA, roles & permissions (docs/12 §F20.4–§F20.5)
+// ---------------------------------------------------------------------------
+
+export type MfaMethod = 'totp' | 'recovery_code'
+
+/** `200 { mfaRequired, mfaToken, methods }` from `POST /auth/admin/login`. */
+export interface MfaChallenge {
+  mfaRequired: true
+  mfaToken: string
+  methods?: MfaMethod[]
+}
+
+/** `200 { mfaEnrollmentRequired, mfaToken }` from `POST /auth/admin/login`. */
+export interface MfaEnrollmentChallenge {
+  mfaEnrollmentRequired: true
+  mfaToken: string
+}
+
+export type AdminLoginResponse = AuthResponse | MfaChallenge | MfaEnrollmentChallenge
+
+export interface MfaEnrollment {
+  secret: string
+  otpauthUri: string
+}
+
+export interface MfaEnrollmentResult {
+  recoveryCodes: string[]
+  auth: AuthResponse
+}
+
+export interface RoleRef {
+  id: string
+  code: string
+  name: string
+}
+
+/** `GET /admin/me`. `permissions` is `["*"]` for `super_admin`. */
+export interface AdminMe {
+  adminAccountId: string
+  userId: string
+  username: string
+  fullName: string | null
+  roles: RoleRef[]
+  permissions: string[]
+  mfaEnabled: boolean
+  mustChangePassword: boolean
+  onDuty?: boolean
+}
+
+export interface AdminSession {
+  id: string
+  userAgent: string | null
+  ipAddress: string | null
+  createdAt: string
+  lastUsedAt: string | null
+  current?: boolean
+}
+
+export interface AdminUser {
+  id: string
+  userId: string
+  username: string
+  fullName: string | null
+  phoneNumber: string | null
+  roles: RoleRef[]
+  isActive: boolean
+  mfaEnabled: boolean
+  lastLoginAt: string | null
+  onDuty?: boolean
+  lockedUntil: string | null
+  /** Detail-only extras (`GET /admin/admin-users/{id}`). */
+  mustChangePassword?: boolean
+  createdAt?: string | null
+  mfaEnrolledAt?: string | null
+  passwordChangedAt?: string | null
+  failedLoginCount?: number | null
+  permissions?: string[]
+  sessions?: AdminSession[]
+}
+
+export interface AdminUserCreateInput {
+  username: string
+  fullName: string
+  phoneNumber: string | null
+  roleIds: string[]
+  temporaryPassword?: string
+}
+
+export interface AdminUserCreateResult {
+  adminUser: AdminUser
+  temporaryPassword: string
+}
+
+export interface AdminUserUpdateInput {
+  fullName: string
+  roleIds: string[]
+}
+
+/** `GET /admin/permissions`; `name` follows `Accept-Language`. */
+export interface PermissionInfo {
+  code: string
+  module: string
+  name: string
+  description: string | null
+}
+
+export interface Role {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string
+  /** Localised name when the server adds one. */
+  name?: string | null
+  description: string | null
+  isSystem: boolean
+  /** Assumed list/detail extra (the doc does not name it). */
+  userCount?: number | null
+  permissionCodes?: string[]
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export interface RoleInput {
+  code: string
+  nameAr: string
+  nameEn: string
+  description: string | null
+  permissionCodes: string[]
+}
+
+// ---------------------------------------------------------------------------
+// F20 — reports (docs/12 §F20.6–§F20.7)
+// ---------------------------------------------------------------------------
+
+export type KpiUnit = 'count' | 'percent' | 'ratio' | 'seconds' | 'sar' | 'hours' | 'rating'
+
+export interface KpiMetric {
+  code: string
+  name: string
+  unit: KpiUnit
+  value: number | null
+  previousValue?: number | null
+  changePercent?: number | null
+  numerator?: number | null
+  denominator?: number | null
+}
+
+export interface KpiFilters {
+  cityId: string | null
+  zoneId: string | null
+  rideCategoryId: string | null
+}
+
+export interface KpiReport {
+  from: string
+  to: string
+  filters?: KpiFilters
+  metrics: KpiMetric[]
+}
+
+export type KpiGranularity = 'day' | 'week' | 'month'
+
+export interface KpiSeriesPoint {
+  periodStart: string
+  value: number | null
+  numerator?: number | null
+  denominator?: number | null
+}
+
+export interface KpiSeries {
+  code: string
+  unit: KpiUnit
+  points: KpiSeriesPoint[]
+}
+
+export type BreakdownGroup = 'city' | 'zone' | 'category'
+
+export interface KpiBreakdownRow {
+  key: string
+  label: string
+  value: number | null
+  numerator?: number | null
+  denominator?: number | null
+}
+
+export interface KpiBreakdown {
+  metric: string
+  rows: KpiBreakdownRow[]
+}
+
+export type ReportDataset = 'kpis' | 'trips' | 'payments' | 'payouts' | 'cancellations' | 'ratings' | 'support_tickets' | 'drivers' | 'incentives'

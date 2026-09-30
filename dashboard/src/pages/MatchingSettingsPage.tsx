@@ -9,6 +9,7 @@ import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { Table, type Column } from '../components/Table'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -99,6 +100,8 @@ function numericWeights(weights: Record<keyof MatchingWeights, string>): Record<
 type Editing = { mode: 'create' } | { mode: 'edit'; settings: MatchingSettings } | null
 
 export function MatchingSettingsPage() {
+  // F20: writing matching settings needs `matching.edit`.
+  const canEdit = usePermission('matching.edit')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -266,16 +269,18 @@ export function MatchingSettingsPage() {
         title={t('matchingSettingsTitle')}
         description={t('matchingSettingsCopy')}
         actions={
-          <Button
-            icon="plus"
-            onClick={() => {
-              setForm(EMPTY_FORM)
-              setErrors({})
-              setEditing({ mode: 'create' })
-            }}
-          >
-            {t('addMatchingSettings')}
-          </Button>
+          canEdit && (
+            <Button
+              icon="plus"
+              onClick={() => {
+                setForm(EMPTY_FORM)
+                setErrors({})
+                setEditing({ mode: 'create' })
+              }}
+            >
+              {t('addMatchingSettings')}
+            </Button>
+          )
         }
       />
 
@@ -285,7 +290,7 @@ export function MatchingSettingsPage() {
         {query.error ? (
           <ErrorState error={query.error} onRetry={query.reload} />
         ) : (
-          <Table columns={columns} rows={rows} rowKey={(row) => row.id} loading={query.loading} emptyTitle={t('noMatchingSettings')} emptyDescription="" />
+          <Table columns={canEdit ? columns : columns.filter((column) => column.key !== 'actions')} rows={rows} rowKey={(row) => row.id} loading={query.loading} emptyTitle={t('noMatchingSettings')} emptyDescription="" />
         )}
       </Card>
 

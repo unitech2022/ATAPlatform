@@ -11,6 +11,7 @@ import { Pagination } from '../components/Pagination'
 import { PermissionError } from '../components/PermissionError'
 import { Table, type Column } from '../components/Table'
 import { Tabs } from '../components/Tabs'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import { useUrlState } from '../hooks/useUrlState'
@@ -25,6 +26,8 @@ const PAGE_SIZE = 20
 
 /** Fare disputes (`/support/disputes`): the open queue by default, with the resolve modal and the F11 refund / four-eyes state. */
 export function SupportDisputesPage() {
+  // F20: resolving fare disputes needs `support.disputes`.
+  const canResolve = usePermission('support.disputes')
   const { t, lang } = useLang()
   const navigate = useNavigate()
   const { params, setFilter, page, setPage } = useUrlState()
@@ -110,7 +113,7 @@ export function SupportDisputesPage() {
       header: t('actions'),
       className: 'text-end',
       render: (row) =>
-        isOpenDispute(row.status) ? (
+        canResolve && isOpenDispute(row.status) ? (
           <Button
             variant="brand"
             size="sm"

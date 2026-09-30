@@ -13,6 +13,7 @@ import { ReasonModal } from '../components/ReasonModal'
 import { ReliabilityCard } from '../components/ReliabilityCard'
 import { Table, type Column } from '../components/Table'
 import { UserTicketsCard } from '../components/UserTicketsCard'
+import { usePermission } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -25,6 +26,8 @@ import type { PassengerListItem } from '../lib/types'
 const PAGE_SIZE = 20
 
 export function PassengersPage() {
+  // F20: suspend / reinstate needs `users.suspend`.
+  const canSuspend = usePermission('users.suspend')
   const { t, lang } = useLang()
   const toast = useToast()
   const describe = useApiErrorMessage()
@@ -117,7 +120,7 @@ export function PassengersPage() {
           >
             {t('passengerDetails')}
           </Button>
-          {row.status === 'suspended' ? (
+          {!canSuspend ? null : row.status === 'suspended' ? (
             <Button variant="brand" size="sm" icon="play" loading={busyId === row.id} onClick={() => reinstate(row)}>
               {t('reinstate')}
             </Button>
