@@ -1,5 +1,15 @@
 import { api } from './api'
 import type {
+  Airport,
+  AirportInput,
+  AirportQueueEntry,
+  AirportZone,
+  AirportZoneInput,
+  ScheduledReservationFilter,
+  ScheduledRule,
+  ScheduledRuleInput,
+  ScheduledTripRow,
+  SchedulingStats,
   AdminRating,
   City,
   DriverIncentiveProgress,
@@ -669,4 +679,59 @@ export const favorites = {
   /** Audited as `favorite_discount_rule.delete` (`204`). */
   remove: (id: string) => api.delete<void>(`/admin/favorite-discount-rules/${id}`),
   stats: (query: FavoriteStatsQuery) => api.get<FavoriteStats>('/admin/favorites/stats', query),
+}
+
+// ---------------------------------------------------------------------------
+// F17 — scheduled rides (permission `scheduling.manage`) and airports (permission `airport.manage`), docs/11 §F17.4/§F17.8
+// ---------------------------------------------------------------------------
+
+export type ScheduledTripQuery = DateRange &
+  PageQuery & {
+    reservation?: ScheduledReservationFilter | ''
+    cityId?: string
+    /** Not in §F17.4 — sent for backends that support them; the page also filters client-side when the rows carry the ids. */
+    rideCategoryId?: string
+    zoneId?: string
+  }
+
+export const scheduledRules = {
+  list: () =>
+    api.get<Paginated<ScheduledRule> | ScheduledRule[]>('/admin/scheduled-ride-rules', ALL).then(unwrapList),
+  /** Audited as `scheduled_ride_rule.create`. */
+  create: (input: ScheduledRuleInput) => api.post<ScheduledRule>('/admin/scheduled-ride-rules', input),
+  /** Audited as `scheduled_ride_rule.update`; a full replacement body. */
+  update: (id: string, input: ScheduledRuleInput) => api.put<ScheduledRule>(`/admin/scheduled-ride-rules/${id}`, input),
+  /** Audited as `scheduled_ride_rule.delete` (`204`). */
+  remove: (id: string) => api.delete<void>(`/admin/scheduled-ride-rules/${id}`),
+}
+
+export const scheduledTrips = {
+  list: (query: ScheduledTripQuery) =>
+    api.get<Paginated<ScheduledTripRow> | ScheduledTripRow[]>('/admin/scheduled-trips', query).then(asPage),
+  /** Manual reservation (`source=admin`); bypasses the marketplace, subject to the overlap rules. Audited `scheduled_trip.assign`. */
+  assign: (tripId: string, driverId: string) => api.post<unknown>(`/admin/scheduled-trips/${tripId}/assign`, { driverId }),
+  /** Releases the active reservation without penalty points. Audited `scheduled_trip.release`. */
+  releaseReservation: (tripId: string, reason: string) => api.post<unknown>(`/admin/scheduled-trips/${tripId}/release-reservation`, { reason }),
+  stats: (query: DateRange) => api.get<SchedulingStats>('/admin/scheduling/stats', query),
+}
+
+export const airports = {
+  list: () => api.get<Paginated<Airport> | Airport[]>('/admin/airports', ALL).then(unwrapList),
+  get: (id: string) => api.get<Airport>(`/admin/airports/${id}`),
+  /** Audited as `airport.create`. */
+  create: (input: AirportInput) => api.post<Airport>('/admin/airports', input),
+  /** Audited as `airport.update`; a full replacement body. */
+  update: (id: string, input: AirportInput) => api.put<Airport>(`/admin/airports/${id}`, input),
+  /** Audited as `airport.delete`. */
+  remove: (id: string) => api.delete<void>(`/admin/airports/${id}`),
+  zones: (airportId: string) => api.get<Paginated<AirportZone> | AirportZone[]>(`/admin/airports/${airportId}/zones`, ALL).then(unwrapList),
+  createZone: (airportId: string, input: AirportZoneInput) => api.post<AirportZone>(`/admin/airports/${airportId}/zones`, input),
+  updateZone: (airportId: string, zoneId: string, input: AirportZoneInput) =>
+    api.put<AirportZone>(`/admin/airports/${airportId}/zones/${zoneId}`, input),
+  removeZone: (airportId: string, zoneId: string) => api.delete<void>(`/admin/airports/${airportId}/zones/${zoneId}`),
+  /** FIFO queue (by `enteredAt`), live. */
+  queue: (airportId: string) => api.get<AirportQueueEntry[] | Paginated<AirportQueueEntry>>(`/admin/airports/${airportId}/queue`).then(unwrapList),
+  /** Audited as `airport_queue.remove`; the body carries the reason. */
+  removeFromQueue: (airportId: string, entryId: string, reason: string) =>
+    api.delete<void>(`/admin/airports/${airportId}/queue/${entryId}`, { reason }),
 }

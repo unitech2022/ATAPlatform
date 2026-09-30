@@ -204,6 +204,7 @@ export interface AuditLog {
 
 export type TripStatus =
   | 'requested'
+  | 'scheduled'
   | 'searching'
   | 'driver_assigned'
   | 'driver_en_route'
@@ -336,6 +337,10 @@ export interface TripDetail {
   ratings?: TripRatingInfo[] | null
   /** F16 — favorite driver request on the trip (docs/10 §F16.3 `Trip.favorite`, assumed to be on the admin payload too). */
   favorite?: TripFavoriteInfo | null
+  /** F17 — scheduled-ride details (docs/11 §F17.4 `Trip.scheduling`, extended with assumed admin-only fields). */
+  scheduling?: TripSchedulingInfo | null
+  /** F17 — airport pickup / dropoff details (docs/11 §F17.8 `Trip.airport`). */
+  airport?: TripAirportInfo | null
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -1951,4 +1956,218 @@ export interface FavoriteStats {
   discountUsageCount: number
   discountTotal: number
   topDrivers: FavoriteTopDriver[]
+}
+
+// ---------------------------------------------------------------------------
+// F17 — scheduled rides (docs/11 §F17.2–§F17.5)
+// ---------------------------------------------------------------------------
+
+/** `scheduled_ride_reservations.status` (§F17.2). */
+export type ReservationStatus = 'reserved' | 'confirmed' | 'assigned' | 'released' | 'no_show' | 'completed' | 'cancelled'
+/** `reservationStatus` of a list row: `none` means the trip has no active reservation. */
+export type ScheduledReservationState = ReservationStatus | 'none'
+/** `reservation=` filter of `GET /admin/scheduled-trips` (§F17.4). */
+export type ScheduledReservationFilter = 'none' | 'reserved' | 'confirmed' | 'assigned'
+export type ReservationSource = 'marketplace' | 'favorite' | 'admin'
+export type ReservationReleaseReason = 'driver_released' | 'confirmation_missed' | 'final_confirmation_missed' | 'no_show' | 'trip_cancelled' | 'admin'
+export type ScheduledFeeType = 'none' | 'fixed' | 'percent' | 'pricing_rule'
+export type ReminderKind = 'reminder' | 'confirm_request' | 'final_confirm_request'
+export type ReminderStatus = 'pending' | 'sent' | 'skipped' | 'cancelled'
+
+/** Body of `POST/PUT /admin/scheduled-ride-rules` — every column of `scheduled_ride_rules` in camelCase (§F17.2/§F17.4). */
+export interface ScheduledRuleInput {
+  cityId: string | null
+  rideCategoryId: string | null
+  maxDaysAhead: number
+  minLeadMinutes: number
+  maxOpenPerPassenger: number
+  lockDemandNormal: boolean
+  marketplaceEnabled: boolean
+  marketplaceRadiusKm: number
+  favoriteExclusiveMinutes: number
+  driverAssignmentLeadMinutes: number
+  confirmationTimeoutMinutes: number
+  finalConfirmationMinutesBefore: number
+  finalConfirmationTimeoutMinutes: number
+  searchStartMinutesBefore: number
+  riderReminderOffsets: number[]
+  driverReminderOffsets: number[]
+  freeCancelMinutesBefore: number
+  lateCancelFeeType: ScheduledFeeType
+  lateCancelFeeAmount: number | null
+  lateCancelFeePercent: number | null
+  lateCancelDriverCompensationPercent: number
+  driverFreeReleaseMinutesBefore: number
+  driverLateReleasePenaltyPoints: number
+  driverConfirmationMissedPenaltyPoints: number
+  driverNoShowPenaltyPoints: number
+  driverNoShowGraceMinutes: number
+  maxReservationsPerDriver: number
+  reservationGapMinutes: number
+  isActive: boolean
+}
+
+export interface ScheduledRule extends ScheduledRuleInput {
+  id: string
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** Row of `GET /admin/scheduled-trips` (§F17.4); `rideCategoryId`/`zoneId`/`driverId`/`status` are assumed optional extras. */
+export interface ScheduledTripRow {
+  tripId: string
+  tripNumber: string
+  scheduledAt: string
+  passengerName: string | null
+  categoryName: string | null
+  pickupName: string | null
+  dropoffName: string | null
+  reservationStatus: ScheduledReservationState | null
+  driverName: string | null
+  minutesToPickup: number
+  /** No first confirmation within 90 minutes of pickup. */
+  atRisk: boolean
+  rideCategoryId?: string | null
+  zoneId?: string | null
+  driverId?: string | null
+  status?: TripStatus | null
+}
+
+/** `GET /admin/scheduling/stats?from=&to=` (§F17.4). */
+export interface SchedulingStats {
+  booked: number
+  completed: number
+  cancelledByPassenger: number
+  cancelledLate: number
+  driverReleases: number
+  confirmationMissed: number
+  driverNoShows: number
+  rematched: number
+  scheduledCompletionRate: number
+  scheduledCancellationRate: number
+  avgReservationLeadHours: number | null
+}
+
+/** One reservation of a trip (§F17.2 columns); the admin trip payload is assumed to list them all as `scheduling.reservations`. */
+export interface ScheduledReservation {
+  id?: string
+  driverId?: string | null
+  driverName?: string | null
+  source?: ReservationSource | null
+  status: ReservationStatus
+  reservedAt?: string | null
+  confirmRequestedAt?: string | null
+  confirmedAt?: string | null
+  finalConfirmRequestedAt?: string | null
+  assignedAt?: string | null
+  releasedAt?: string | null
+  releaseReason?: ReservationReleaseReason | null
+  isLateRelease?: boolean | null
+  penaltyPoints?: number | null
+}
+
+/** `scheduled_ride_reminders` row (§F17.2); assumed to be listed as `scheduling.reminders` on the admin trip payload. */
+export interface ScheduledReminder {
+  id?: string
+  recipientRole: 'passenger' | 'driver'
+  kind: ReminderKind
+  offsetMinutes?: number | null
+  sendAt: string
+  sentAt?: string | null
+  status: ReminderStatus
+}
+
+/** `Trip.scheduling` (§F17.4 passenger shape) plus assumed admin fields (`reservations`, `reminders`). */
+export interface TripSchedulingInfo {
+  freeCancelUntil?: string | null
+  searchStartsAt?: string | null
+  reservation?: {
+    status: ReservationStatus
+    driverId?: string | null
+    driverName?: string | null
+    driverFirstName?: string | null
+    reservedAt?: string | null
+  } | null
+  reservations?: ScheduledReservation[] | null
+  reminders?: ScheduledReminder[] | null
+}
+
+// ---------------------------------------------------------------------------
+// F17 — airports (docs/11 §F17.6–§F17.8)
+// ---------------------------------------------------------------------------
+
+export type AirportZoneKind = 'terminal' | 'pickup_zone' | 'driver_waiting_area'
+export type AirportQueueStatus = 'waiting' | 'offered' | 'dispatched' | 'left' | 'removed'
+
+/** Body of `POST/PUT /admin/airports` (§F17.6 `airports`). */
+export interface AirportInput {
+  cityId: string
+  /** IATA, 3 letters, unique. */
+  code: string
+  nameAr: string
+  nameEn: string
+  lat: number
+  lng: number
+  geofence: LatLngTuple[]
+  requiresPickupZone: boolean
+  defaultFreeWaitingMinutes: number | null
+  defaultWaitingPerMinute: number | null
+  queueEnabled: boolean
+  isActive: boolean
+}
+
+export interface Airport extends AirportInput {
+  id: string
+  createdAt?: string | null
+  updatedAt?: string | null
+  /** Assumed optional counters on list rows. */
+  zonesCount?: number | null
+}
+
+/** Body of `POST/PUT /admin/airports/{id}/zones` (§F17.6 `airport_zones`). */
+export interface AirportZoneInput {
+  kind: AirportZoneKind
+  code: string
+  terminalCode: string | null
+  nameAr: string
+  nameEn: string
+  /** Required for `driver_waiting_area`. */
+  polygon: LatLngTuple[] | null
+  lat: number
+  lng: number
+  instructionsAr: string | null
+  instructionsEn: string | null
+  freeWaitingMinutes: number | null
+  waitingPerMinute: number | null
+  sortOrder: number
+  isActive: boolean
+}
+
+export interface AirportZone extends AirportZoneInput {
+  id: string
+  airportId?: string
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+/** Row of `GET /admin/airports/{id}/queue` (§F17.8); `driverId` is an assumed optional extra for the profile link. */
+export interface AirportQueueEntry {
+  entryId: string
+  position: number
+  driverName: string | null
+  categoryCode: string | null
+  enteredAt: string
+  lastSeenAt: string | null
+  status: AirportQueueStatus
+  driverId?: string | null
+}
+
+/** `Trip.airport` (§F17.8). */
+export interface TripAirportInfo {
+  code: string
+  direction: 'pickup' | 'dropoff'
+  zoneName?: string | null
+  terminalCode?: string | null
+  flightNumber?: string | null
+  freeWaitingMinutes?: number | null
 }

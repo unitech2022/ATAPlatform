@@ -13,10 +13,11 @@ import { useAuth } from '../context/auth'
 import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import type { TranslationKey } from '../i18n'
-import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety } from '../lib/admin'
+import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety, scheduledTrips } from '../lib/admin'
 import { favoriteRateShare } from '../lib/favorites'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
 import { daysAgoIso, todayIso } from '../lib/pricing'
+import { upcomingWithin } from '../lib/scheduling'
 import { formatRatio } from '../lib/rewards'
 import { formatDuration } from '../lib/safety'
 import type { DashboardSummary, SafetySummary } from '../lib/types'
@@ -83,6 +84,32 @@ export function DashboardPage() {
           },
         ]),
   ]
+  // F17 — scheduled rides in the next 24 h and the unconfirmed at-risk ones; hidden on 403 (`scheduling.manage`) or any error.
+  // The endpoint filters by date, so today + tomorrow are fetched and narrowed to the next 24 hours here.
+  const tomorrow = daysAgoIso(-1)
+  const scheduledSoon = useQuery(() => scheduledTrips.list({ from: today, to: tomorrow, page: 1, pageSize: 200 }), `dashboard-scheduled:${today}:${tomorrow}`)
+  const soon = upcomingWithin(scheduledSoon.data?.items ?? [], 24 * 60)
+  const soonPending = scheduledSoon.loading && !scheduledSoon.data
+  const soonTruncated = (scheduledSoon.data?.total ?? 0) > (scheduledSoon.data?.items.length ?? 0)
+  const scheduledStats: { key: TranslationKey; value: string; icon: IconName; to: string; meta: string; tone?: 'brand' | 'danger' }[] = scheduledSoon.error
+    ? []
+    : [
+        {
+          key: 'statScheduledSoon',
+          value: soonPending ? '…' : `${formatNumber(soon.length)}${soonTruncated ? '+' : ''}`,
+          icon: 'calendar',
+          to: `/scheduled?from=${today}&to=${tomorrow}`,
+          meta: t('sdNext24h'),
+        },
+        {
+          key: 'statScheduledAtRisk',
+          value: soonPending ? '…' : `${formatNumber(soon.filter((row) => row.atRisk).length)}${soonTruncated ? '+' : ''}`,
+          icon: 'alert',
+          to: '/scheduled?atRisk=true',
+          meta: t('sdAtRiskMeta'),
+          tone: 'danger',
+        },
+      ]
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
     ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
@@ -130,6 +157,16 @@ export function DashboardPage() {
           {financeStats.map((stat) => (
             <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
               <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={t('finance')} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {scheduledStats.length > 0 && (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          {scheduledStats.map((stat) => (
+            <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
+              <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={stat.meta} />
             </Link>
           ))}
         </div>

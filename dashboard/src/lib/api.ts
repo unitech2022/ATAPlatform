@@ -141,7 +141,8 @@ export const api = {
     request<T>('POST', path, { ...options, body }),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, { body }),
-  delete: <T>(path: string) => request<T>('DELETE', path),
+  /** `body` is optional; `DELETE /admin/airports/{id}/queue/{entryId}` carries `{ reason }` (docs/11 §F17.8). */
+  delete: <T>(path: string, body?: unknown) => request<T>('DELETE', path, { body }),
   /** Fetches a protected binary (e.g. /files/{id}) with the Bearer header. */
   blob: async (path: string, query?: QueryParams) => {
     const response = await send('GET', path, { query })

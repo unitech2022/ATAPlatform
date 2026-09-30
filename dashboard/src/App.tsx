@@ -64,7 +64,13 @@ const IncentiveDetailPage = lazy(() => import('./pages/IncentiveDetailPage').the
 // F16 favorite driver
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage').then((module) => ({ default: module.FavoritesPage })))
 
-/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14), ratings/marketing (F15) and favorites (F16) sections. */
+// F17 scheduled rides and airports
+const ScheduledTripsPage = lazy(() => import('./pages/ScheduledTripsPage').then((module) => ({ default: module.ScheduledTripsPage })))
+const ScheduledRulesPage = lazy(() => import('./pages/ScheduledRulesPage').then((module) => ({ default: module.ScheduledRulesPage })))
+const AirportsPage = lazy(() => import('./pages/AirportsPage').then((module) => ({ default: module.AirportsPage })))
+const AirportDetailPage = lazy(() => import('./pages/AirportDetailPage').then((module) => ({ default: module.AirportDetailPage })))
+
+/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14), ratings/marketing (F15), favorites (F16) and scheduled rides/airports (F17) sections. */
 const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'payments', Page: PaymentsPage },
   { path: 'payments/:id', Page: PaymentDetailPage },
@@ -99,6 +105,10 @@ const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'incentives', Page: IncentivesPage },
   { path: 'incentives/:id', Page: IncentiveDetailPage },
   { path: 'favorites', Page: FavoritesPage },
+  { path: 'scheduled', Page: ScheduledTripsPage },
+  { path: 'scheduled/rules', Page: ScheduledRulesPage },
+  { path: 'airports', Page: AirportsPage },
+  { path: 'airports/:id', Page: AirportDetailPage },
 ]
 
 /** Short aliases that redirect to the canonical routes from docs/08 §F13.10 and docs/09 "لوحة الإدارة". */

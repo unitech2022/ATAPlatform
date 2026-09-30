@@ -18,6 +18,7 @@ import { TripMessagesPanel } from '../components/TripMessagesPanel'
 import { TripPaymentCard } from '../components/TripPaymentCard'
 import { TripRewardsCard } from '../components/TripRewardsCard'
 import { TripSafetyCard } from '../components/TripSafetyCard'
+import { TripSchedulingCard } from '../components/TripSchedulingCard'
 import { useLang } from '../context/lang'
 import { useToast } from '../context/toast'
 import { useApiErrorMessage } from '../hooks/useApiErrorMessage'
@@ -68,7 +69,9 @@ export function TripDetailPage() {
   }
 
   const trip = query.data
-  const canCancel = !isTerminalTripStatus(trip.status)
+  const isScheduledTrip = trip.bookingType === 'scheduled' || Boolean(trip.scheduling)
+  // Scheduled trips carry their own cancel action inside the scheduling section.
+  const canCancel = !isTerminalTripStatus(trip.status) && !isScheduledTrip
   const isCancelled = trip.status === 'cancelled' || trip.status === 'no_drivers'
   const point = (name: string | null, address: string | null) => [name, address].filter(Boolean).join(' — ') || '—'
 
@@ -181,6 +184,15 @@ export function TripDetailPage() {
               { label: t('pricingMode'), value: t(PRICING_MODE_KEY[trip.pricingMode] ?? 'pricingFixed') },
               { label: t('offeredPrice'), value: trip.offeredPrice !== null ? `${formatMoney(trip.offeredPrice)} ${t('sar')}` : '—', ltr: true },
               ...(trip.scheduledAt ? [{ label: t('scheduledAt'), value: formatDateTime(trip.scheduledAt, lang) }] : []),
+              ...(trip.airport
+                ? [
+                    { label: t('apTripAirport'), value: `${trip.airport.code} · ${trip.airport.direction === 'pickup' ? t('apDirPickup') : t('apDirDropoff')}` },
+                    ...(trip.airport.zoneName ? [{ label: t('apTripZone'), value: trip.airport.zoneName }] : []),
+                    ...(trip.airport.terminalCode ? [{ label: t('apTripTerminal'), value: trip.airport.terminalCode, ltr: true }] : []),
+                    ...(trip.airport.flightNumber ? [{ label: t('apTripFlight'), value: trip.airport.flightNumber, ltr: true }] : []),
+                    ...(typeof trip.airport.freeWaitingMinutes === 'number' ? [{ label: t('apTripFreeWaiting'), value: `${formatNumber(trip.airport.freeWaitingMinutes)} ${t('min')}`, ltr: true }] : []),
+                  ]
+                : []),
             ]}
           />
         </Card>
@@ -191,6 +203,8 @@ export function TripDetailPage() {
           </div>
         </Card>
       </div>
+
+      {isScheduledTrip && <TripSchedulingCard trip={trip} onChanged={query.reload} onCancel={() => setCancelOpen(true)} />}
 
       <TripPaymentCard trip={trip} />
 

@@ -23,6 +23,9 @@ import type {
   PayoutBatchStatus,
   PayoutStatus,
   RefundStatus,
+  AirportQueueStatus,
+  ReminderStatus,
+  ScheduledReservationState,
   SettlementBatchStatus,
   SettlementDirection,
   TripStatus,
@@ -66,6 +69,7 @@ export function driverStatusKey(status: DriverStatus | null | undefined): Transl
 
 export const tripStatusMeta: Record<TripStatus, StatusMeta> = {
   requested: { tone: 'muted', key: 'tripStatusRequested' },
+  scheduled: { tone: 'warning', key: 'tripStatusScheduled' },
   searching: { tone: 'warning', key: 'tripStatusSearching' },
   driver_assigned: { tone: 'ink', key: 'tripStatusDriverAssigned' },
   driver_en_route: { tone: 'ink', key: 'tripStatusDriverEnRoute' },
@@ -277,4 +281,32 @@ export const favoriteStatusMeta: Record<FavoriteStatus, StatusMeta> = {
   unavailable: { tone: 'muted', key: 'fvStatusUnavailable' },
   rejected: { tone: 'danger', key: 'fvStatusRejected' },
   expired: { tone: 'muted', key: 'fvStatusExpired' },
+}
+
+// F17 — scheduled rides and airport queue
+
+export const reservationStateMeta: Record<ScheduledReservationState, StatusMeta> = {
+  none: { tone: 'danger', key: 'sdResNone' },
+  reserved: { tone: 'warning', key: 'sdResReserved' },
+  confirmed: { tone: 'ink', key: 'sdResConfirmed' },
+  assigned: { tone: 'brand', key: 'sdResAssigned' },
+  released: { tone: 'muted', key: 'sdResReleased' },
+  no_show: { tone: 'danger', key: 'sdResNoShow' },
+  completed: { tone: 'brand', key: 'sdResCompleted' },
+  cancelled: { tone: 'muted', key: 'sdResCancelled' },
+}
+
+export const reminderStatusMeta: Record<ReminderStatus, StatusMeta> = {
+  pending: { tone: 'warning', key: 'sdRemPending' },
+  sent: { tone: 'brand', key: 'sdRemSent' },
+  skipped: { tone: 'muted', key: 'sdRemSkipped' },
+  cancelled: { tone: 'muted', key: 'sdRemCancelled' },
+}
+
+export const airportQueueStatusMeta: Record<AirportQueueStatus, StatusMeta> = {
+  waiting: { tone: 'warning', key: 'apQueueWaiting' },
+  offered: { tone: 'brand', key: 'apQueueOffered' },
+  dispatched: { tone: 'ink', key: 'apQueueDispatched' },
+  left: { tone: 'muted', key: 'apQueueLeft' },
+  removed: { tone: 'danger', key: 'apQueueRemoved' },
 }

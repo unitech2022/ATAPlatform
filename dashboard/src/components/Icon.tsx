@@ -55,6 +55,8 @@ export type IconName =
   | 'box'
   | 'gauge'
   | 'siren'
+  | 'calendar'
+  | 'plane'
 
 // Paths match the Figma Make prototype (viewBox 24, stroke 1.8, round caps).
 const paths: Record<IconName, ReactNode> = {
@@ -321,6 +323,13 @@ const paths: Record<IconName, ReactNode> = {
   gift: <path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" />,
   trophy: <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />,
   flag: <path d="M4 22V4M4 4h13l-2 4 2 4H4" />,
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
+  plane: <path d="M2.5 13.5 21 4l-4 16-5.5-4.5-3 3v-5L16 8l-8.5 6.5z" />,
   heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />,
 }
 

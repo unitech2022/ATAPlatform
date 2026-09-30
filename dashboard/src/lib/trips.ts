@@ -8,9 +8,10 @@ export function isTerminalTripStatus(status: TripStatus) {
   return TERMINAL_TRIP_STATUSES.includes(status)
 }
 
-export type TripStatusGroup = 'active' | 'completed' | 'cancelled'
+export type TripStatusGroup = 'scheduled' | 'active' | 'completed' | 'cancelled'
 
 export const TRIP_STATUS_GROUPS: { group: TripStatusGroup; key: TranslationKey; statuses: TripStatus[] }[] = [
+  { group: 'scheduled', key: 'tripGroupScheduled', statuses: ['scheduled'] },
   {
     group: 'active',
     key: 'tripGroupActive',

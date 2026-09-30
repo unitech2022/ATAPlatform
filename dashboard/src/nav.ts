@@ -119,6 +119,13 @@ export const MARKETING_ITEMS: NavItem[] = [
   { key: 'navFavorites', icon: 'heart', to: '/favorites', isActive: (pathname) => pathname.startsWith('/favorites') },
 ]
 
+/** F17 — scheduled rides & airports group ("الجدولة والمطار"). */
+export const SCHEDULING_ITEMS: NavItem[] = [
+  { key: 'navScheduledTrips', icon: 'calendar', to: '/scheduled', isActive: (pathname) => pathname === '/scheduled' },
+  { key: 'navScheduledRules', icon: 'sliders', to: '/scheduled/rules', isActive: (pathname) => pathname.startsWith('/scheduled/rules') },
+  { key: 'navAirports', icon: 'plane', to: '/airports', isActive: (pathname) => pathname.startsWith('/airports') },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -129,6 +136,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { items: NAV_ITEMS },
   { key: 'navGroupSafety', items: SAFETY_ITEMS },
   { key: 'navGroupCancellation', items: CANCELLATION_ITEMS },
+  { key: 'navGroupScheduling', items: SCHEDULING_ITEMS },
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
   { key: 'navGroupMarketing', items: MARKETING_ITEMS },
   { key: 'navGroupFinance', items: FINANCE_ITEMS },
@@ -181,6 +189,10 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (/^\/incentives\/[^/]+/.test(pathname)) return 'icDetailTitle'
   if (pathname.startsWith('/incentives')) return 'icTitle'
   if (pathname.startsWith('/favorites')) return 'fvTitle'
+  if (pathname.startsWith('/scheduled/rules')) return 'sdRulesTitle'
+  if (pathname.startsWith('/scheduled')) return 'sdTitle'
+  if (/^\/airports\/[^/]+/.test(pathname)) return 'apDetailTitle'
+  if (pathname.startsWith('/airports')) return 'apTitle'
   if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
   if (pathname.startsWith('/reliability')) return 'rlTitle'
   return 'appName'
