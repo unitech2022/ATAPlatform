@@ -146,6 +146,17 @@ export const SUPPORT_ITEMS: NavItem[] = [
   { key: 'navHelpCenter', icon: 'book', to: '/help-center', isActive: (pathname) => pathname.startsWith('/help-center') },
 ]
 
+/** F19 — corporate accounts group ("الشركات"). `/corporate/invoices` is a static sibling of `/corporate/:id`. */
+export const CORPORATE_ITEMS: NavItem[] = [
+  {
+    key: 'navCorporateAccounts',
+    icon: 'bank',
+    to: '/corporate',
+    isActive: (pathname) => pathname.startsWith('/corporate') && !pathname.startsWith('/corporate/invoices'),
+  },
+  { key: 'navCorporateInvoices', icon: 'receipt', to: '/corporate/invoices', isActive: (pathname) => pathname.startsWith('/corporate/invoices') },
+]
+
 export interface NavGroup {
   /** Heading key; omitted for the ungrouped top section. */
   key?: TranslationKey
@@ -161,6 +172,7 @@ export const NAV_GROUPS: NavGroup[] = [
   { key: 'navGroupPricingOps', items: PRICING_OPS_ITEMS },
   { key: 'navGroupMarketing', items: MARKETING_ITEMS },
   { key: 'navGroupFinance', items: FINANCE_ITEMS },
+  { key: 'navGroupCorporate', items: CORPORATE_ITEMS },
   { key: 'navGroupNotifications', items: NOTIFICATION_ITEMS },
 ]
 
@@ -222,5 +234,8 @@ export function pageTitleKey(pathname: string): TranslationKey {
   if (pathname.startsWith('/help-center')) return 'hcTitle'
   if (/^\/reliability\/[^/]+/.test(pathname)) return 'rlProfileTitle'
   if (pathname.startsWith('/reliability')) return 'rlTitle'
+  if (pathname.startsWith('/corporate/invoices')) return 'coInvoicesTitle'
+  if (/^\/corporate\/[^/]+/.test(pathname)) return 'coDetailTitle'
+  if (pathname.startsWith('/corporate')) return 'coTitle'
   return 'appName'
 }

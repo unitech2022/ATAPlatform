@@ -14,6 +14,7 @@ import { Modal } from '../components/Modal'
 import { PageSpinner } from '../components/Spinner'
 import { Table, type Column } from '../components/Table'
 import { TripCancellationCard } from '../components/TripCancellationCard'
+import { TripCorporateCard } from '../components/TripCorporateCard'
 import { TripMessagesPanel } from '../components/TripMessagesPanel'
 import { TripPaymentCard } from '../components/TripPaymentCard'
 import { TripRewardsCard } from '../components/TripRewardsCard'
@@ -206,6 +207,8 @@ export function TripDetailPage() {
       </div>
 
       {isScheduledTrip && <TripSchedulingCard trip={trip} onChanged={query.reload} onCancel={() => setCancelOpen(true)} />}
+
+      <TripCorporateCard trip={trip} />
 
       <TripPaymentCard trip={trip} />
 

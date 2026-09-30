@@ -78,7 +78,12 @@ const CannedResponsesPage = lazy(() => import('./pages/CannedResponsesPage').the
 const SlaPoliciesPage = lazy(() => import('./pages/SlaPoliciesPage').then((module) => ({ default: module.SlaPoliciesPage })))
 const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage').then((module) => ({ default: module.HelpCenterPage })))
 
-/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14), ratings/marketing (F15), favorites (F16), scheduled rides/airports (F17) and support/help center (F18) sections. */
+// F19 corporate accounts
+const CorporateAccountsPage = lazy(() => import('./pages/CorporateAccountsPage').then((module) => ({ default: module.CorporateAccountsPage })))
+const CorporateAccountDetailPage = lazy(() => import('./pages/CorporateAccountDetailPage').then((module) => ({ default: module.CorporateAccountDetailPage })))
+const CorporateInvoicesPage = lazy(() => import('./pages/CorporateInvoicesPage').then((module) => ({ default: module.CorporateInvoicesPage })))
+
+/** Lazy routes of the finance (F11), notifications (F13), safety (F12), cancellation (F14), ratings/marketing (F15), favorites (F16), scheduled rides/airports (F17) support/help center (F18) and corporate accounts (F19) sections. */
 const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   { path: 'payments', Page: PaymentsPage },
   { path: 'payments/:id', Page: PaymentDetailPage },
@@ -125,6 +130,10 @@ const LAZY_ROUTES: { path: string; Page: ComponentType }[] = [
   // Alias of `support/tickets/:id`; the static sub-pages above outrank it.
   { path: 'support/:id', Page: SupportTicketDetailPage },
   { path: 'help-center', Page: HelpCenterPage },
+  { path: 'corporate', Page: CorporateAccountsPage },
+  // Static sub-page; outranks `corporate/:id`.
+  { path: 'corporate/invoices', Page: CorporateInvoicesPage },
+  { path: 'corporate/:id', Page: CorporateAccountDetailPage },
 ]
 
 /** Short aliases that redirect to the canonical routes from docs/08 §F13.10 and docs/09 "لوحة الإدارة". */

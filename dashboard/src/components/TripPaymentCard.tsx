@@ -30,7 +30,9 @@ export function TripPaymentCard({ trip }: { trip: TripDetail }) {
   const refundedSoFar = (data?.refunds ?? []).filter((refund) => refund.status !== 'rejected' && refund.status !== 'failed').reduce((sum, refund) => sum + refund.amount, 0)
   const paid = data?.payment?.paidAmount ?? data?.total ?? trip.finalFare ?? null
   const refundable = paid === null ? null : Math.max(0, Math.round((paid - refundedSoFar) * 100) / 100)
-  const canRefund = trip.status === 'completed' && (refundable === null || refundable > 0)
+  // Corporate trips are billed on the company invoice (§F19.2): there is no payment to refund to a wallet or card.
+  const isCorporate = trip.paymentMethod === 'corporate'
+  const canRefund = !isCorporate && trip.status === 'completed' && (refundable === null || refundable > 0)
 
   const submitRefund = async (input: RefundInput) => {
     const refund = payment ? await payments.refund(payment.id, input) : await payments.refundTrip(trip.id, { amount: input.amount, reasonCode: input.reasonCode, reason: input.reason })
@@ -63,6 +65,7 @@ export function TripPaymentCard({ trip }: { trip: TripDetail }) {
             )}
             {data?.payment?.fallbackToCash && <Badge tone="warning">{t('fallbackToCash')}</Badge>}
           </div>
+          {isCorporate && <p className="rounded-2xl bg-cloud px-4 py-3 text-sm text-muted">{t('coTcBilledToCompany')}</p>}
           {payment && (
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-2xl bg-cloud px-4 py-3">

@@ -138,6 +138,21 @@ import type {
   WalletKind,
   WalletListItem,
   WalletTransaction,
+  CorporateAccount,
+  CorporateAccountInput,
+  CorporateAccountListItem,
+  CorporateAccountStatus,
+  CorporateAdjustmentInput,
+  CorporateAdminInviteInput,
+  CorporateCostCenter,
+  CorporateEmployee,
+  CorporateInvoice,
+  CorporateInvoiceStatus,
+  CorporateMarkPaidInput,
+  CorporatePolicy,
+  CorporateReceivable,
+  CorporateTripRow,
+  CorporateUserStatus,
   AuthResponse,
   CurrentDemand,
   DashboardSummary,
@@ -852,4 +867,58 @@ export const helpArticles = {
   remove: (id: string) => api.delete<void>(`/admin/help/articles/${id}`),
   publish: (id: string) => api.post<HelpArticle>(`/admin/help/articles/${id}/publish`),
   unpublish: (id: string) => api.post<HelpArticle>(`/admin/help/articles/${id}/unpublish`),
+}
+
+// ---------------------------------------------------------------------------
+// F19 — corporate accounts and invoices (docs/12 §F19.4 "الإدارة", permission `corporate.manage`)
+// ---------------------------------------------------------------------------
+
+export type CorporateAccountQuery = PageQuery & { status?: CorporateAccountStatus | ''; cityId?: string; search?: string }
+export type CorporateEmployeeQuery = PageQuery & { status?: CorporateUserStatus | '' }
+export type CorporateTripQuery = DateRange &
+  PageQuery & {
+    status?: TripStatus | ''
+    /** `true` guests only, `false` employees only. */
+    isGuest?: 'true' | 'false' | ''
+    search?: string
+  }
+export type CorporateInvoiceQuery = DateRange & PageQuery & { accountId?: string; status?: CorporateInvoiceStatus | '' }
+
+const corporateBase = (id: string) => `/admin/corporate/accounts/${id}`
+
+export const corporateAccounts = {
+  list: (query: CorporateAccountQuery) => api.get<Paginated<CorporateAccountListItem>>('/admin/corporate/accounts', query),
+  get: (id: string) => api.get<CorporateAccount>(corporateBase(id)),
+  create: (input: CorporateAccountInput) => api.post<CorporateAccount>('/admin/corporate/accounts', input),
+  update: (id: string, input: CorporateAccountInput) => api.put<CorporateAccount>(corporateBase(id), input),
+  activate: (id: string) => api.post<CorporateAccount>(`${corporateBase(id)}/activate`),
+  suspend: (id: string, reason: string) => api.post<CorporateAccount>(`${corporateBase(id)}/suspend`, { reason }),
+  close: (id: string, reason: string) => api.post<CorporateAccount>(`${corporateBase(id)}/close`, { reason }),
+  inviteAdmin: (id: string, input: CorporateAdminInviteInput) => api.post<void>(`${corporateBase(id)}/admins`, input),
+  employees: (id: string, query: CorporateEmployeeQuery) => api.get<Paginated<CorporateEmployee>>(`${corporateBase(id)}/employees`, query),
+  addAdjustment: (id: string, input: CorporateAdjustmentInput) => api.post<void>(`${corporateBase(id)}/adjustments`, input),
+  generateInvoice: (id: string, periodStart: string) => api.post<CorporateInvoice>(`${corporateBase(id)}/invoices/generate`, { periodStart }),
+  // Assumed (not in §F19.4 "الإدارة"): the company-admin endpoints mirrored under the account.
+  disableEmployee: (id: string, employeeId: string) => api.post<void>(`${corporateBase(id)}/employees/${employeeId}/disable`),
+  enableEmployee: (id: string, employeeId: string) => api.post<void>(`${corporateBase(id)}/employees/${employeeId}/enable`),
+  resendInvitation: (id: string, employeeId: string) => api.post<void>(`${corporateBase(id)}/employees/${employeeId}/resend-invitation`),
+  revokeInvitation: (id: string, employeeId: string) => api.delete<void>(`${corporateBase(id)}/employees/${employeeId}`),
+  policies: (id: string) => api.get<Paginated<CorporatePolicy> | CorporatePolicy[]>(`${corporateBase(id)}/policies`, ALL).then(unwrapList),
+  costCenters: (id: string) => api.get<Paginated<CorporateCostCenter> | CorporateCostCenter[]>(`${corporateBase(id)}/cost-centers`, ALL).then(unwrapList),
+  trips: (id: string, query: CorporateTripQuery) => api.get<Paginated<CorporateTripRow>>(`${corporateBase(id)}/trips`, query),
+  exportTrips: (id: string, query: CorporateTripQuery) => api.download(`${corporateBase(id)}/trips/export`, { ...query, page: undefined, pageSize: undefined, format: 'csv' }),
+}
+
+export const corporateInvoices = {
+  list: (query: CorporateInvoiceQuery) => api.get<Paginated<CorporateInvoice>>('/admin/corporate/invoices', query),
+  issue: (id: string) => api.post<CorporateInvoice>(`/admin/corporate/invoices/${id}/issue`),
+  markPaid: (id: string, input: CorporateMarkPaidInput) => api.post<CorporateInvoice>(`/admin/corporate/invoices/${id}/mark-paid`, input),
+  void: (id: string, reason: string) => api.post<CorporateInvoice>(`/admin/corporate/invoices/${id}/void`, { reason }),
+  /** Authenticated blob download (PDF stored in `stored_files`). */
+  pdf: (id: string) => api.download(`/admin/corporate/invoices/${id}/pdf`),
+}
+
+/** Needs `corporate.manage` and `payments.view` (§F19.4); a bare array per the doc, a page envelope is tolerated. */
+export const corporateReceivables = {
+  list: () => api.get<Paginated<CorporateReceivable> | CorporateReceivable[]>('/admin/corporate/receivables').then(unwrapList),
 }

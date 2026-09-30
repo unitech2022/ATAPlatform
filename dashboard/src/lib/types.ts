@@ -217,7 +217,7 @@ export type TripStatus =
   | 'no_drivers'
 
 export type BookingType = 'now' | 'scheduled'
-export type PaymentMethod = 'cash' | 'wallet' | 'card'
+export type PaymentMethod = 'cash' | 'wallet' | 'card' | 'corporate'
 export type PricingMode = 'fixed' | 'saver' | 'offer'
 export type TripActor = 'passenger' | 'driver' | 'system' | 'admin'
 
@@ -341,6 +341,8 @@ export interface TripDetail {
   scheduling?: TripSchedulingInfo | null
   /** F17 — airport pickup / dropoff details (docs/11 §F17.8 `Trip.airport`). */
   airport?: TripAirportInfo | null
+  /** F19 — corporate booking details (docs/12 §F19.4 `Trip.corporate`, extended with assumed admin-only fields); null for non-corporate trips. */
+  corporate?: TripCorporateInfo | null
 }
 
 export type LiveDriverStatus = 'idle' | 'on_trip'
@@ -2489,4 +2491,211 @@ export interface SupportStats {
   csatAvg: number | null
   csatCount: number
   byType: { type: TicketType; created: number; resolved: number }[]
+}
+
+// ---------------------------------------------------------------------------
+// F19 — corporate accounts (docs/12 §F19.1 / §F19.4 "الإدارة")
+// ---------------------------------------------------------------------------
+
+export type CorporateAccountStatus = 'pending' | 'active' | 'suspended' | 'closed'
+export type CorporateUserStatus = 'invited' | 'active' | 'disabled'
+export type CorporateRole = 'corporate_admin' | 'employee'
+export type CorporateInvoiceStatus = 'draft' | 'issued' | 'paid' | 'overdue' | 'void'
+export type CorporateZoneMatch = 'pickup_and_dropoff' | 'pickup_or_dropoff'
+
+/** `corporate_accounts.billing_address` — the Saudi national address (§F19.1). */
+export interface CorporateBillingAddress {
+  buildingNumber: string
+  street: string
+  district: string
+  city: string
+  postalCode: string
+  additionalNumber: string
+  countryCode: string
+}
+
+/** Row of `GET /admin/corporate/accounts`: the base `corporate_accounts` columns (camelCase) plus the assumed `cityName`. */
+export interface CorporateAccountListItem {
+  id: string
+  accountNumber: string
+  displayName: string
+  legalNameAr: string
+  legalNameEn: string
+  crNumber: string
+  status: CorporateAccountStatus
+  cityId: string | null
+  cityName?: string | null
+  creditLimit: number
+  createdAt: string
+}
+
+/** Assumed optional block of `GET /admin/corporate/accounts/{id}`; mirrors `GET /corporate/dashboard` (§F19.4). */
+export interface CorporateAccountSummary {
+  monthToDate?: { trips: number; spend: number } | null
+  activeEmployees?: number | null
+  invitedEmployees?: number | null
+  budgetUtilizationPercent?: number | null
+  creditUsed?: number | null
+  openInvoices?: { count: number; amount: number } | null
+}
+
+export interface CorporateAccount extends CorporateAccountListItem {
+  vatNumber: string | null
+  billingEmail: string
+  billingAddress: CorporateBillingAddress | null
+  contactName: string
+  contactPhone: string
+  billingCycle: 'monthly'
+  paymentTermsDays: number
+  defaultPolicyId?: string | null
+  notes: string | null
+  updatedAt?: string
+  summary?: CorporateAccountSummary | null
+}
+
+export interface CorporateAccountInput {
+  legalNameAr: string
+  legalNameEn: string
+  displayName: string
+  crNumber: string
+  vatNumber: string | null
+  billingEmail: string
+  billingAddress: CorporateBillingAddress
+  cityId: string | null
+  contactName: string
+  contactPhone: string
+  creditLimit: number
+  billingCycle: 'monthly'
+  paymentTermsDays: number
+  notes: string | null
+}
+
+export interface CorporateAdminInviteInput {
+  phoneNumber: string
+  fullName: string
+}
+
+/** `GET /admin/corporate/receivables` (§F19.4); `unbilled` and `unpaidInvoices` are amounts. */
+export interface CorporateReceivable {
+  accountId: string
+  name: string
+  creditLimit: number
+  unbilled: number
+  unpaidInvoices: number
+  overdueAmount: number
+}
+
+/** Row of `GET /admin/corporate/accounts/{id}/employees` — same shape as the company-admin list (§F19.4); `invitationExpiresAt` is assumed. */
+export interface CorporateEmployee {
+  id: string
+  fullName: string | null
+  phoneNumber: string
+  role: CorporateRole
+  employeeNumber: string | null
+  department: string | null
+  costCenter: string | null
+  policyName: string | null
+  monthlyBudget: number | null
+  spentThisMonth: number | null
+  status: CorporateUserStatus
+  activatedAt: string | null
+  invitationExpiresAt?: string | null
+}
+
+/** `corporate_policies` columns (camelCase); returned by the assumed read-only `GET /admin/corporate/accounts/{id}/policies`. */
+export interface CorporatePolicy {
+  id: string
+  name: string
+  isDefault: boolean
+  allowedRideCategoryIds: string[] | null
+  allowedDays: number[] | null
+  timeWindows: { from: string; to: string }[] | null
+  allowedZoneIds: string[] | null
+  zoneMatch: CorporateZoneMatch
+  maxFarePerTrip: number | null
+  monthlyBudgetPerEmployee: number | null
+  requirePurpose: boolean
+  requireCostCenter: boolean
+  allowScheduled: boolean
+  allowGuestBooking: boolean
+  isActive: boolean
+}
+
+/** `corporate_cost_centers` columns; returned by the assumed `GET /admin/corporate/accounts/{id}/cost-centers`. */
+export interface CorporateCostCenter {
+  id: string
+  code: string
+  name: string
+  isActive: boolean
+}
+
+/** Row of the assumed `GET /admin/corporate/accounts/{id}/trips`: the company CSV columns (§F19.4 `/corporate/reports/trips/export`) plus ids. */
+export interface CorporateTripRow {
+  tripId: string
+  tripNumber: string
+  date: string
+  employee: string | null
+  employeeNumber: string | null
+  department: string | null
+  costCenter: string | null
+  guest: string | null
+  purpose: string | null
+  category: string | null
+  pickup: string | null
+  dropoff: string | null
+  distanceKm: number | null
+  amountInclVat: number | null
+  vat: number | null
+  status: TripStatus
+}
+
+/** `corporate_invoices` columns (camelCase) plus the company name for the cross-company overview. */
+export interface CorporateInvoice {
+  id: string
+  invoiceNumber: string
+  accountId: string
+  accountName: string | null
+  accountNumber?: string | null
+  periodStart: string
+  periodEnd: string
+  issueDate: string | null
+  dueDate: string | null
+  currency: string
+  tripsCount: number
+  subtotalExclVat: number
+  vatRate: number
+  vatAmount: number
+  totalInclVat: number
+  status: CorporateInvoiceStatus
+  issuedAt?: string | null
+  paidAt: string | null
+  paidAmount: number | null
+  paymentReference: string | null
+  voidReason: string | null
+}
+
+export interface CorporateMarkPaidInput {
+  amount: number
+  reference: string
+  paidAt?: string
+}
+
+export interface CorporateAdjustmentInput {
+  amount: number
+  description: string
+}
+
+/** `Trip.corporate` (§F19.4); the trailing fields are assumed admin extras. */
+export interface TripCorporateInfo {
+  companyName: string
+  purpose: string | null
+  costCenter: string | null
+  isGuest: boolean
+  guestName: string | null
+  accountId?: string | null
+  employeeName?: string | null
+  employeeNumber?: string | null
+  department?: string | null
+  guestPhone?: string | null
+  policyName?: string | null
 }

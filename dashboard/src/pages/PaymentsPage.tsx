@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router'
 import { MetaBadge } from '../components/Badge'
 import { Card } from '../components/Card'
+import { CorporatePaymentsPanel } from '../components/CorporatePaymentsPanel'
 import { ErrorState } from '../components/ErrorState'
 import { Input, SearchInput, Select } from '../components/Field'
 import { Money } from '../components/Money'
@@ -19,7 +20,37 @@ import type { PaymentListItem, PaymentStatus } from '../lib/types'
 
 const PAGE_SIZE = 20
 
+const VIEWS = ['cards', 'corporate'] as const
+
+/** Payments: gateway payments (F11) plus a "corporate" view with receivables and collected company invoices (F19). */
 export function PaymentsPage() {
+  const { t } = useLang()
+  const { params, update } = useUrlState()
+  const view = parseEnum(params.get('view'), VIEWS) || 'cards'
+
+  return (
+    <>
+      <PageHeader title={t('paymentsTitle')} description={t('paymentsCopy')} />
+      <Tabs
+        className="mb-4"
+        value={view}
+        onChange={(value) =>
+          update((next) => {
+            for (const key of Array.from(next.keys())) next.delete(key)
+            if (value === 'corporate') next.set('view', value)
+          })
+        }
+        options={[
+          { value: 'cards' as (typeof VIEWS)[number], label: t('coPayViewCards') },
+          { value: 'corporate' as (typeof VIEWS)[number], label: t('coPayViewCorporate') },
+        ]}
+      />
+      {view === 'corporate' ? <CorporatePaymentsPanel /> : <CardPayments />}
+    </>
+  )
+}
+
+function CardPayments() {
   const { t, lang } = useLang()
   const navigate = useNavigate()
   const { params, setFilter, page, setPage } = useUrlState()
@@ -90,8 +121,6 @@ export function PaymentsPage() {
 
   return (
     <>
-      <PageHeader title={t('paymentsTitle')} description={t('paymentsCopy')} />
-
       <Tabs
         className="mb-4"
         value={status}

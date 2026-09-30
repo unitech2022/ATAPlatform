@@ -33,6 +33,14 @@ const CODE_KEY: Record<string, TranslationKey> = {
   dispute_exists: 'errDisputeExists',
   dispute_window_closed: 'errDisputeWindowClosed',
   attachment_limit: 'errAttachmentLimit',
+  // F19 (docs/12)
+  corporate_not_member: 'errCorporateNotMember',
+  corporate_account_inactive: 'errCorporateAccountInactive',
+  corporate_member_elsewhere: 'errCorporateMemberElsewhere',
+  corporate_policy_violation: 'errCorporatePolicyViolation',
+  corporate_budget_exceeded: 'errCorporateBudgetExceeded',
+  corporate_credit_limit_exceeded: 'errCorporateCreditLimit',
+  invitation_expired: 'errInvitationExpired',
 }
 
 /** Turns any thrown value into a human-readable message in the current language. */

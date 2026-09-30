@@ -34,6 +34,7 @@ export const PAYMENT_METHOD_KEY: Record<PaymentMethod, TranslationKey> = {
   cash: 'paymentCash',
   wallet: 'paymentWallet',
   card: 'paymentCard',
+  corporate: 'paymentCorporate',
 }
 
 export const PRICING_MODE_KEY: Record<PricingMode, TranslationKey> = {

@@ -13,6 +13,9 @@ import type {
   RatingStatus,
   RedemptionStatus,
   CancellationFeeStatus,
+  CorporateAccountStatus,
+  CorporateInvoiceStatus,
+  CorporateUserStatus,
   ExcuseStatus,
   LostItemStatus,
   RestrictionLevel,
@@ -344,4 +347,26 @@ export const disputeStatusMeta: Record<DisputeStatus, StatusMeta> = {
   approved: { tone: 'brand', key: 'spDisputeApproved' },
   partially_approved: { tone: 'brand', key: 'spDisputePartiallyApproved' },
   rejected: { tone: 'muted', key: 'spDisputeRejected' },
+}
+
+/** F19 — corporate accounts, members and invoices (docs/12 §F19.1). */
+export const corporateAccountStatusMeta: Record<CorporateAccountStatus, StatusMeta> = {
+  pending: { tone: 'warning', key: 'coStatusPending' },
+  active: { tone: 'brand', key: 'statusActive' },
+  suspended: { tone: 'danger', key: 'statusSuspended' },
+  closed: { tone: 'muted', key: 'coStatusClosed' },
+}
+
+export const corporateUserStatusMeta: Record<CorporateUserStatus, StatusMeta> = {
+  invited: { tone: 'warning', key: 'coUserInvited' },
+  active: { tone: 'brand', key: 'statusActive' },
+  disabled: { tone: 'muted', key: 'coUserDisabled' },
+}
+
+export const corporateInvoiceStatusMeta: Record<CorporateInvoiceStatus, StatusMeta> = {
+  draft: { tone: 'muted', key: 'coInvDraft' },
+  issued: { tone: 'ink', key: 'coInvIssued' },
+  paid: { tone: 'brand', key: 'coInvPaid' },
+  overdue: { tone: 'danger', key: 'coInvOverdue' },
+  void: { tone: 'muted', key: 'coInvVoid' },
 }

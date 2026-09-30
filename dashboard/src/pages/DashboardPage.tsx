@@ -14,7 +14,8 @@ import { useLang } from '../context/lang'
 import { useQuery } from '../hooks/useQuery'
 import { useSpanUnits } from '../hooks/useSpanUnits'
 import type { TranslationKey } from '../i18n'
-import { cancellations, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety, scheduledTrips, support } from '../lib/admin'
+import { cancellations, corporateInvoices, corporateReceivables, dashboard, drivers, favorites, live, payments, payouts, promotions, refunds, safety, scheduledTrips, support } from '../lib/admin'
+import { sumBy } from '../lib/corporate'
 import { favoriteRateShare } from '../lib/favorites'
 import { formatDate, formatMoney, formatNumber } from '../lib/format'
 import { daysAgoIso, todayIso } from '../lib/pricing'
@@ -138,6 +139,34 @@ export function DashboardPage() {
           meta: t('navGroupSupport'),
         },
       ]
+  // F19 — corporate spend this month (unbilled receivables) and overdue invoices; each card hides on 403 (`corporate.manage`, receivables also `payments.view`) or any error.
+  const corporateReceivablesQuery = useQuery(() => corporateReceivables.list(), 'dashboard-corporate-receivables')
+  const corporateOverdue = useQuery(() => corporateInvoices.list({ status: 'overdue', page: 1, pageSize: 1 }), 'dashboard-corporate-overdue')
+  const corporateStats: { key: TranslationKey; value: string; icon: IconName; to: string; meta: string; tone?: 'brand' | 'danger' }[] = [
+    ...(corporateReceivablesQuery.error
+      ? []
+      : [
+          {
+            key: 'statCorporateGmv' as const,
+            value: corporateReceivablesQuery.data ? `${formatMoney(sumBy(corporateReceivablesQuery.data, (row) => row.unbilled))} ${t('sar')}` : '…',
+            icon: 'bank' as const,
+            to: '/corporate',
+            meta: t('navGroupCorporate'),
+          },
+        ]),
+    ...(corporateOverdue.error
+      ? []
+      : [
+          {
+            key: 'statCorporateOverdue' as const,
+            value: countOf(corporateOverdue),
+            icon: 'alert' as const,
+            to: '/corporate/invoices?status=overdue',
+            meta: corporateReceivablesQuery.data ? `${formatMoney(sumBy(corporateReceivablesQuery.data, (row) => row.overdueAmount))} ${t('sar')}` : t('navGroupCorporate'),
+            tone: 'danger' as const,
+          },
+        ]),
+  ]
   const gmv = summary.data?.today?.gmv
   const financeStats: { key: TranslationKey; value: string; icon: IconName; to: string; tone?: 'brand' | 'danger' }[] = [
     ...(typeof gmv === 'number' ? [{ key: 'statGmvToday' as const, value: `${formatMoney(gmv)} ${t('sar')}`, icon: 'activity' as const, to: '/payments' }] : []),
@@ -185,6 +214,16 @@ export function DashboardPage() {
           {financeStats.map((stat) => (
             <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
               <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={t('finance')} />
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {corporateStats.length > 0 && (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          {corporateStats.map((stat) => (
+            <Link key={stat.key} to={stat.to} className="block rounded-3xl transition hover:-translate-y-0.5 hover:shadow-brand">
+              <StatCard title={t(stat.key)} icon={stat.icon} tone={stat.tone} value={stat.value} meta={stat.meta} />
             </Link>
           ))}
         </div>
